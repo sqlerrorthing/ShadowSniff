@@ -2,13 +2,14 @@ use crate::WideString;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter, Write};
 use core::mem::zeroed;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
 use core::mem;
+use winapi::shared::minwindef::{DWORD, FALSE};
 use winapi::shared::ntdef::LARGE_INTEGER;
-use winapi::um::fileapi::{CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, CREATE_NEW, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING};
+use winapi::um::fileapi::{CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING};
 use winapi::um::handleapi::{CloseHandle, INVALID_HANDLE_VALUE};
 use winapi::um::processenv::GetCurrentDirectoryW;
 use winapi::um::winnt::{FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, GENERIC_READ, GENERIC_WRITE};
@@ -132,6 +133,11 @@ impl Path {
     pub fn create_file(&self) -> Result<(), String> {
         create_file(self)
     }
+    
+    #[inline]
+    pub fn write_file(&self, data: &[u8]) -> Result<(), String> {
+        write_file(self, data)
+    }
 }
 
 impl Deref for Path {
@@ -148,7 +154,7 @@ impl Display for Path {
     }
 }
 
-impl<S> Div<S> for Path
+impl<S> Div<S> for &Path
 where 
     S: AsRef<str>
 {
@@ -156,7 +162,7 @@ where
 
     fn div(self, rhs: S) -> Self::Output {
         let rhs_str = rhs.as_ref().replace('/', "\\");
-        let mut new_path = self.inner;
+        let mut new_path = self.inner.clone();
         
         if !new_path.ends_with('\\') {
             new_path.push('\\');
@@ -166,6 +172,60 @@ where
         
         Path::new(new_path)
     }
+}
+
+pub trait WriteToFile {
+    fn write_to(self, path: &Path) -> Result<(), String>;
+}
+
+impl<T> WriteToFile for T
+where T: AsRef<[u8]>
+{
+    fn write_to(self, path: &Path) -> Result<(), String> {
+        path.write_file(self.as_ref())
+    }
+}
+
+pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
+    let wide = path.to_wide();
+    
+    unsafe {
+        let handle = CreateFileW(
+            wide.as_ptr(),
+            GENERIC_WRITE,
+            0,
+            null_mut(),
+            CREATE_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL,
+            null_mut()
+        );
+
+        if handle == INVALID_HANDLE_VALUE {
+            return Err(format!("Failed to get file handle to write file '{}', error code: {}", path, GetLastError()))
+        }
+        
+        let mut bytes_written: DWORD = 0;
+        
+        let result = WriteFile(
+            handle,
+            data.as_ptr() as *const _,
+            data.len() as DWORD,
+            &mut bytes_written,
+            null_mut()
+        );
+        
+        CloseHandle(handle);
+        
+        if result == FALSE {
+            return Err(format!("Failed to write file file '{}', error code: {}", path, GetLastError()))
+        }
+        
+        if bytes_written as usize != data.len() {
+            return Err(format!("Failed to write all bytes to file '{}'", path))
+        }
+    }
+    
+    Ok(())
 }
 
 pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
@@ -181,7 +241,7 @@ pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
         let mut find_data = mem::zeroed();
 
         let handle = FindFirstFileW(wide_search.as_ptr(), &mut find_data);
-        if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
+        if handle == INVALID_HANDLE_VALUE {
             let err = GetLastError();
             return if err == ERROR_NO_MORE_FILES {
                 Ok(())

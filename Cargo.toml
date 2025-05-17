@@ -15,8 +15,9 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["winuser", "processthreadsapi"] }
+winapi = { version = "0.3.9", features = ["winuser", "processthreadsapi", "wingdi"] }
 wee_alloc = "0.4.5"
 utils = { path = "utils" }
 tasks = { path = "tasks" }
-log = "0.4.27"
+miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }
+crc32fast = { version = "1.4.2", default-features = false }

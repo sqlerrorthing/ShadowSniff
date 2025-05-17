@@ -13,8 +13,6 @@ pub use winapi::um::processthreadsapi::ExitProcess;
 #[cfg(all(debug_assertions, not(test)))]
 use panic_imports::*;
 
-
-
 #[cfg(all(debug_assertions, not(test)))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {

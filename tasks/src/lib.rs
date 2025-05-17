@@ -41,7 +41,7 @@ impl Task for CompositeTask {
         
         for task in self.subtasks.clone() {
             let path = match task.parent_name() {
-                Some(name) => parent.clone() / name, 
+                Some(name) => parent / name, 
                 None => parent.clone(),
             };
             
