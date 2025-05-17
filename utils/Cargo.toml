@@ -4,5 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_System_Console"] }
-winapi = { version = "0.3.9", features = ["fileapi", "winnt", "ntdef", "handleapi", "processenv"] }
+windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_System_Console", "Win32_Storage_FileSystem", "Win32_System_Environment", "Win32_System_IO", "Win32_Security"] }

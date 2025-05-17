@@ -59,7 +59,7 @@ dependencies = [
  "tasks",
  "utils",
  "wee_alloc",
- "winapi",
+ "windows-sys",
 ]
 
 [[package]]
@@ -67,14 +67,13 @@ name = "tasks"
 version = "0.1.0"
 dependencies = [
  "utils",
- "winapi",
+ "windows-sys",
 ]
 
 [[package]]
 name = "utils"
 version = "0.1.0"
 dependencies = [
- "winapi",
  "windows-sys",
 ]
 

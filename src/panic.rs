@@ -3,12 +3,12 @@ mod panic_imports {
     pub use alloc::string::String;
     pub use core::fmt::Write;
     pub use core::ptr::null_mut;
-    pub use winapi::um::processthreadsapi::ExitProcess;
-    pub use winapi::um::winuser::{MessageBoxA, MB_ICONERROR, MB_OK};
+    pub use windows_sys::Win32::System::Threading::ExitProcess;
+    pub use windows_sys::Win32::UI::WindowsAndMessaging::{MessageBoxA, MB_ICONERROR, MB_OK};
 }
 
 #[cfg(all(not(debug_assertions), not(test)))]
-pub use winapi::um::processthreadsapi::ExitProcess;
+use windows_sys::Win32::System::Threading::ExitProcess;
 
 #[cfg(all(debug_assertions, not(test)))]
 use panic_imports::*;
@@ -30,10 +30,8 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
             MB_OK | MB_ICONERROR
         );
 
-        ExitProcess(0);
+        ExitProcess(0);   
     }
-
-    loop {}
 }
 
 #[cfg(all(not(debug_assertions), not(test)))]
@@ -42,6 +40,4 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     unsafe {
         ExitProcess(0);
     }
-
-    loop {}
 }

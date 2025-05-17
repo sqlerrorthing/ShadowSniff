@@ -5,4 +5,8 @@ edition = "2024"
 
 [dependencies]
 utils = { path = "../utils" }
-winapi = { version = "0.3.9", features = ["processthreadsapi", "ntdef", "minwindef", "synchapi"] }
+windows-sys = { version = "0.59.0", features = [
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_Security"
+] }

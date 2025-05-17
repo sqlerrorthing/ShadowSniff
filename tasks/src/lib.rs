@@ -6,14 +6,13 @@ extern crate alloc;
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::ffi::c_void;
 use core::ptr::null_mut;
-use winapi::ctypes::c_void;
-use winapi::shared::minwindef::{DWORD, TRUE};
-use winapi::um::handleapi::CloseHandle;
-use winapi::um::processthreadsapi::{CreateThread};
-use winapi::um::synchapi::WaitForMultipleObjects;
-use winapi::um::winnt::HANDLE;
 use utils::path::Path;
+use windows_sys::Win32::Foundation::CloseHandle;
+use windows_sys::Win32::Foundation::HANDLE;
+use windows_sys::Win32::Foundation::TRUE;
+use windows_sys::Win32::System::Threading::{CreateThread, WaitForMultipleObjects};
 
 pub trait Task: Send + Sync {
     fn parent_name(&self) -> Option<&'static str> {
@@ -68,7 +67,7 @@ impl Task for CompositeTask {
 
         unsafe {
             WaitForMultipleObjects(
-                handles.len() as DWORD,
+                handles.len() as _,
                 handles.as_ptr(),
                 TRUE,
                 0xFFFFFFFF,
@@ -87,7 +86,7 @@ struct ThreadParams {
 }
 
 #[allow(unsafe_op_in_unsafe_fn)]
-unsafe extern "system" fn thread_proc(param: *mut c_void) -> DWORD {
+unsafe extern "system" fn thread_proc(param: *mut c_void) -> u32 {
     let params = Box::from_raw(param as *mut ThreadParams);
 
     params.task.run(&params.path);

@@ -6,14 +6,10 @@ use core::fmt::{Display, Formatter, Write};
 use core::mem::zeroed;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
-use core::mem;
-use winapi::shared::minwindef::{DWORD, FALSE};
-use winapi::shared::ntdef::LARGE_INTEGER;
-use winapi::um::fileapi::{CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING};
-use winapi::um::handleapi::{CloseHandle, INVALID_HANDLE_VALUE};
-use winapi::um::processenv::GetCurrentDirectoryW;
-use winapi::um::winnt::{FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, GENERIC_READ, GENERIC_WRITE};
+use windows_sys::Win32::Foundation::{CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE};
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, ERROR_NO_MORE_FILES};
+use windows_sys::Win32::Storage::FileSystem::{CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING};
+use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 
 #[derive(Clone)]
 pub struct Path {
@@ -26,7 +22,7 @@ impl Path {
     {
         let path = path.as_ref().to_string().replace('/', "\\");
         let mut normalized = String::with_capacity(path.len());
-        
+
         let mut chars = path.chars().peekable();
         while let Some(c) = chars.next() {
             if c == '\\' {
@@ -38,12 +34,12 @@ impl Path {
                 normalized.push(c)
             }
         }
-        
+
         Self {
             inner: normalized
         }
     }
-    
+
     pub fn get_attributes(&self) -> Option<u32> {
         unsafe {
             let attr = GetFileAttributesW(self.to_wide().as_ptr());
@@ -54,16 +50,16 @@ impl Path {
             }
         }
     }
-    
+
     pub fn as_absolute(&self) -> Path {
         let current_dir = get_current_directory();
-        
+
         let trimmed = self.inner.trim_start_matches(['\\', '/'].as_ref());
         let full = format!("{}\\{}", current_dir, trimmed);
-        
+
         Path::new(full)
     }
-    
+
     pub fn is_exists(&self) -> bool {
         self.get_attributes().is_some()
     }
@@ -81,7 +77,7 @@ impl Path {
             None => false,
         }
     }
-    
+
     pub fn parent(&self) -> Option<Path> {
         if let Some(pos) = self.inner.rfind('\\') {
             if pos == 0 {
@@ -128,12 +124,12 @@ impl Path {
     pub fn remove_file(&self) -> Result<(), String> {
         remove_file(self)
     }
-    
+
     #[inline]
     pub fn create_file(&self) -> Result<(), String> {
         create_file(self)
     }
-    
+
     #[inline]
     pub fn write_file(&self, data: &[u8]) -> Result<(), String> {
         write_file(self, data)
@@ -155,7 +151,7 @@ impl Display for Path {
 }
 
 impl<S> Div<S> for &Path
-where 
+where
     S: AsRef<str>
 {
     type Output = Path;
@@ -163,13 +159,13 @@ where
     fn div(self, rhs: S) -> Self::Output {
         let rhs_str = rhs.as_ref().replace('/', "\\");
         let mut new_path = self.inner.clone();
-        
+
         if !new_path.ends_with('\\') {
             new_path.push('\\');
         }
-        
+
         new_path.push_str(&rhs_str);
-        
+
         Path::new(new_path)
     }
 }
@@ -188,7 +184,7 @@ where T: AsRef<[u8]>
 
 pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
     let wide = path.to_wide();
-    
+
     unsafe {
         let handle = CreateFileW(
             wide.as_ptr(),
@@ -203,28 +199,28 @@ pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
         if handle == INVALID_HANDLE_VALUE {
             return Err(format!("Failed to get file handle to write file '{}', error code: {}", path, GetLastError()))
         }
-        
-        let mut bytes_written: DWORD = 0;
-        
+
+        let mut bytes_written: u32 = 0;
+
         let result = WriteFile(
             handle,
             data.as_ptr() as *const _,
-            data.len() as DWORD,
+            data.len() as u32,
             &mut bytes_written,
             null_mut()
         );
-        
+
         CloseHandle(handle);
-        
+
         if result == FALSE {
             return Err(format!("Failed to write file file '{}', error code: {}", path, GetLastError()))
         }
-        
+
         if bytes_written as usize != data.len() {
             return Err(format!("Failed to write all bytes to file '{}'", path))
         }
     }
-    
+
     Ok(())
 }
 
@@ -238,7 +234,7 @@ pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
     let wide_search = search_path.to_wide();
 
     unsafe {
-        let mut find_data = mem::zeroed();
+        let mut find_data = zeroed();
 
         let handle = FindFirstFileW(wide_search.as_ptr(), &mut find_data);
         if handle == INVALID_HANDLE_VALUE {
@@ -291,7 +287,7 @@ pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
 
 pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
     let wide = path.to_wide();
-    
+
     unsafe {
         let handle = CreateFileW(
             wide.as_ptr(),
@@ -307,17 +303,17 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
             let err = GetLastError();
             return Err(format!("Failed to open file {}, error code: {}", path, err));
         }
-        
-        let mut size: LARGE_INTEGER = zeroed();
+
+        let mut size: i64 = zeroed();
         if GetFileSizeEx(handle, &mut size) == 0 {
             CloseHandle(handle);
             return Err("Failed to get file size".into())
         }
-        
-        let file_size = *size.QuadPart() as usize;
+
+        let file_size = size as usize;
         let mut buffer: Vec<u8> = Vec::with_capacity(file_size);
         buffer.set_len(file_size);
-        
+
         let mut bytes_read = 0;
         let read_ok = ReadFile(
             handle,
@@ -326,9 +322,9 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
             &mut bytes_read,
             null_mut()
         );
-        
+
         CloseHandle(handle);
-        
+
         if read_ok == 0 {
             let err = GetLastError();
             return Err(format!("Failed to read from file {}, error code: {}", path, err));
@@ -354,7 +350,7 @@ pub fn remove_dir_all(path: &Path) -> Result<(), String> {
     remove_dir_contents(path)?;
     remove_dir(path)?;
     Ok(())
-    
+
 }
 
 pub fn remove_file(path: &Path) -> Result<(), String> {
@@ -390,10 +386,10 @@ pub fn create_file(path: &Path) -> Result<(), String> {
                 Err(format!("Failed to create file {}, error code: {}", path, err))
             }
         }
-        
+
         CloseHandle(handle);
     }
-    
+
     Ok(())
 }
 
@@ -425,7 +421,7 @@ pub fn mkdirs(path: &Path) -> Result<(), String> {
         if !current.is_empty() {
             current.push('\\');
         }
-        
+
         current.push_str(part);
 
         let subpath = Path::new(&current);
@@ -441,16 +437,16 @@ pub fn get_current_directory() -> Path {
     if required_size == 0 {
         panic!("Couldn't get current directory, required size is 0");
     }
-    
+
     let mut buffer: Vec<u16> = Vec::with_capacity(required_size as usize);
     unsafe { buffer.set_len(required_size as usize); }
-    
+
     let len = unsafe { GetCurrentDirectoryW(required_size, buffer.as_mut_ptr()) };
     if len == 0 || len > required_size {
         panic!("Couldn't get current directory, len is 0 or len > required_size");
     }
-    
+
     unsafe { buffer.set_len(len as usize) };
-    
+
     Path::new(String::from_utf16(&buffer).expect("Couldn't get current directory"))
 }

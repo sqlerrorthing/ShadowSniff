@@ -15,7 +15,13 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["winuser", "processthreadsapi", "wingdi"] }
+windows-sys = { version = "0.59.0", features = [
+    "Win32_System_ProcessStatus", 
+    "Win32_System_Threading", 
+    "Win32_Foundation", 
+    "Win32_Graphics_Gdi", 
+    "Win32_UI_WindowsAndMessaging"
+] }
 wee_alloc = "0.4.5"
 utils = { path = "utils" }
 tasks = { path = "tasks" }
