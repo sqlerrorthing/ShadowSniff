@@ -1,0 +1,2 @@
+[build]
+rustflags = ["-Zlocation-detail=none", "-Zfmt-debug=none"]

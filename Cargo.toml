@@ -1,0 +1,22 @@
+[package]
+name = "steall"
+version = "0.1.0"
+edition = "2024"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+
+[profile.dev]
+panic = "abort"
+
+[dependencies]
+winapi = { version = "0.3.9", features = ["winuser", "processthreadsapi"] }
+wee_alloc = "0.4.5"
+utils = { path = "utils" }
+tasks = { path = "tasks" }
+log = "0.4.27"
