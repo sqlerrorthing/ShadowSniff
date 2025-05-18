@@ -16,7 +16,6 @@
 extern crate alloc;
 
 use tasks::Task;
-use utils::log_debug;
 use utils::path::Path;
 use crate::stealer::StealerTask;
 

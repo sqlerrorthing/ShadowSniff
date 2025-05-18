@@ -6,10 +6,14 @@ use core::fmt::{Display, Formatter};
 use core::mem::zeroed;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
-use windows_sys::Win32::Foundation::{CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE};
+use core::slice::from_raw_parts;
+use windows_sys::core::PWSTR;
+use windows_sys::Win32::Foundation::{CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK};
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, ERROR_NO_MORE_FILES};
 use windows_sys::Win32::Storage::FileSystem::{CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING};
+use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
+use windows_sys::Win32::UI::Shell::SHGetKnownFolderPath;
 
 #[derive(Clone)]
 pub struct Path {
@@ -449,4 +453,24 @@ pub fn get_current_directory() -> Path {
     unsafe { buffer.set_len(len as usize) };
 
     Path::new(String::from_utf16(&buffer).expect("Couldn't get current directory"))
+}
+
+pub fn get_known_folder_path(folder_id: &windows_sys::core::GUID) -> Option<Path> {
+    unsafe {
+        let mut path_raw_ptr: PWSTR = null_mut();
+        let hr = SHGetKnownFolderPath(folder_id, 0, null_mut(), &mut path_raw_ptr);
+        if hr == S_OK {
+            let mut len = 0;
+            while *path_raw_ptr.add(len) != 0 {
+                len += 1;
+            }
+
+            let path = String::from_utf16_lossy(from_raw_parts(path_raw_ptr, len));
+
+            CoTaskMemFree(path_raw_ptr as _);
+            Some(Path::new(path))
+        } else {
+            None
+        }
+    }
 }

