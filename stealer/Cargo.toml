@@ -1,0 +1,18 @@
+[package]
+name = "stealer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tasks = { path = "../tasks" }
+utils = { path = "../utils" }
+windows-sys = { version = "0.59.0", features = [
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory"
+] }
+miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }

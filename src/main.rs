@@ -15,12 +15,11 @@
 
 extern crate alloc;
 
+use stealer::StealerTask;
 use tasks::Task;
 use utils::path::Path;
-use crate::stealer::StealerTask;
 
 mod panic;
-mod stealer;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
