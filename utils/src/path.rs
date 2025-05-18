@@ -1,3 +1,4 @@
+use alloc::borrow::ToOwned;
 use crate::WideString;
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -9,8 +10,8 @@ use core::ptr::null_mut;
 use core::slice::from_raw_parts;
 use windows_sys::core::PWSTR;
 use windows_sys::Win32::Foundation::{CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK};
-use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, ERROR_NO_MORE_FILES};
-use windows_sys::Win32::Storage::FileSystem::{CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING};
+use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS};
+use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FIND_DATAW};
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 use windows_sys::Win32::UI::Shell::{FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
@@ -82,6 +83,37 @@ impl Path {
         }
     }
 
+    pub fn name(&self) -> Option<&str> {
+        self.inner
+            .rsplit('\\')
+            .next()
+            .map(|s| s.rsplit_once('.').map(|(name, _)| name).unwrap_or(s))
+    }
+    
+    pub fn fullname(&self) -> Option<&str> {
+        self.inner
+            .rsplit('\\')
+            .next()
+    }
+
+    pub fn extension(&self) -> Option<&str> {
+        self.inner
+            .rsplit('\\')
+            .next()?
+            .rsplit_once('.')?
+            .1
+            .into()
+    }
+    
+    pub fn name_and_extension(&self) -> Option<(&str, Option<&str>)> {
+        let last_component = self.inner.rsplit('\\').next()?;
+        
+        match last_component.rsplit_once('.') {
+            Some((name, ext)) if !name.is_empty() => Some((name, Some(ext))),
+            _ => Some((last_component, None))
+        }
+    }
+    
     pub fn parent(&self) -> Option<Path> {
         if let Some(pos) = self.inner.rfind('\\') {
             if pos == 0 {
@@ -93,7 +125,7 @@ impl Path {
             None
         }
     }
-
+    
     #[inline]
     pub fn mkdirs(&self) -> Result<(), String> {
         mkdirs(self)
@@ -138,6 +170,42 @@ impl Path {
     pub fn write_file(&self, data: &[u8]) -> Result<(), String> {
         write_file(self, data)
     }
+    
+    #[inline]
+    pub fn list_files(&self) -> Option<Vec<Path>> {
+        list_files(self)
+    }
+
+    #[inline]
+    pub fn copy_content<F>(&self, dst: &Path, filter: &F) -> Result<(), String>
+    where
+        F: Fn(&Path) -> bool
+    {
+        copy_content(self, dst, filter)
+    }
+
+    #[inline]
+    pub fn copy_all_content(&self, dst: &Path) -> Result<(), String> {
+        copy_all_content(self, dst)
+    }
+    
+    #[inline]
+    pub fn copy_folder_with_filter<F>(&self, dst: &Path, filter: &F) -> Result<(), String>
+    where
+        F: Fn(&Path) -> bool
+    {
+        copy_folder_with_filter(self, dst, filter)
+    }
+    
+    #[inline]
+    pub fn copy_folder(&self, dst: &Path) -> Result<(), String> {
+        copy_folder(self, dst)
+    }
+    
+    #[inline]
+    pub fn copy_file(&self, dst: &Path, with_name: bool) -> Result<(), String> {
+        copy_file(self, dst, with_name)
+    }
 }
 
 impl Deref for Path {
@@ -171,6 +239,17 @@ where
         new_path.push_str(&rhs_str);
 
         Path::new(new_path)
+    }
+}
+
+impl<S> Div<S> for Path
+where
+    S: AsRef<str>
+{
+    type Output = Path;
+    
+    fn div(self, rhs: S) -> Self::Output {
+        &self / rhs
     }
 }
 
@@ -236,7 +315,7 @@ pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
+pub fn list_files(path: &Path) -> Option<Vec<Path>> {
     let search_path = if path.ends_with('\\') {
         format!("{}*", path)
     } else {
@@ -244,56 +323,148 @@ pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
     };
 
     let wide_search = search_path.to_wide();
-
+    
     unsafe {
-        let mut find_data = zeroed();
+        let mut data: WIN32_FIND_DATAW = zeroed();
 
-        let handle = FindFirstFileW(wide_search.as_ptr(), &mut find_data);
+        let handle = FindFirstFileW(wide_search.as_ptr(), &mut data);
         if handle == INVALID_HANDLE_VALUE {
-            let err = GetLastError();
-            return if err == ERROR_NO_MORE_FILES {
-                Ok(())
-            } else {
-                Err(format!("Failed to list directory '{}', error code: {}", path, err))
-            }
+            return None
         }
 
+        let mut results = Vec::new();
+
         loop {
-            let filename = {
-                let len = (0..)
-                    .take_while(|&i| find_data.cFileName[i] != 0)
-                    .count();
-                let slice = &find_data.cFileName[..len];
-                String::from_utf16_lossy(slice)
-            };
+            let name = String::from_utf16_lossy(
+                &data.cFileName[.. {
+                    let mut len = 0;
+                    while len < data.cFileName.len() && data.cFileName[len] != 0 {
+                        len += 1;
+                    }
+                    len
+                }]
+            );
 
-            if filename != "." && filename != ".." {
-                let full_path = format!("{}\\{}", path, filename);
-                let path = Path::new(full_path);
-
-                let is_dir = (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-
-                if is_dir {
-                    remove_dir_all(&path)?;
-                } else {
-                    remove_file(&path)?;
-                }
+            if name != "." && name != ".." {
+                let full_path = path / name;
+                results.push(full_path);
             }
 
-            if FindNextFileW(handle, &mut find_data) == 0 {
-                let err = GetLastError();
-                if err == ERROR_NO_MORE_FILES {
-                    break;
-                } else {
-                    FindClose(handle);
-                    return Err(format!("Failed to iterate directory {}, error code: {}", path, err));
-                }
+            let res = FindNextFileW(handle, &mut data);
+            if res == FALSE {
+                break;
             }
         }
 
         FindClose(handle);
+        Some(results)
+    }
+}
+
+pub fn copy_all_content(src: &Path, dst: &Path) -> Result<(), String> {
+    copy_content(src, dst, &|_| true)
+}
+
+pub fn copy_content<F>(src: &Path, dst: &Path, filter: &F) -> Result<(), String>
+where
+    F: Fn(&Path) -> bool
+{
+    if !src.is_dir() {
+        return Err("Source must be a directory".to_owned())
+    }
+    
+    if let Some(files) = list_files(src) {
+        for entry in files {
+            if !filter(&entry) {
+                continue
+            }
+            
+            let relative = entry.inner.strip_prefix(&src.inner)
+                .ok_or("Failed to compute relative path".to_owned())?;
+            
+            let new_dst = dst / relative;
+            
+            if entry.is_dir() {
+                copy_content(&entry, &new_dst, filter)?;
+            } else {
+                copy_file(&entry, &new_dst, false)?;
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+pub fn copy_folder(src: &Path, dst: &Path) -> Result<(), String> {
+    copy_folder_with_filter(src, dst, &|_| true)
+}
+
+pub fn copy_folder_with_filter<F>(src: &Path, dst: &Path, filter: &F) -> Result<(), String>
+where
+    F: Fn(&Path) -> bool
+{
+    if !src.is_dir() {
+        return Err("Source must be a directory".to_owned())
     }
 
+    let dst = dst / src.name().ok_or("Failed to get folder name")?;
+    copy_content(src, &dst, filter)?;
+
+    Ok(())
+}
+
+pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), String> {
+    if !src.is_file() {
+        return Err("Source must be a file".to_owned())
+    }
+    
+    let dst = if with_filename {
+        &(dst / src.fullname().ok_or("Failed to get file name")?)
+    } else {
+        dst
+    };
+    
+    let src_wide = src.to_wide();
+    let dst_wide = dst.to_wide();
+
+    if let Some(parent) = dst.parent() {
+        if !parent.is_exists() {
+            parent.mkdirs()?;
+        }
+    }
+
+    unsafe {
+        if CopyFileW(
+            src_wide.as_ptr(),
+            dst_wide.as_ptr(),
+            FALSE
+        ) == 0 {
+            return Err(format!("Failed to copy file {} (to {}), error code: {}", src, dst, GetLastError()))
+        }
+    }
+    
+    Ok(())
+}
+
+pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
+    if let Some(entries) = list_files(path) {
+        for entry in entries {
+            let is_dir = entry.is_dir();
+
+            if is_dir {
+                remove_dir_all(&entry)?;
+            } else {
+                remove_file(&entry)?;
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+pub fn remove_dir_all(path: &Path) -> Result<(), String> {
+    remove_dir_contents(path)?;
+    remove_dir(path)?;
     Ok(())
 }
 
@@ -356,13 +527,6 @@ pub fn remove_dir(path: &Path) -> Result<(), String> {
             Ok(())
         }
     }
-}
-
-pub fn remove_dir_all(path: &Path) -> Result<(), String> {
-    remove_dir_contents(path)?;
-    remove_dir(path)?;
-    Ok(())
-
 }
 
 pub fn remove_file(path: &Path) -> Result<(), String> {

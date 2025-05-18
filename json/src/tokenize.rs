@@ -17,13 +17,6 @@ pub enum Token {
     String(String),
 }
 
-#[cfg(test)]
-impl Token {
-    pub(crate) fn string(input: &str) -> Self {
-        Self::String(String::from(input))
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenizeError {
     CharNotRecognized(char),

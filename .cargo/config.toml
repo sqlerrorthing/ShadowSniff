@@ -1,2 +1,5 @@
 [build]
-rustflags = ["-Zlocation-detail=none", "-Zfmt-debug=none"]
+rustflags = []
+
+[target.'cfg(not(debug_assertations))']
+rustflags = []

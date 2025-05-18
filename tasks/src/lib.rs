@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
 
@@ -12,6 +13,51 @@ use windows_sys::Win32::Foundation::CloseHandle;
 use windows_sys::Win32::Foundation::HANDLE;
 use windows_sys::Win32::Foundation::TRUE;
 use windows_sys::Win32::System::Threading::{CreateThread, WaitForMultipleObjects};
+
+#[macro_export]
+macro_rules! composite_task {
+    ( $( $expr:expr ),* $(,)? ) => {
+        CompositeTask::new(vec![
+            $(
+                alloc::sync::Arc::new($expr)
+            ),*
+        ])
+    };
+}
+
+#[macro_export]
+macro_rules! parent_name {
+    ($name:expr) => {
+        fn parent_name(&self) -> Option<&'static str> {
+            Some($name)
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_composite_task_runner {
+    ($task_type:ty) => {
+        impl Task for $task_type {
+            unsafe fn run(&self, parent: &utils::path::Path) {
+                unsafe {
+                    self.inner.run(parent);
+                }
+            }
+        }
+    };
+
+    ($task_type:ty, $parent_name:expr) => {
+        impl Task for $task_type {
+            $crate::parent_name!($parent_name);
+
+            unsafe fn run(&self, parent: &utils::path::Path) {
+                unsafe {
+                    self.inner.run(parent);
+                }
+            }
+        }
+    };
+}
 
 pub trait Task: Send + Sync {
     fn parent_name(&self) -> Option<&'static str> {
@@ -35,47 +81,58 @@ impl CompositeTask {
 
 impl Task for CompositeTask {
     unsafe fn run(&self, parent: &Path) {
-        let mut handles: Vec<HANDLE> = Vec::new();
-        
-        for task in self.subtasks.clone() {
-            let path = match task.parent_name() {
-                Some(name) => parent / name,
-                None => parent.clone(),
-            };
-            
-            let params = Box::new(ThreadParams {
-                task: task.clone(),
-                path
-            });
-            
-            let handle = unsafe {
-                CreateThread(
-                    null_mut(),
-                    0,
-                    Some(thread_proc),
-                    Box::into_raw(params) as *mut _,
-                    0,
-                    null_mut()
-                )
-            };
-            
-            if !handle.is_null() {
-                handles.push(handle);
+        match self.subtasks.len() {
+            0 => return,
+            1 => {
+                let task = &self.subtasks[0];
+                task.run(&task_path(task, parent));
             }
+            _ => run_tasks(&self.subtasks, parent)
         }
+    }
+}
 
-        unsafe {
-            WaitForMultipleObjects(
-                handles.len() as _,
-                handles.as_ptr(),
-                TRUE,
-                0xFFFFFFFF,
-            );
-        }
+unsafe fn run_tasks(tasks: &Vec<Arc<dyn Task>>, parent: &Path) {
+    let mut handles: Vec<HANDLE> = Vec::new();
 
-        for handle in handles {
-            unsafe { CloseHandle(handle) };
+    for task in tasks.clone() {
+        let params = Box::new(ThreadParams {
+            task: task.clone(),
+            path: task_path(&task, parent)
+        });
+
+        let handle = unsafe {
+            CreateThread(
+                null_mut(),
+                0,
+                Some(thread_proc),
+                Box::into_raw(params) as *mut _,
+                0,
+                null_mut()
+            )
+        };
+
+        if !handle.is_null() {
+            handles.push(handle);
         }
+    }
+
+    WaitForMultipleObjects(
+        handles.len() as _,
+        handles.as_ptr(),
+        TRUE,
+        0xFFFFFFFF,
+    );
+
+    for handle in handles {
+        CloseHandle(handle);
+    }
+}
+
+fn task_path(task: &Arc<dyn Task>, parent: &Path) -> Path {
+    match task.parent_name() {
+        Some(name) => parent / name,
+        None => parent.clone(),
     }
 }
 

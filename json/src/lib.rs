@@ -1,16 +1,15 @@
 #![no_std]
 
+extern crate alloc;
 mod parser;
 mod tokenize;
 
-extern crate alloc;
-
-use alloc::collections::BTreeMap;
-use alloc::string::{String};
-use alloc::vec::Vec;
-use core::fmt::{write, Display, Formatter};
 use crate::parser::{parse_tokens, TokenParseError};
 use crate::tokenize::{tokenize, TokenizeError};
+use alloc::collections::BTreeMap;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::fmt::{Display, Formatter};
 
 pub enum Value {
     Null,

