@@ -1,5 +1,0 @@
-[build]
-rustflags = []
-
-[target.'cfg(not(debug_assertations))']
-rustflags = []
