@@ -7,6 +7,7 @@ use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::ffi::c_void;
+use core::panic;
 use core::ptr::null_mut;
 use utils::path::Path;
 use windows_sys::Win32::Foundation::CloseHandle;
@@ -40,7 +41,7 @@ impl Task for CompositeTask {
         
         for task in self.subtasks.clone() {
             let path = match task.parent_name() {
-                Some(name) => parent / name, 
+                Some(name) => parent / name,
                 None => parent.clone(),
             };
             

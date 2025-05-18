@@ -13,7 +13,7 @@ use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_F
 use windows_sys::Win32::Storage::FileSystem::{CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING};
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
-use windows_sys::Win32::UI::Shell::{FOLDERID_System, SHGetKnownFolderPath};
+use windows_sys::Win32::UI::Shell::{FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
 
 #[derive(Clone)]
 pub struct Path {
@@ -187,6 +187,14 @@ where T: AsRef<[u8]>
 }
 
 pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        if !parent.is_exists() {
+            if let Err(e) = parent.mkdirs() {
+                return Err(e);
+            }
+        }
+    }
+    
     let wide = path.to_wide();
 
     unsafe {
@@ -478,5 +486,9 @@ pub fn get_known_folder_path(folder_id: &windows_sys::core::GUID) -> Option<Path
 impl Path {
     pub fn system() -> Self {
         get_known_folder_path(&FOLDERID_System).unwrap()
+    }
+    
+    pub fn appdata() -> Self {
+        get_known_folder_path(&FOLDERID_RoamingAppData).unwrap()
     }
 }

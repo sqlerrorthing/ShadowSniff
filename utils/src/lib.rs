@@ -9,6 +9,7 @@ use core::iter::once;
 pub mod path;
 pub mod logging;
 pub mod process;
+pub mod base64;
 
 pub trait WideString {
     fn to_wide(&self) -> Vec<u16>;

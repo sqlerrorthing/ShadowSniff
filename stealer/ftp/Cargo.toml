@@ -1,0 +1,9 @@
+[package]
+name = "ftp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tasks = { path = "../../tasks" }
+utils = { path = "../../utils" }
+windows = { version = "0.61.1", default-features = false, features = ["Data_Xml_Dom"] }

