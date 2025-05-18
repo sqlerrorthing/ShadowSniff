@@ -25,4 +25,5 @@ windows-sys = { version = "0.59.0", features = [
 wee_alloc = "0.4.5"
 utils = { path = "utils" }
 tasks = { path = "tasks" }
+json = { path = "json" }
 miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }

@@ -2,7 +2,7 @@ use crate::WideString;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::fmt::{Display, Formatter, Write};
+use core::fmt::{Display, Formatter};
 use core::mem::zeroed;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
