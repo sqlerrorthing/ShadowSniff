@@ -5,6 +5,7 @@ extern crate alloc;
 mod filezilla;
 
 use crate::filezilla::FileZillaTask;
+use alloc::borrow::ToOwned;
 use alloc::vec;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 

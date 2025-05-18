@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::boxed::Box;
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::ffi::c_void;
@@ -28,8 +29,8 @@ macro_rules! composite_task {
 #[macro_export]
 macro_rules! parent_name {
     ($name:expr) => {
-        fn parent_name(&self) -> Option<&'static str> {
-            Some($name)
+        fn parent_name(&self) -> Option<alloc::string::String> {
+            Some(obfstr::obfstr!($name).to_owned())
         }
     };
 }
@@ -60,7 +61,7 @@ macro_rules! impl_composite_task_runner {
 }
 
 pub trait Task: Send + Sync {
-    fn parent_name(&self) -> Option<&'static str> {
+    fn parent_name(&self) -> Option<String> {
         None
     }
     

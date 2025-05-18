@@ -1,6 +1,7 @@
 #![no_std]
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use crate::alloc::borrow::ToOwned;
 mod telegram;
 
 extern crate alloc;

