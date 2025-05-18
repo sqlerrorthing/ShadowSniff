@@ -101,13 +101,38 @@ fn create_png(width: u32, height: u32, pixels: &[u8]) -> Vec<u8> {
     png
 }
 
+fn crc32(bytes: &[u8]) -> u32 {
+    let mut table = [0u32; 256];
+
+    for i in 0..256 {
+        let mut c = i as u32;
+        for _ in 0..8 {
+            c = if c & 1 != 0 {
+                0xEDB88320 ^ (c >> 1)
+            } else {
+                c >> 1
+            };
+        }
+        table[i] = c;
+    }
+
+    let mut crc = 0xFFFFFFFFu32;
+    for &b in bytes {
+        crc = table[((crc ^ b as u32) & 0xFF) as usize] ^ (crc >> 8);
+    }
+
+    crc ^ 0xFFFFFFFF
+}
+
 fn append_chunk(png: &mut Vec<u8>, chunk_type: &[u8; 4], data: &[u8]) {
-    let mut crc = crc32fast::Hasher::new();
-    crc.update(chunk_type);
-    crc.update(data);
+    let mut chunk_bytes = Vec::new();
+    chunk_bytes.extend_from_slice(chunk_type);
+    chunk_bytes.extend_from_slice(data);
+
+    let crc = crc32(&chunk_bytes);
 
     png.extend(&(data.len() as u32).to_be_bytes());
-    png.extend(chunk_type);
-    png.extend(data);
-    png.extend(&crc.finalize().to_be_bytes());
+    png.extend_from_slice(chunk_type);
+    png.extend_from_slice(data);
+    png.extend(&crc.to_be_bytes());
 }

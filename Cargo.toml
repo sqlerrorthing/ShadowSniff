@@ -26,4 +26,3 @@ wee_alloc = "0.4.5"
 utils = { path = "utils" }
 tasks = { path = "tasks" }
 miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }
-crc32fast = { version = "1.4.2", default-features = false }
