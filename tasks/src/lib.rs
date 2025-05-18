@@ -2,12 +2,10 @@
 
 extern crate alloc;
 
-#[allow(unused_imports)]
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::ffi::c_void;
-use core::panic;
 use core::ptr::null_mut;
 use utils::path::Path;
 use windows_sys::Win32::Foundation::CloseHandle;
