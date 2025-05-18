@@ -30,6 +30,7 @@ dependencies = [
 name = "utils"
 version = "0.1.0"
 dependencies = [
+ "obfstr",
  "windows-sys",
 ]
 

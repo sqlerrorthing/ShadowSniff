@@ -15,6 +15,7 @@ use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, Creat
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 use windows_sys::Win32::UI::Shell::{FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
+use obfstr::obfstr as s;
 
 #[derive(Clone)]
 pub struct Path {
@@ -370,7 +371,7 @@ where
     F: Fn(&Path) -> bool
 {
     if !src.is_dir() {
-        return Err("Source must be a directory".to_owned())
+        return Err(s!("Source must be a directory").to_owned())
     }
     
     if let Some(files) = list_files(src) {
@@ -380,7 +381,7 @@ where
             }
             
             let relative = entry.inner.strip_prefix(&src.inner)
-                .ok_or("Failed to compute relative path".to_owned())?;
+                .ok_or(s!("Failed to compute relative path").to_owned())?;
             
             let new_dst = dst / relative;
             
@@ -404,10 +405,10 @@ where
     F: Fn(&Path) -> bool
 {
     if !src.is_dir() {
-        return Err("Source must be a directory".to_owned())
+        return Err(s!("Source must be a directory").to_owned())
     }
 
-    let dst = dst / src.name().ok_or("Failed to get folder name")?;
+    let dst = dst / src.name().ok_or(s!("Failed to get folder name"))?;
     copy_content(src, &dst, filter)?;
 
     Ok(())
@@ -415,11 +416,11 @@ where
 
 pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), String> {
     if !src.is_file() {
-        return Err("Source must be a file".to_owned())
+        return Err(s!("Source must be a file").to_owned())
     }
     
     let dst = if with_filename {
-        &(dst / src.fullname().ok_or("Failed to get file name")?)
+        &(dst / src.fullname().ok_or(s!("Failed to get file name"))?)
     } else {
         dst
     };
@@ -490,7 +491,7 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
         let mut size: i64 = zeroed();
         if GetFileSizeEx(handle, &mut size) == 0 {
             CloseHandle(handle);
-            return Err("Failed to get file size".into())
+            return Err(s!("Failed to get file size").to_owned())
         }
 
         let file_size = size as usize;
@@ -611,7 +612,7 @@ pub fn mkdirs(path: &Path) -> Result<(), String> {
 pub fn get_current_directory() -> Path {
     let required_size = unsafe { GetCurrentDirectoryW(0, null_mut()) };
     if required_size == 0 {
-        panic!("Couldn't get current directory, required size is 0");
+        panic!("{}", s!("Couldn't get current directory, required size is 0"));
     }
 
     let mut buffer: Vec<u16> = Vec::with_capacity(required_size as usize);
@@ -619,12 +620,12 @@ pub fn get_current_directory() -> Path {
 
     let len = unsafe { GetCurrentDirectoryW(required_size, buffer.as_mut_ptr()) };
     if len == 0 || len > required_size {
-        panic!("Couldn't get current directory, len is 0 or len > required_size");
+        panic!("{}", s!("Couldn't get current directory, len is 0 or len > required_size"));
     }
 
     unsafe { buffer.set_len(len as usize) };
 
-    Path::new(String::from_utf16(&buffer).expect("Couldn't get current directory"))
+    Path::new(String::from_utf16(&buffer).expect(s!("Couldn't get current directory")))
 }
 
 pub fn get_known_folder_path(folder_id: &windows_sys::core::GUID) -> Option<Path> {
