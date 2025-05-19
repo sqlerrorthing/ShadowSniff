@@ -4,7 +4,7 @@ use alloc::string::String;
 use crate::Value;
 
 pub trait Reader {
-    fn read_table<S>(table_name: S) -> Option<Box<dyn RecordIterator>>
+    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn RecordIterator>>
     where 
         S: AsRef<str>;
 }

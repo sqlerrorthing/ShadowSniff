@@ -19,7 +19,7 @@ pub enum Value {
 struct DummyReader;
 
 impl Reader for DummyReader {
-    fn read_table<S>(_table_name: S) -> Option<Box<dyn RecordIterator>>
+    fn read_table<S>(&self, _table_name: S) -> Option<Box<dyn RecordIterator>>
     where
         S: AsRef<str>
     {
