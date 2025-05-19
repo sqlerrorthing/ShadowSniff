@@ -1,4 +1,3 @@
-use alloc::borrow::ToOwned;
 use crate::WideString;
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -15,7 +14,6 @@ use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, Creat
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 use windows_sys::Win32::UI::Shell::{FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
-use obfstr::obfstr as s;
 
 #[derive(Clone)]
 pub struct Path {
@@ -58,7 +56,7 @@ impl Path {
     }
 
     pub fn as_absolute(&self) -> Path {
-        let current_dir = get_current_directory();
+        let current_dir = get_current_directory().unwrap();
 
         let trimmed = self.inner.trim_start_matches(['\\', '/'].as_ref());
         let full = format!("{}\\{}", current_dir, trimmed);
@@ -128,47 +126,47 @@ impl Path {
     }
     
     #[inline]
-    pub fn mkdirs(&self) -> Result<(), String> {
+    pub fn mkdirs(&self) -> Result<(), u32> {
         mkdirs(self)
     }
 
     #[inline]
-    pub fn mkdir(&self) -> Result<(), String> {
+    pub fn mkdir(&self) -> Result<(), u32> {
         mkdir(self)
     }
 
     #[inline]
-    pub fn remove_dir_contents(&self) -> Result<(), String> {
+    pub fn remove_dir_contents(&self) -> Result<(), u32> {
         remove_dir_contents(self)
     }
 
     #[inline]
-    pub fn read_file(&self) -> Result<Vec<u8>, String> {
+    pub fn read_file(&self) -> Result<Vec<u8>, u32> {
         read_file(self)
     }
 
     #[inline]
-    pub fn remove_dir(&self) -> Result<(), String> {
+    pub fn remove_dir(&self) -> Result<(), u32> {
         remove_dir(self)
     }
 
     #[inline]
-    pub fn remove_dir_all(&self) -> Result<(), String> {
+    pub fn remove_dir_all(&self) -> Result<(), u32> {
         remove_dir_all(self)
     }
 
     #[inline]
-    pub fn remove_file(&self) -> Result<(), String> {
+    pub fn remove_file(&self) -> Result<(), u32> {
         remove_file(self)
     }
 
     #[inline]
-    pub fn create_file(&self) -> Result<(), String> {
+    pub fn create_file(&self) -> Result<(), u32> {
         create_file(self)
     }
 
     #[inline]
-    pub fn write_file(&self, data: &[u8]) -> Result<(), String> {
+    pub fn write_file(&self, data: &[u8]) -> Result<(), u32> {
         write_file(self, data)
     }
     
@@ -178,7 +176,7 @@ impl Path {
     }
 
     #[inline]
-    pub fn copy_content<F>(&self, dst: &Path, filter: &F) -> Result<(), String>
+    pub fn copy_content<F>(&self, dst: &Path, filter: &F) -> Result<(), u32>
     where
         F: Fn(&Path) -> bool
     {
@@ -186,12 +184,12 @@ impl Path {
     }
 
     #[inline]
-    pub fn copy_all_content(&self, dst: &Path) -> Result<(), String> {
+    pub fn copy_all_content(&self, dst: &Path) -> Result<(), u32> {
         copy_all_content(self, dst)
     }
     
     #[inline]
-    pub fn copy_folder_with_filter<F>(&self, dst: &Path, filter: &F) -> Result<(), String>
+    pub fn copy_folder_with_filter<F>(&self, dst: &Path, filter: &F) -> Result<(), u32>
     where
         F: Fn(&Path) -> bool
     {
@@ -199,12 +197,12 @@ impl Path {
     }
     
     #[inline]
-    pub fn copy_folder(&self, dst: &Path) -> Result<(), String> {
+    pub fn copy_folder(&self, dst: &Path) -> Result<(), u32> {
         copy_folder(self, dst)
     }
     
     #[inline]
-    pub fn copy_file(&self, dst: &Path, with_name: bool) -> Result<(), String> {
+    pub fn copy_file(&self, dst: &Path, with_name: bool) -> Result<(), u32> {
         copy_file(self, dst, with_name)
     }
 }
@@ -255,18 +253,18 @@ where
 }
 
 pub trait WriteToFile {
-    fn write_to(self, path: &Path) -> Result<(), String>;
+    fn write_to(self, path: &Path) -> Result<(), u32>;
 }
 
 impl<T> WriteToFile for T
 where T: AsRef<[u8]>
 {
-    fn write_to(self, path: &Path) -> Result<(), String> {
+    fn write_to(self, path: &Path) -> Result<(), u32> {
         path.write_file(self.as_ref())
     }
 }
 
-pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
+pub fn write_file(path: &Path, data: &[u8]) -> Result<(), u32> {
     if let Some(parent) = path.parent() {
         if !parent.is_exists() {
             if let Err(e) = parent.mkdirs() {
@@ -289,7 +287,7 @@ pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
         );
 
         if handle == INVALID_HANDLE_VALUE {
-            return Err(format!("Failed to get file handle to write file '{}', error code: {}", path, GetLastError()))
+            return Err(GetLastError())
         }
 
         let mut bytes_written: u32 = 0;
@@ -305,11 +303,11 @@ pub fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
         CloseHandle(handle);
 
         if result == FALSE {
-            return Err(format!("Failed to write file file '{}', error code: {}", path, GetLastError()))
+            return Err(GetLastError())
         }
 
         if bytes_written as usize != data.len() {
-            return Err(format!("Failed to write all bytes to file '{}'", path))
+            return Err(GetLastError())
         }
     }
 
@@ -362,16 +360,16 @@ pub fn list_files(path: &Path) -> Option<Vec<Path>> {
     }
 }
 
-pub fn copy_all_content(src: &Path, dst: &Path) -> Result<(), String> {
+pub fn copy_all_content(src: &Path, dst: &Path) -> Result<(), u32> {
     copy_content(src, dst, &|_| true)
 }
 
-pub fn copy_content<F>(src: &Path, dst: &Path, filter: &F) -> Result<(), String>
+pub fn copy_content<F>(src: &Path, dst: &Path, filter: &F) -> Result<(), u32>
 where
     F: Fn(&Path) -> bool
 {
     if !src.is_dir() {
-        return Err(s!("Source must be a directory").to_owned())
+        return Err(1)
     }
     
     if let Some(files) = list_files(src) {
@@ -381,7 +379,7 @@ where
             }
             
             let relative = entry.inner.strip_prefix(&src.inner)
-                .ok_or(s!("Failed to compute relative path").to_owned())?;
+                .ok_or(2u32)?;
             
             let new_dst = dst / relative;
             
@@ -396,31 +394,31 @@ where
     Ok(())
 }
 
-pub fn copy_folder(src: &Path, dst: &Path) -> Result<(), String> {
+pub fn copy_folder(src: &Path, dst: &Path) -> Result<(), u32> {
     copy_folder_with_filter(src, dst, &|_| true)
 }
 
-pub fn copy_folder_with_filter<F>(src: &Path, dst: &Path, filter: &F) -> Result<(), String>
+pub fn copy_folder_with_filter<F>(src: &Path, dst: &Path, filter: &F) -> Result<(), u32>
 where
     F: Fn(&Path) -> bool
 {
     if !src.is_dir() {
-        return Err(s!("Source must be a directory").to_owned())
+        return Err(1)
     }
 
-    let dst = dst / src.name().ok_or(s!("Failed to get folder name"))?;
+    let dst = dst / src.name().ok_or(2u32)?;
     copy_content(src, &dst, filter)?;
 
     Ok(())
 }
 
-pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), String> {
+pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), u32> {
     if !src.is_file() {
-        return Err(s!("Source must be a file").to_owned())
+        return Err(1)
     }
     
     let dst = if with_filename {
-        &(dst / src.fullname().ok_or(s!("Failed to get file name"))?)
+        &(dst / src.fullname().ok_or(2u32)?)
     } else {
         dst
     };
@@ -440,14 +438,14 @@ pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), Stri
             dst_wide.as_ptr(),
             FALSE
         ) == 0 {
-            return Err(format!("Failed to copy file {} (to {}), error code: {}", src, dst, GetLastError()))
+            return Err(GetLastError())
         }
     }
     
     Ok(())
 }
 
-pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
+pub fn remove_dir_contents(path: &Path) -> Result<(), u32> {
     if let Some(entries) = list_files(path) {
         for entry in entries {
             let is_dir = entry.is_dir();
@@ -463,13 +461,13 @@ pub fn remove_dir_contents(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn remove_dir_all(path: &Path) -> Result<(), String> {
+pub fn remove_dir_all(path: &Path) -> Result<(), u32> {
     remove_dir_contents(path)?;
     remove_dir(path)?;
     Ok(())
 }
 
-pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
+pub fn read_file(path: &Path) -> Result<Vec<u8>, u32> {
     let wide = path.to_wide();
 
     unsafe {
@@ -484,14 +482,13 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
         );
 
         if handle == INVALID_HANDLE_VALUE {
-            let err = GetLastError();
-            return Err(format!("Failed to open file {}, error code: {}", path, err));
+            return Err(GetLastError());
         }
 
         let mut size: i64 = zeroed();
         if GetFileSizeEx(handle, &mut size) == 0 {
             CloseHandle(handle);
-            return Err(s!("Failed to get file size").to_owned())
+            return Err(1000001)
         }
 
         let file_size = size as usize;
@@ -510,8 +507,7 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
         CloseHandle(handle);
 
         if read_ok == 0 {
-            let err = GetLastError();
-            return Err(format!("Failed to read from file {}, error code: {}", path, err));
+            return Err(GetLastError());
         }
 
         buffer.truncate(bytes_read as usize);
@@ -519,29 +515,27 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, String> {
     }
 }
 
-pub fn remove_dir(path: &Path) -> Result<(), String> {
+pub fn remove_dir(path: &Path) -> Result<(), u32> {
     unsafe {
         if RemoveDirectoryW(path.to_wide().as_ptr()) == 0 {
-            let err = GetLastError();
-            Err(format!("Failed to remove directory '{}', error code: {}", path, err))
+            Err(GetLastError())
         } else {
             Ok(())
         }
     }
 }
 
-pub fn remove_file(path: &Path) -> Result<(), String> {
+pub fn remove_file(path: &Path) -> Result<(), u32> {
     unsafe {
         if DeleteFileW(path.to_wide().as_ptr()) == 0 {
-            let err = GetLastError();
-            Err(format!("Failed to delete file '{}', error code: {}", path, err))
+            Err(GetLastError())
         } else {
             Ok(())
         }
     }
 }
 
-pub fn create_file(path: &Path) -> Result<(), String> {
+pub fn create_file(path: &Path) -> Result<(), u32> {
     let wide = path.to_wide();
     unsafe {
         let handle = CreateFileW(
@@ -560,7 +554,7 @@ pub fn create_file(path: &Path) -> Result<(), String> {
             return if err == ERROR_FILE_EXISTS {
                 Ok(())
             } else {
-                Err(format!("Failed to create file {}, error code: {}", path, err))
+                Err(err)
             }
         }
 
@@ -570,7 +564,7 @@ pub fn create_file(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn mkdir(path: &Path) -> Result<(), String> {
+pub fn mkdir(path: &Path) -> Result<(), u32> {
     let wide = path.to_wide();
 
     unsafe {
@@ -578,7 +572,7 @@ pub fn mkdir(path: &Path) -> Result<(), String> {
         if success == 0 {
             let err = GetLastError();
             if err != ERROR_ALREADY_EXISTS {
-                return Err(format!("Failed to create directory: {}, err: {}", path, err));
+                return Err(err);
             }
         }
     }
@@ -586,7 +580,7 @@ pub fn mkdir(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn mkdirs(path: &Path) -> Result<(), String> {
+pub fn mkdirs(path: &Path) -> Result<(), u32> {
     let parts: Vec<&str> = path
         .split('\\')
         .filter(|part| !part.is_empty())
@@ -609,10 +603,10 @@ pub fn mkdirs(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn get_current_directory() -> Path {
+pub fn get_current_directory() -> Option<Path> {
     let required_size = unsafe { GetCurrentDirectoryW(0, null_mut()) };
     if required_size == 0 {
-        panic!("{}", s!("Couldn't get current directory, required size is 0"));
+        return None;
     }
 
     let mut buffer: Vec<u16> = Vec::with_capacity(required_size as usize);
@@ -620,12 +614,12 @@ pub fn get_current_directory() -> Path {
 
     let len = unsafe { GetCurrentDirectoryW(required_size, buffer.as_mut_ptr()) };
     if len == 0 || len > required_size {
-        panic!("{}", s!("Couldn't get current directory, len is 0 or len > required_size"));
+        return None;
     }
 
     unsafe { buffer.set_len(len as usize) };
 
-    Path::new(String::from_utf16(&buffer).expect(s!("Couldn't get current directory")))
+    Some(Path::new(String::from_utf16(&buffer).ok()?))
 }
 
 pub fn get_known_folder_path(folder_id: &windows_sys::core::GUID) -> Option<Path> {
