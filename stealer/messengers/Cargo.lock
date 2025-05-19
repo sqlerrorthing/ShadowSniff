@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "json"
+version = "0.1.0"
+
+[[package]]
 name = "messengers"
 version = "0.1.0"
 dependencies = [
@@ -30,6 +34,8 @@ dependencies = [
 name = "utils"
 version = "0.1.0"
 dependencies = [
+ "json",
+ "obfstr",
  "windows-sys",
 ]
 

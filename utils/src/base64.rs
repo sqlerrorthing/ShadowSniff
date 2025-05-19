@@ -11,6 +11,10 @@ fn base64_char_value(c: u8) -> Option<u8> {
     }
 }
 
+pub fn base64_decode_string(input: &str) -> Option<Vec<u8>> {
+    base64_decode(input.as_bytes())
+}
+
 pub fn base64_decode(input: &[u8]) -> Option<Vec<u8>> {
     let mut output = Vec::with_capacity(input.len() * 3 / 4);
     let mut buf = 0u32;
