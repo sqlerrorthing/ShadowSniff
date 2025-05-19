@@ -10,7 +10,6 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
-use core::ops::Index;
 
 pub enum Value {
     Null,

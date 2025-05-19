@@ -10,7 +10,7 @@ use core::slice::from_raw_parts;
 use windows_sys::core::PWSTR;
 use windows_sys::Win32::Foundation::{CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK};
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS};
-use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FIND_DATAW};
+use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FIND_DATAW};
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 use windows_sys::Win32::UI::Shell::{FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
@@ -174,6 +174,14 @@ impl Path {
     pub fn list_files(&self) -> Option<Vec<Path>> {
         list_files(self)
     }
+    
+    #[inline]
+    pub fn list_files_filtered<F>(&self, filter: &F) -> Option<Vec<Path>>
+    where
+        F: Fn(&Path) -> bool
+    {
+        list_files_filtered(self, filter)
+    }
 
     #[inline]
     pub fn copy_content<F>(&self, dst: &Path, filter: &F) -> Result<(), u32>
@@ -204,6 +212,12 @@ impl Path {
     #[inline]
     pub fn copy_file(&self, dst: &Path, with_name: bool) -> Result<(), u32> {
         copy_file(self, dst, with_name)
+    }
+}
+
+impl AsRef<Path> for Path {
+    fn as_ref(&self) -> &Path {
+        self
     }
 }
 
@@ -253,14 +267,19 @@ where
 }
 
 pub trait WriteToFile {
-    fn write_to(self, path: &Path) -> Result<(), u32>;
+    fn write_to<P>(&self, path: P) -> Result<(), u32>
+    where 
+        P: AsRef<Path>;
 }
 
 impl<T> WriteToFile for T
-where T: AsRef<[u8]>
+where T: AsRef<[u8]> + ?Sized
 {
-    fn write_to(self, path: &Path) -> Result<(), u32> {
-        path.write_file(self.as_ref())
+    fn write_to<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>
+    {
+        path.as_ref().write_file(self.as_ref())
     }
 }
 
@@ -315,6 +334,13 @@ pub fn write_file(path: &Path, data: &[u8]) -> Result<(), u32> {
 }
 
 pub fn list_files(path: &Path) -> Option<Vec<Path>> {
+    list_files_filtered(path, &|_| true)
+}
+
+pub fn list_files_filtered<F>(path: &Path, filter: &F) -> Option<Vec<Path>>
+where
+    F: Fn(&Path) -> bool
+{
     let search_path = if path.ends_with('\\') {
         format!("{}*", path)
     } else {
@@ -340,13 +366,17 @@ pub fn list_files(path: &Path) -> Option<Vec<Path>> {
                     while len < data.cFileName.len() && data.cFileName[len] != 0 {
                         len += 1;
                     }
+                    
                     len
                 }]
             );
 
             if name != "." && name != ".." {
                 let full_path = path / name;
-                results.push(full_path);
+                
+                if filter(&full_path) {
+                    results.push(full_path);
+                }
             }
 
             let res = FindNextFileW(handle, &mut data);
@@ -474,7 +504,7 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, u32> {
         let handle = CreateFileW(
             wide.as_ptr(),
             GENERIC_READ,
-            0,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
             null_mut(),
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,

