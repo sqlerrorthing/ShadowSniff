@@ -1,3 +1,4 @@
+use alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::format;
@@ -54,8 +55,8 @@ fn collect_servers() -> Vec<Server> {
     let base = &Path::appdata() / s!("FileZilla");
 
     let paths = [
-        (&base / s!("recentservers.xml"), "RecentServers"),
-        (&base / s!("sitemanager.xml"), "Servers"),
+        (&base / s!("recentservers.xml"), s!("RecentServers").to_owned()),
+        (&base / s!("sitemanager.xml"), s!("Servers").to_owned()),
     ];
 
     for (path, servers_node) in paths {
