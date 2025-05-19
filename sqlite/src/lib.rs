@@ -4,9 +4,10 @@ mod reader;
 
 extern crate alloc;
 
+use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use crate::reader::Reader;
+use crate::reader::{Reader, RecordIterator};
 
 pub enum Value {
     String(String),
@@ -15,12 +16,17 @@ pub enum Value {
     Null
 }
 
-pub struct Database<T: Reader> {
-    inner: T
+struct DummyReader;
+
+impl Reader for DummyReader {
+    fn read_table<S>(_table_name: S) -> Option<Box<dyn RecordIterator>>
+    where
+        S: AsRef<str>
+    {
+        None
+    }
 }
 
-impl<T: Reader> Database<T> {
-    pub fn new(inner: T) -> Self {
-        Self { inner }
-    }
+pub fn read_sqlite3_database(_data: &[u8]) -> impl Reader {
+    DummyReader
 }
