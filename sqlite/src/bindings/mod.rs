@@ -1,13 +1,4 @@
-use crate::bindings::sqlite3_bindings::{
-    sqlite3, sqlite3_close, sqlite3_column_blob, 
-    sqlite3_column_bytes, sqlite3_column_count,
-    sqlite3_column_double, sqlite3_column_int64,
-    sqlite3_column_text, sqlite3_column_type,
-    sqlite3_deserialize, sqlite3_finalize,
-    sqlite3_open, sqlite3_prepare_v2, sqlite3_step, 
-    sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_READONLY, 
-    SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT
-};
+use crate::bindings::sqlite3_bindings::{sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_READONLY, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT};
 use crate::{DatabaseReader, RecordKey, TableRecord, Value};
 use alloc::boxed::Box;
 use alloc::format;
@@ -27,6 +18,11 @@ pub(crate) struct Sqlite3BindingsReader {
 impl Sqlite3BindingsReader {
     pub fn new_from_file(db_path: &Path) -> Result<Self, i32> {
         let c_path = CString::new(db_path);
+        
+        unsafe {
+            sqlite3_initialize();
+        }
+        
         let mut db: *mut sqlite3 = null_mut();
         let rc = unsafe {
             sqlite3_open(c_path.as_ptr(), &mut db)

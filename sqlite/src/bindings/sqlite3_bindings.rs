@@ -48,6 +48,8 @@ unsafe extern "C" {
         mFlags: core::ffi::c_uint,
     ) -> core::ffi::c_int;
 
+    pub fn sqlite3_initialize() -> core::ffi::c_int;
+    
     pub fn sqlite3_finalize(pStmt: *mut sqlite3_stmt) -> core::ffi::c_int;
 
     pub fn sqlite3_open(
