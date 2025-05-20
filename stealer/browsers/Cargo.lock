@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "browsers"
+version = "0.1.0"
+dependencies = [
+ "obfstr",
+ "sqlite",
+ "tasks",
+ "utils",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -34,6 +44,15 @@ dependencies = [
  "cc",
  "obfstr",
  "utils",
+]
+
+[[package]]
+name = "tasks"
+version = "0.1.0"
+dependencies = [
+ "obfstr",
+ "utils",
+ "windows-sys",
 ]
 
 [[package]]
