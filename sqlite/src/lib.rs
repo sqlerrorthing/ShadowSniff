@@ -1,11 +1,15 @@
 #![no_std]
 
+mod bindings;
+
 extern crate alloc;
 
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
+use utils::path::Path;
+use crate::bindings::Sqlite3BindingsReader;
 
 pub enum Value {
     String(String),
@@ -15,13 +19,53 @@ pub enum Value {
     Null
 }
 
+impl Value {
+    pub fn as_string(&self) -> Option<&String> {
+        if let Value::String(s) = self {
+            Some(s)
+        } else {
+            None
+        }
+    }
+    
+    pub fn as_integer(&self) -> Option<i64> {
+        if let Value::Integer(i) = self {
+            Some(*i)
+        } else {
+            None
+        }
+    }
+    
+    pub fn as_float(&self) -> Option<f64> {
+        if let Value::Float(f) = self {
+            Some(*f)
+        } else {
+            None
+        }
+    }
+    
+    pub fn as_blob(&self) -> Option<&Vec<u8>> {
+        if let Value::Blob(b) = self {
+            Some(b)
+        } else {
+            None
+        }
+    }
+    
+    pub fn as_null(&self) -> Option<()> {
+        if let Value::Null = self {
+            Some(())
+        } else {
+            None
+        }
+    }
+}
+
 pub trait DatabaseReader {
-    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn RecordIterator>>
+    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn Iterator<Item = Box<dyn TableRecord>>>>
     where
         S: AsRef<str>;
 }
-
-pub trait RecordIterator: Iterator<Item = Box<dyn TableRecord>> {}
 
 pub trait TableRecord {
     fn get_value_by_key(&self, key: &RecordKey) -> Option<&Value>;
@@ -36,14 +80,7 @@ pub trait TableRecordExtension: TableRecord {
 impl<T: TableRecord + ?Sized> TableRecordExtension for T {}
 
 pub enum RecordKey {
-    Str(String),
     Idx(usize)
-}
-
-impl From<&str> for RecordKey {
-    fn from(value: &str) -> Self {
-        RecordKey::Str(value.to_owned())
-    }
 }
 
 impl From<usize> for RecordKey {
@@ -52,17 +89,10 @@ impl From<usize> for RecordKey {
     }
 }
 
-struct DummyDatabaseReader;
-
-impl DatabaseReader for DummyDatabaseReader {
-    fn read_table<S>(&self, _table_name: S) -> Option<Box<dyn RecordIterator>>
-    where
-        S: AsRef<str>
-    {
-        None
-    }
+pub fn read_sqlite3_database_by_path(path: &Path) -> Option<impl DatabaseReader> {
+    Sqlite3BindingsReader::new_from_file(path).ok()
 }
 
-pub fn read_sqlite3_database(_data: Vec<u8>) -> Option<impl DatabaseReader> {
-    Some(DummyDatabaseReader)
+pub fn read_sqlite3_database_by_bytes(bytes: &[u8]) -> Option<impl DatabaseReader> {
+    Sqlite3BindingsReader::new_from_bytes(bytes).ok()
 }
