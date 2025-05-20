@@ -3,16 +3,9 @@
 version = 4
 
 [[package]]
-name = "embedded-io"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
-
-[[package]]
 name = "utils"
 version = "0.1.0"
 dependencies = [
- "embedded-io",
  "windows-sys",
 ]
 

@@ -1,26 +1,16 @@
 #![no_std]
 
-mod sqlite;
-
 extern crate alloc;
 
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use utils::io::cursor::ByteCursor;
-use crate::sqlite::db::SqliteDatabase;
-
-pub enum Type {
-    String,
-    Number,
-    Blob,
-    Null
-}
 
 pub enum Value {
     String(String),
-    Number(f64),
+    Integer(i64),
+    Float(f64),
     Blob(Vec<u8>),
     Null
 }
@@ -62,7 +52,17 @@ impl From<usize> for RecordKey {
     }
 }
 
-pub fn read_sqlite3_database(data: Vec<u8>) -> Option<impl DatabaseReader> {
-    let cursor = ByteCursor::new(data);
-    Some(SqliteDatabase::from_cursor(cursor)?)
+struct DummyDatabaseReader;
+
+impl DatabaseReader for DummyDatabaseReader {
+    fn read_table<S>(&self, _table_name: S) -> Option<Box<dyn RecordIterator>>
+    where
+        S: AsRef<str>
+    {
+        None
+    }
+}
+
+pub fn read_sqlite3_database(_data: Vec<u8>) -> Option<impl DatabaseReader> {
+    Some(DummyDatabaseReader)
 }
