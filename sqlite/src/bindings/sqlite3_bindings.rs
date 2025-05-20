@@ -3,7 +3,7 @@ pub const SQLITE_FLOAT: u32 = 2;
 pub const SQLITE_BLOB: u32 = 4;
 pub const SQLITE_NULL: u32 = 5;
 pub const SQLITE_TEXT: u32 = 3;
-pub const SQLITE_DESERIALIZE_READONLY: u32 = 4;
+pub const SQLITE_DESERIALIZE_RESIZEABLE: u32 = 2;
 pub const SQLITE_ROW: u32 = 100;
 
 #[repr(C)]

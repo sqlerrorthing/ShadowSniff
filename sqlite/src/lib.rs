@@ -7,6 +7,7 @@ extern crate alloc;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::fmt::{write, Display, Formatter};
 use utils::path::Path;
 use crate::bindings::Sqlite3BindingsReader;
 
@@ -56,6 +57,18 @@ impl Value {
             Some(())
         } else {
             None
+        }
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Value::String(value) => write!(f, "{}", value),
+            Value::Integer(value) => write!(f, "{}", value),
+            Value::Float(value) => write!(f, "{}", value),
+            Value::Blob(value) => write!(f, "{}", String::from_utf8_lossy(value)),
+            Value::Null => write!(f, "null"),
         }
     }
 }

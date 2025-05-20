@@ -1,4 +1,4 @@
-use crate::bindings::sqlite3_bindings::{sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_READONLY, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT};
+use crate::bindings::sqlite3_bindings::{sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT};
 use crate::{DatabaseReader, RecordKey, TableRecord, Value};
 use alloc::boxed::Box;
 use alloc::format;
@@ -7,6 +7,7 @@ use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
 use core::ptr::null_mut;
 use obfstr::obfstr as s;
+use utils::log_debug;
 use utils::path::Path;
 
 mod sqlite3_bindings;
@@ -37,6 +38,11 @@ impl Sqlite3BindingsReader {
     
     pub fn new_from_bytes(db_bytes: &[u8]) -> Result<Self, i32> {
         let mut db: *mut sqlite3 = null_mut();
+
+        unsafe {
+            sqlite3_initialize();
+        }
+        
         let rc = unsafe {
             sqlite3_open(":memory:\0".as_ptr() as *const i8, &mut db)
         };
@@ -45,17 +51,18 @@ impl Sqlite3BindingsReader {
             return Err(rc);
         }
 
-        let db_bytes = db_bytes.to_vec();
-        let db_size = db_bytes.len();
+        let data_size = db_bytes.len();
+        let data = db_bytes.to_vec().into_boxed_slice();
+        let data_ptr = Box::into_raw(data) as *mut u8;
         
         let rc = unsafe {
             sqlite3_deserialize(
                 db,
                 b"main\0".as_ptr() as *const i8,
-                db_bytes.as_ptr() as *mut u8,
-                db_size as i64,
-                db_size as i64,
-                SQLITE_DESERIALIZE_READONLY
+                data_ptr,
+                data_size as i64,
+                data_size as i64,
+                SQLITE_DESERIALIZE_RESIZEABLE
             )
         };
         
@@ -69,7 +76,9 @@ impl Sqlite3BindingsReader {
 
 impl Drop for Sqlite3BindingsReader {
     fn drop(&mut self) {
-        unsafe { sqlite3_close(self.db); }
+        unsafe {
+            sqlite3_close(self.db); 
+        }
     }
 }
 
