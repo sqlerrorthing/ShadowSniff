@@ -133,22 +133,39 @@ fn tokenize_string(chars: &Vec<char>, index: &mut usize) -> Result<Token, Tokeni
 fn tokenize_float(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
     let mut unparsed_num = String::new();
     let mut has_decimal = false;
+    let mut has_exponent = false;
 
     while *index < chars.len() {
         let ch = chars[*index];
         match ch {
-            c if c.is_ascii_digit() || c == '-' => unparsed_num.push(c),
-            c if c == '.' && !has_decimal => {
+            c if c.is_ascii_digit() || c == '-' => {
+                unparsed_num.push(c);
+            }
+            '.' if !has_decimal && !has_exponent => {
                 unparsed_num.push('.');
                 has_decimal = true;
             }
-
+            'e' | 'E' if !has_exponent => {
+                unparsed_num.push('e');
+                has_exponent = true;
+                *index += 1;
+                if *index < chars.len() {
+                    let next_ch = chars[*index];
+                    if next_ch == '+' || next_ch == '-' {
+                        unparsed_num.push(next_ch);
+                    } else {
+                        *index -= 1;
+                    }
+                }
+            }
             _ => break,
         }
         *index += 1;
     }
 
-    *index -= 1;
+    if *index > 0 {
+        *index -= 1;
+    }
 
     match unparsed_num.parse() {
         Ok(f) => Ok(Token::Number(f)),

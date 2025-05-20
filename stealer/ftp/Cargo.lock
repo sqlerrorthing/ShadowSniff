@@ -13,6 +13,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "json"
+version = "0.1.0"
+
+[[package]]
 name = "obfstr"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -66,6 +70,8 @@ checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
 name = "utils"
 version = "0.1.0"
 dependencies = [
+ "json",
+ "obfstr",
  "windows-sys",
 ]
 
