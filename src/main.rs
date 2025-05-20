@@ -34,6 +34,6 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     unsafe {
         StealerTask::new().run(&out);
     }
-    
+
     0
 }
