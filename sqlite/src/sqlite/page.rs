@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 
+#[derive(PartialEq)]
 pub(super) enum PageType {
     TableLeaf,
     TableInterior
@@ -8,11 +9,11 @@ pub(super) enum PageType {
 pub(super) struct TableLeafCell {
     size: i64,
     row_id: i64,
-    payload: Vec<u8>
+    pub(crate) payload: Vec<u8>
 }
 
 pub(super) struct TableInteriorCell {
-    left_child_page: u32,
+    pub(crate) left_child_page: u32,
     key: i64
 }
 
@@ -22,22 +23,22 @@ pub(super) enum Cell {
 }
 
 pub(super) struct PageHeader {
-    page_type: PageType,
+    pub(crate) page_type: PageType,
     first_free_block: u16,
     cell_count: u16,
     cell_content_offset: u32,
     fragmented_bytes_count: u8,
-    rightmost_pointer: Option<u32>
+    pub(crate) rightmost_pointer: Option<u32>
 }
 
 pub(super) struct Page {
-    header: PageHeader,
+    pub(crate) header: PageHeader,
     cell_pointers: Vec<u16>,
-    cells: Vec<Cell>
+    pub(crate) cells: Vec<Cell>
 }
 
 impl Page {
-    fn get(&self, index: usize) -> Option<&Cell> {
+    pub(crate) fn get(&self, index: usize) -> Option<&Cell> {
         self.cells.get(index)
     }
 }
