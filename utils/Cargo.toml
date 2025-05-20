@@ -16,3 +16,4 @@ windows-sys = { version = "0.59.0", features = [
     "Win32_System_Threading",
     "Win32_System_Pipes"
 ] }
+embedded-io = "0.6.1"
