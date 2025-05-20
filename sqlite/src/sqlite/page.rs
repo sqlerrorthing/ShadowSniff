@@ -7,14 +7,14 @@ pub(super) enum PageType {
 }
 
 pub(super) struct TableLeafCell {
-    size: i64,
-    row_id: i64,
+    pub(crate) size: i64,
+    pub(crate) row_id: i64,
     pub(crate) payload: Vec<u8>
 }
 
 pub(super) struct TableInteriorCell {
     pub(crate) left_child_page: u32,
-    key: i64
+    pub(crate) key: i64
 }
 
 pub(super) enum Cell {
@@ -24,16 +24,26 @@ pub(super) enum Cell {
 
 pub(super) struct PageHeader {
     pub(crate) page_type: PageType,
-    first_free_block: u16,
-    cell_count: u16,
-    cell_content_offset: u32,
-    fragmented_bytes_count: u8,
+    pub(crate) first_free_block: u16,
+    pub(crate) cell_count: u16,
+    pub(crate) cell_content_offset: u32,
+    pub(crate) fragmented_bytes_count: u8,
     pub(crate) rightmost_pointer: Option<u32>
+}
+
+impl PageHeader {
+    pub fn byte_size(&self) -> usize {
+        if self.rightmost_pointer.is_some() {
+            12
+        } else {
+            8
+        }
+    }
 }
 
 pub(super) struct Page {
     pub(crate) header: PageHeader,
-    cell_pointers: Vec<u16>,
+    pub(crate) cell_pointers: Vec<u16>,
     pub(crate) cells: Vec<Cell>
 }
 
