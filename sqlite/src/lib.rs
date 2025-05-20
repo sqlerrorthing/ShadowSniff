@@ -4,7 +4,6 @@ mod bindings;
 
 extern crate alloc;
 
-use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -27,7 +26,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_integer(&self) -> Option<i64> {
         if let Value::Integer(i) = self {
             Some(*i)
@@ -35,7 +34,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_float(&self) -> Option<f64> {
         if let Value::Float(f) = self {
             Some(*f)
@@ -43,7 +42,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_blob(&self) -> Option<&Vec<u8>> {
         if let Value::Blob(b) = self {
             Some(b)
@@ -51,7 +50,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_null(&self) -> Option<()> {
         if let Value::Null = self {
             Some(())
