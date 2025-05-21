@@ -9,7 +9,6 @@ use crate::Bookmark;
 use crate::chromium::Browser;
 use obfstr::obfstr as s;
 use json::{parse, Value};
-use utils::log_debug;
 
 pub(super) struct BookmarksTask {
     browser: Arc<Browser>

