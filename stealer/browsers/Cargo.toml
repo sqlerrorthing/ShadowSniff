@@ -7,4 +7,5 @@ edition = "2024"
 tasks = { path = "../../tasks" }
 utils = { path = "../../utils" }
 sqlite = { path = "../../sqlite" }
+json = { path = "../../json" }
 obfstr = "0.4.4"

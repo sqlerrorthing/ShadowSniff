@@ -7,7 +7,7 @@ use crate::alloc::borrow::ToOwned;
 extern crate alloc;
 
 use alloc::vec;
-use core::fmt::{Display, Formatter};
+use core::fmt::{write, Display, Formatter};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use crate::chromium::ChromiumTask;
@@ -43,6 +43,23 @@ impl Display for Cookie {
             f, 
            "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r", 
            self.host_key, self.path, self.expires_utc, self.name, self.value
+        )
+    }
+}
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct Bookmark {
+    pub name: String,
+    pub url: String,
+}
+
+impl Display for Bookmark {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Name: {}\n\
+            Url: {}",
+            self.name, self.url
         )
     }
 }

