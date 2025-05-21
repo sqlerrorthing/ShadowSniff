@@ -81,3 +81,24 @@ impl Display for AutoFill {
         )
     }
 }
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct CreditCard {
+    pub name_on_card: String,
+    pub expiration_month: i64,
+    pub expiration_year: i64,
+    pub card_number: String,
+    pub use_count: i64
+}
+
+impl Display for CreditCard {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Number: {}\n\
+            Month/Year: {}/{}\n\
+            Name: {}",
+            self.card_number, self.expiration_month, self.expiration_year, self.name_on_card
+        )
+    }
+}
