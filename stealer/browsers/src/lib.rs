@@ -63,3 +63,21 @@ impl Display for Bookmark {
         )
     }
 }
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct AutoFill {
+    pub name: String,
+    pub value: String,
+    pub last_used: i64
+}
+
+impl Display for AutoFill {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Name: {}\n\
+            Value: {}",
+            self.name, self.value
+        )
+    }
+}
