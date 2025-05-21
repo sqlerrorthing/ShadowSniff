@@ -43,7 +43,7 @@ impl Task for BookmarksTask {
             .iter()
             .map(|bookmark| bookmark.to_string())
             .collect::<Vec<String>>()
-            .join("\n")
+            .join("\n\n")
             .write_to(parent);
     }
 }
