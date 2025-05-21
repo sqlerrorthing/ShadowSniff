@@ -7,7 +7,7 @@ use crate::alloc::borrow::ToOwned;
 extern crate alloc;
 
 use alloc::vec;
-use core::fmt::{write, Display, Formatter};
+use core::fmt::{Display, Formatter};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use crate::chromium::ChromiumTask;
