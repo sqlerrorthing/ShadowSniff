@@ -7,7 +7,7 @@ extern crate alloc;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::fmt::{write, Display, Formatter};
+use core::fmt::{Display, Formatter};
 use utils::path::Path;
 use crate::bindings::Sqlite3BindingsReader;
 
@@ -74,9 +74,13 @@ impl Display for Value {
 }
 
 pub trait DatabaseReader {
-    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn Iterator<Item = Box<dyn TableRecord>>>>
+    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn Table>>
     where
         S: AsRef<str>;
+}
+
+pub trait Table: Iterator<Item = Box<dyn TableRecord>> {
+    fn records_length(&self) -> usize;
 }
 
 pub trait TableRecord {

