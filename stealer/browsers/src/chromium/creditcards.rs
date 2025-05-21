@@ -47,5 +47,5 @@ impl Task for CreditCardsTask {
 }
 
 fn get_credit_cards(profile: &Path) -> Option<Vec<CreditCard>> {
-    None
+    todo!("Not implemented yet")
 }
