@@ -7,7 +7,7 @@ use crate::alloc::borrow::ToOwned;
 extern crate alloc;
 
 use alloc::vec;
-use core::fmt::{write, Display, Formatter};
+use core::fmt::{Display, Formatter};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use crate::chromium::ChromiumTask;
@@ -78,6 +78,27 @@ impl Display for AutoFill {
             "Name: {}\n\
             Value: {}",
             self.name, self.value
+        )
+    }
+}
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct CreditCard {
+    pub name_on_card: String,
+    pub expiration_month: i64,
+    pub expiration_year: i64,
+    pub card_number: String,
+    pub use_count: i64
+}
+
+impl Display for CreditCard {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Number: {}\n\
+            Month/Year: {}/{}\n\
+            Name: {}",
+            self.card_number, self.expiration_month, self.expiration_year, self.name_on_card
         )
     }
 }

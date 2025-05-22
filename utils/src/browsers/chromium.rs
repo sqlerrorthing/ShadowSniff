@@ -112,13 +112,13 @@ pub unsafe fn decrypt_data(buffer: &[u8], master_key: &[u8]) -> Option<String> {
         &mut decrypted_size,
         0
     );
-    
+
+    BCryptDestroyKey(key);
+    BCryptCloseAlgorithmProvider(alg, 0);
+
     if status != 0 {
         return None
     }
-    
-    BCryptDestroyKey(key);
-    BCryptCloseAlgorithmProvider(alg, 0);
     
     Some(String::from_utf8_lossy(&decrypted[..decrypted_size as usize]).to_string())
 }

