@@ -70,10 +70,10 @@ fn get_autofills(profile: &Path) -> Option<Vec<AutoFill>> {
 }
 
 fn extract_autofill_from_record(record: &Box<dyn TableRecord>) -> Option<AutoFill> {
+    let last_used = record.get_value(AUTOFILL_DATE_LAST_USED)?.as_integer()?;
     let name = record.get_value(AUTOFILL_NAME)?.as_string()?.clone();
     let value = record.get_value(AUTOFILL_VALUE)?.as_string()?.clone();
-    let last_used = record.get_value(AUTOFILL_DATE_LAST_USED)?.as_integer()?;
-    
+
     Some(AutoFill {
         name,
         value,
