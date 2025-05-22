@@ -102,3 +102,20 @@ impl Display for CreditCard {
         )
     }
 }
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct Download {
+    pub saved_as: String,
+    pub url: String
+}
+
+impl Display for Download {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Url: {}\n\
+            Saved: {}",
+            self.url, self.saved_as
+        )
+    }
+}
