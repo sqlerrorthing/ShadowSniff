@@ -1,3 +1,4 @@
+use sqlite::DatabaseReader;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
