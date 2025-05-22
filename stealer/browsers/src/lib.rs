@@ -2,7 +2,7 @@
 
 mod chromium;
 
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use crate::alloc::borrow::ToOwned;
 extern crate alloc;
 
