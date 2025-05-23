@@ -49,6 +49,6 @@ impl Task for HistoryTask {
 
 }
 
-fn get_history(profile: &Path) -> Option<Vec<History>> {
-    None
+fn get_history(_profile: &Path) -> Option<Vec<History>> {
+    todo!("implement")
 }
