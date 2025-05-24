@@ -1,10 +1,9 @@
-use alloc::string::{String, ToString};
 use crate::alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use tasks::{parent_name, Task};
-use utils::path::{Path, WriteToFile};
+use utils::path::Path;
 use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
 use crate::chromium::Browser;
 use obfstr::obfstr as s;

