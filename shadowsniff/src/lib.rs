@@ -16,11 +16,11 @@ use ftp::FtpTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 
-pub struct StealerTask {
+pub struct SniffTask {
     inner: CompositeTask
 }
 
-impl StealerTask {
+impl SniffTask {
     pub fn new() -> Self {
         Self {
             inner: composite_task!(
@@ -35,4 +35,4 @@ impl StealerTask {
     }
 }
 
-impl_composite_task_runner!(StealerTask);
+impl_composite_task_runner!(SniffTask);
