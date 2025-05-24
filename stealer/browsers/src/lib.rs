@@ -153,7 +153,7 @@ impl Display for History {
         write!(
             f,
             "Title: {}\n\
-            Url: {}\n",
+            Url: {}",
             self.title,
             self.url,
         )
