@@ -3,6 +3,17 @@
 version = 4
 
 [[package]]
+name = "ShadowSniff"
+version = "0.1.0"
+dependencies = [
+ "shadowsniff",
+ "tasks",
+ "utils",
+ "wee_alloc",
+ "windows-sys",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -83,7 +94,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "stealer"
+name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
  "ftp",
@@ -92,17 +103,6 @@ dependencies = [
  "obfstr",
  "tasks",
  "utils",
- "windows-sys",
-]
-
-[[package]]
-name = "steall"
-version = "0.1.0"
-dependencies = [
- "stealer",
- "tasks",
- "utils",
- "wee_alloc",
  "windows-sys",
 ]
 

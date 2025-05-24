@@ -19,7 +19,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     let mut message = String::with_capacity(512);
     let _ = write!(&mut message, "{}\0", info);
 
-    let title = b"Steall: Panic\0";
+    let title = b"ShadowSniff: Panic\0";
     let msg_ptr = message.as_ptr();
 
     unsafe {
