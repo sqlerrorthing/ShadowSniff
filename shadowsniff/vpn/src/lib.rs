@@ -10,11 +10,11 @@ use alloc::vec;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use crate::openvpn::OpenVPN;
 
-pub struct VpnsTask {
+pub struct VpnTask {
     inner: CompositeTask
 }
 
-impl VpnsTask {
+impl VpnTask {
     pub fn new() -> Self {
         Self {
             inner: composite_task!(
@@ -24,4 +24,4 @@ impl VpnsTask {
     }
 }
 
-impl_composite_task_runner!(VpnsTask, "Vpns");
+impl_composite_task_runner!(VpnTask, "Vpn");

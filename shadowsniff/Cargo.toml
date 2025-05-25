@@ -18,5 +18,5 @@ windows-sys = { version = "0.59.0", features = [
 miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }
 ftp = { path = "ftp" }
 messengers = { path = "messengers" }
-vpns = { path = "vpns" }
+vpn = { path = "vpn" }
 obfstr = "0.4.4"
