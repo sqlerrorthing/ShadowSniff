@@ -1,5 +1,5 @@
 use crate::bindings::sqlite3_bindings::{sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT};
-use crate::{DatabaseReader, RecordKey, TableRecord, Value};
+use crate::{DatabaseReader, TableRecord, Value};
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
@@ -7,7 +7,6 @@ use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
 use core::ptr::null_mut;
 use obfstr::obfstr as s;
-use utils::log_debug;
 use utils::path::Path;
 
 mod sqlite3_bindings;
@@ -131,10 +130,8 @@ pub struct SqliteRow {
 }
 
 impl TableRecord for SqliteRow {
-    fn get_value(&self, key: impl Into<RecordKey>) -> Option<&Value> {
-        match key.into() {
-            RecordKey::Idx(id) => self.row.get(id)
-        }
+    fn get_value(&self, key: usize) -> Option<&Value> {
+        self.row.get(key)
     }
 }
 

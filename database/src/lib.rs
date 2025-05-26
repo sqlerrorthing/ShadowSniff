@@ -82,17 +82,7 @@ pub trait DatabaseReader {
 }
 
 pub trait TableRecord {
-    fn get_value(&self, key: impl Into<RecordKey>) -> Option<&Value>;
-}
-
-pub enum RecordKey {
-    Idx(usize)
-}
-
-impl From<usize> for RecordKey {
-    fn from(value: usize) -> Self {
-        RecordKey::Idx(value)
-    }
+    fn get_value(&self, key: usize) -> Option<&Value>;
 }
 
 pub fn read_sqlite3_database_by_path(path: &Path) -> Option<impl DatabaseReader> {
