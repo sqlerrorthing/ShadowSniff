@@ -73,10 +73,10 @@ impl Display for Value {
 }
 
 pub trait DatabaseReader {
-    type Iter<'a>: Iterator<Item = Self::Record> where Self: 'a;
+    type Iter: Iterator<Item = Self::Record>;
     type Record: TableRecord;
     
-    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>;
 }
