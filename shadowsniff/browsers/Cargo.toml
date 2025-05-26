@@ -6,6 +6,6 @@ edition = "2024"
 [dependencies]
 tasks = { path = "../../tasks" }
 utils = { path = "../../utils" }
-sqlite = { path = "../../sqlite" }
+database = { path = "../../database" }
 json = { path = "../../json" }
 obfstr = "0.4.4"

