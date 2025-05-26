@@ -7,7 +7,6 @@ use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
 use core::ptr::null_mut;
 use obfstr::obfstr as s;
-use utils::log_debug;
 use utils::path::Path;
 
 mod sqlite3_bindings;
