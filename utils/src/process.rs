@@ -60,8 +60,6 @@ pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
         return Err(GetLastError())
     }
 
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    
     let mut output = Vec::new();
     let mut buffer = [0u8; 4096];
     
