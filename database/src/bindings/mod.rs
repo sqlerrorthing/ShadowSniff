@@ -82,10 +82,10 @@ impl Drop for Sqlite3BindingsReader {
 }
 
 impl DatabaseReader for Sqlite3BindingsReader {
-    type Iter<'a> = SqliteIterator;
+    type Iter = SqliteIterator;
     type Record = SqliteRow;
     
-    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>
     {
