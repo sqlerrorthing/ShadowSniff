@@ -83,7 +83,10 @@ impl Drop for Sqlite3BindingsReader {
 }
 
 impl DatabaseReader for Sqlite3BindingsReader {
-    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn Iterator<Item=Box<dyn TableRecord>>>>
+    type Iter<'a> = SqliteIterator;
+    type Record = SqliteRow;
+    
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
     where
         S: AsRef<str>
     {
@@ -103,9 +106,19 @@ impl DatabaseReader for Sqlite3BindingsReader {
         unsafe { sqlite3_finalize(stmt) };
         
         let rows = table.rows.into_iter();
-        Some(Box::new(SqliteIterator {
-            rows
-        }))
+        Some(SqliteIterator { rows })
+    }
+}
+
+pub struct SqliteIterator {
+    rows: IntoIter<SqliteRow>,
+}
+
+impl Iterator for SqliteIterator {
+    type Item = SqliteRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.rows.next()
     }
 }
 
@@ -113,21 +126,15 @@ struct SqliteTable {
     rows: Vec<SqliteRow>
 } 
 
-struct SqliteRow {
+pub struct SqliteRow {
     row: Vec<Value>
 }
 
 impl TableRecord for SqliteRow {
-    fn get_value_by_key(&self, key: &RecordKey) -> Option<&Value> {
-        match key { 
-            RecordKey::Idx(id) => self.row.get(*id)
+    fn get_value(&self, key: impl Into<RecordKey>) -> Option<&Value> {
+        match key.into() {
+            RecordKey::Idx(id) => self.row.get(id)
         }
-    }
-}
-
-impl TableRecord for &SqliteRow {
-    fn get_value_by_key(&self, key: &RecordKey) -> Option<&Value> {
-        (*self).get_value_by_key(key)
     }
 }
 
@@ -180,18 +187,6 @@ impl SqliteTable {
         }
 
         SqliteTable { rows }
-    }
-}
-
-pub struct SqliteIterator {
-    rows: IntoIter<SqliteRow>,
-}
-
-impl Iterator for SqliteIterator {
-    type Item = Box<dyn TableRecord>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.rows.next().map(|row| Box::new(row) as Box<dyn TableRecord>)
     }
 }
 
