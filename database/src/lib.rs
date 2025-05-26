@@ -4,10 +4,9 @@ mod bindings;
 
 extern crate alloc;
 
-use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::fmt::{write, Display, Formatter};
+use core::fmt::{Display, Formatter};
 use utils::path::Path;
 use crate::bindings::Sqlite3BindingsReader;
 
@@ -74,31 +73,16 @@ impl Display for Value {
 }
 
 pub trait DatabaseReader {
-    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn Iterator<Item = Box<dyn TableRecord>>>>
+    type Iter<'a>: Iterator<Item = Self::Record> where Self: 'a;
+    type Record: TableRecord;
+    
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
     where
         S: AsRef<str>;
 }
 
 pub trait TableRecord {
-    fn get_value_by_key(&self, key: &RecordKey) -> Option<&Value>;
-}
-
-pub trait TableRecordExtension: TableRecord {
-    fn get_value(&self, key: impl Into<RecordKey>) -> Option<&Value> {
-        self.get_value_by_key(&key.into())
-    }
-}
-
-impl<T: TableRecord + ?Sized> TableRecordExtension for T {}
-
-pub enum RecordKey {
-    Idx(usize)
-}
-
-impl From<usize> for RecordKey {
-    fn from(value: usize) -> Self {
-        RecordKey::Idx(value)
-    }
+    fn get_value(&self, key: usize) -> Option<&Value>;
 }
 
 pub fn read_sqlite3_database_by_path(path: &Path) -> Option<impl DatabaseReader> {
