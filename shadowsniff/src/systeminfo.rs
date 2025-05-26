@@ -12,7 +12,7 @@ impl Task for SystemInfoTask {
     unsafe fn run(&self, parent: &Path) {
         let system = Path::system();
         
-        let res = process::run_file(&(&system / s!("systeminfo.exe")));
+        let res = process::run_file(&(system / s!("systeminfo.exe")));
         if res.is_err() {
             return;
         }
