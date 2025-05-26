@@ -4,7 +4,6 @@ mod bindings;
 
 extern crate alloc;
 
-use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
@@ -74,26 +73,17 @@ impl Display for Value {
 }
 
 pub trait DatabaseReader {
-    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn Table>>
+    type Iter<'a>: Iterator<Item = Self::Record> where Self: 'a;
+    type Record: TableRecord;
+    
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
     where
         S: AsRef<str>;
 }
 
-pub trait Table: Iterator<Item = Box<dyn TableRecord>> {
-    fn records_length(&self) -> usize;
-}
-
 pub trait TableRecord {
-    fn get_value_by_key(&self, key: &RecordKey) -> Option<&Value>;
+    fn get_value(&self, key: impl Into<RecordKey>) -> Option<&Value>;
 }
-
-pub trait TableRecordExtension: TableRecord {
-    fn get_value(&self, key: impl Into<RecordKey>) -> Option<&Value> {
-        self.get_value_by_key(&key.into())
-    }
-}
-
-impl<T: TableRecord + ?Sized> TableRecordExtension for T {}
 
 pub enum RecordKey {
     Idx(usize)

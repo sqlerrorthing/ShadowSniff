@@ -1,5 +1,5 @@
 use crate::bindings::sqlite3_bindings::{sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT};
-use crate::{DatabaseReader, RecordKey, Table, TableRecord, Value};
+use crate::{DatabaseReader, RecordKey, TableRecord, Value};
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
@@ -7,6 +7,7 @@ use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
 use core::ptr::null_mut;
 use obfstr::obfstr as s;
+use utils::log_debug;
 use utils::path::Path;
 
 mod sqlite3_bindings;
@@ -82,7 +83,10 @@ impl Drop for Sqlite3BindingsReader {
 }
 
 impl DatabaseReader for Sqlite3BindingsReader {
-    fn read_table<S>(&self, table_name: S) -> Option<Box<dyn Table>>
+    type Iter<'a> = SqliteIterator;
+    type Record = SqliteRow;
+    
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
     where
         S: AsRef<str>
     {
@@ -101,31 +105,37 @@ impl DatabaseReader for Sqlite3BindingsReader {
         let table = SqliteTable::from_stmt(stmt);
         unsafe { sqlite3_finalize(stmt) };
         
-        Some(Box::new(table))
+        let rows = table.rows.into_iter();
+        Some(SqliteIterator { rows })
     }
 }
 
-struct SqliteRow {
-    row: Vec<Value>
+pub struct SqliteIterator {
+    rows: IntoIter<SqliteRow>,
 }
 
-impl TableRecord for SqliteRow {
-    fn get_value_by_key(&self, key: &RecordKey) -> Option<&Value> {
-        match key { 
-            RecordKey::Idx(id) => self.row.get(*id)
-        }
-    }
-}
+impl Iterator for SqliteIterator {
+    type Item = SqliteRow;
 
-impl TableRecord for &SqliteRow {
-    fn get_value_by_key(&self, key: &RecordKey) -> Option<&Value> {
-        (*self).get_value_by_key(key)
+    fn next(&mut self) -> Option<Self::Item> {
+        self.rows.next()
     }
 }
 
 struct SqliteTable {
-    initial_length: usize,
-    rows: IntoIter<SqliteRow>
+    rows: Vec<SqliteRow>
+} 
+
+pub struct SqliteRow {
+    row: Vec<Value>
+}
+
+impl TableRecord for SqliteRow {
+    fn get_value(&self, key: impl Into<RecordKey>) -> Option<&Value> {
+        match key.into() {
+            RecordKey::Idx(id) => self.row.get(id)
+        }
+    }
 }
 
 impl SqliteTable {
@@ -176,24 +186,7 @@ impl SqliteTable {
             rows.push(SqliteRow { row });
         }
 
-        SqliteTable { 
-            initial_length: rows.len(), 
-            rows: rows.into_iter()
-        }
-    }
-}
-
-impl Table for SqliteTable {
-    fn records_length(&self) -> usize {
-        self.initial_length
-    }
-}
-
-impl Iterator for SqliteTable {
-    type Item = Box<dyn TableRecord>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.rows.next().map(|row| Box::new(row) as Box<dyn TableRecord>)
+        SqliteTable { rows }
     }
 }
 
