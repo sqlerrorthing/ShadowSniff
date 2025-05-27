@@ -1,4 +1,3 @@
-use alloc::boxed::Box;
 use database::TableRecord;
 use crate::alloc::borrow::ToOwned;
 use alloc::sync::Arc;

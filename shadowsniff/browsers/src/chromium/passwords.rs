@@ -1,5 +1,4 @@
 use alloc::borrow::ToOwned;
-use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use tasks::{parent_name, Task};

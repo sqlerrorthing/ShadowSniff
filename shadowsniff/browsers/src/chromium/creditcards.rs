@@ -1,4 +1,3 @@
-use alloc::boxed::Box;
 use crate::alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use alloc::vec::Vec;

@@ -1,7 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, History};
-use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use obfstr::obfstr as s;
