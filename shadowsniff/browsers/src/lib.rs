@@ -64,7 +64,13 @@ where
     S: AsRef<str>,
 {
     collect_from_all_profiles(profiles, |profile| {
-        read_and_map_records(&db_type, path(profile).as_ref(), table.as_ref(), &mapper)
+        let db_path = path(profile);
+        
+        if !db_path.as_ref().is_exists() {
+            None
+        } else {
+            read_and_map_records(&db_type, db_path.as_ref(), table.as_ref(), &mapper)
+        }
     })
 }
 

