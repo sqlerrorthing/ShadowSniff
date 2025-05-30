@@ -1,0 +1,9 @@
+[package]
+name = "vpn"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tasks = { path = "../../tasks" }
+utils = { path = "../../utils" }
+obfstr = "0.4.4"
