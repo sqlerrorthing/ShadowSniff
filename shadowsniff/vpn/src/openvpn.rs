@@ -15,7 +15,7 @@ impl Task for OpenVPN {
             return
         }
         
-        profiles.copy_content(parent,  &|profile| {
+        profiles.copy_content(parent, &|profile| {
             profile.extension().map(|ex| ex.contains("ovpn")).unwrap_or(false)
         }).unwrap()
     }
