@@ -25,15 +25,15 @@ Despite its lightweight design, ShadowSniff delivers extensive functionality,
 covering all essential data extraction capabilities for Windows targets.
 
 ### Browsers
-| Feature      | Chromium           | Gecko              |
-|--------------|--------------------|--------------------|
-| AutoFill     | :white_check_mark: | ❌                  |
-| Bookmarks    | :white_check_mark: | ❌                  |
-| Cookies      | :white_check_mark: | :white_check_mark: |
-| Passwords    | :white_check_mark: | ❌                  |
-| Credit cards | :white_check_mark: | ❌                  |
-| Downloads    | :white_check_mark: | ❌                  |
-| History      | :white_check_mark: | :white_check_mark: |
+| Feature      | Chromium | Gecko |
+|--------------|----------|-------|
+| AutoFill     | ✅        | ❌     |
+| Bookmarks    | ✅        | ❌     |
+| Cookies      | ✅        | ✅     |
+| Passwords    | ✅        | ❌     |
+| Credit cards | ✅        | ❌     |
+| Downloads    | ✅        | ❌     |
+| History      | ✅        | ✅     |
 
 ### Messengers
 - [x] Discord
