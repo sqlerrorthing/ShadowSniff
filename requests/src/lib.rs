@@ -14,6 +14,7 @@ use windows_sys::core::{PCWSTR, PWSTR};
 use windows_sys::w;
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_INSUFFICIENT_BUFFER};
 use windows_sys::Win32::Networking::WinHttp::{WinHttpAddRequestHeaders, WinHttpCloseHandle, WinHttpConnect, WinHttpCrackUrl, WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable, WinHttpQueryHeaders, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest, URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_ADDREQ_FLAG_ADD, WINHTTP_FLAG_SECURE, WINHTTP_INTERNET_SCHEME_HTTPS, WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_QUERY_STATUS_CODE};
+use json::{parse, ParseError, Value};
 use utils::WideString;
 
 macro_rules! close {
@@ -22,6 +23,18 @@ macro_rules! close {
             WinHttpCloseHandle($handle);
         )*
     };
+}
+
+pub type ResponseBody = Vec<u8>;
+
+pub trait ResponseBodyExt {
+    fn as_json(&self) -> Result<Value, ParseError>;
+}
+
+impl ResponseBodyExt for ResponseBody {
+    fn as_json(&self) -> Result<Value, ParseError> {
+        parse(self)
+    }
 }
 
 pub struct Request {
@@ -34,26 +47,26 @@ pub struct Request {
 pub struct Response {
     status_code: u16,
     headers: BTreeMap<String, String>,
-    body: Vec<u8>,
+    body: ResponseBody,
 }
 
 impl Response {
     pub fn status_code(&self) -> u16 {
         self.status_code
     }
-    
+
     pub fn headers(&self) -> &BTreeMap<String, String> {
         &self.headers
     }
-    
-    pub fn body(&self) -> &Vec<u8> {
+
+    pub fn body(&self) -> &ResponseBody {
         &self.body
     }
 }
 
 impl Request {
     pub fn get<S>(url: S) -> GetBuilder
-    where 
+    where
         S: Into<String>
     {
         GetBuilder {
@@ -67,7 +80,7 @@ impl Request {
     }
 
     pub fn post<S>(url: S) -> PostBuilder
-    where 
+    where
         S: Into<String>
     {
         PostBuilder {
@@ -79,7 +92,7 @@ impl Request {
             }
         }
     }
-    
+
     pub fn send(&self) -> Result<Response, u32> {
         unsafe {
             let session = WinHttpOpen(
@@ -89,11 +102,11 @@ impl Request {
                 null_mut(),
                 0
             );
-            
+
             if session.is_null() {
                 return Err(GetLastError())
             }
-            
+
             let mut url_comp = URL_COMPONENTS {
                 dwStructSize: size_of::<URL_COMPONENTS>() as u32,
                 dwSchemeLength: -1i32 as u32,
@@ -102,7 +115,7 @@ impl Request {
                 dwExtraInfoLength: -1i32 as u32,
                 ..zeroed()
             };
-            
+
             let url = self.url.to_wide();
             if WinHttpCrackUrl(url.as_ptr(), 0, 0, &mut url_comp) == 0 {
                 close!(session);
@@ -111,10 +124,10 @@ impl Request {
 
             let mut host = slice::from_raw_parts(url_comp.lpszHostName, url_comp.dwHostNameLength as usize).to_vec();
             host.push(0);
-            
+
             let mut path = slice::from_raw_parts(url_comp.lpszUrlPath, url_comp.dwUrlPathLength as usize).to_vec();
             path.push(0);
-            
+
             let connection = WinHttpConnect(
                 session,
                 host.as_ptr(),
@@ -126,7 +139,7 @@ impl Request {
                 close!(session);
                 return Err(GetLastError());
             }
-            
+
             let method: PCWSTR = self.method.into();
 
             let request = WinHttpOpenRequest(
