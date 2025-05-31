@@ -27,13 +27,13 @@ covering all essential data extraction capabilities for Windows targets.
 ### Browsers
 | Feature      | Chromium           | Gecko              |
 |--------------|--------------------|--------------------|
-| AutoFill     | :heavy_check_mark: | :white_check_mark: |
-| Bookmarks    | :heavy_check_mark: | :white_check_mark: |
-| Cookies      | :heavy_check_mark: | :heavy_check_mark: |
-| Passwords    | :heavy_check_mark: | :white_check_mark: |
-| Credit cards | :heavy_check_mark: | :white_check_mark: |
-| Downloads    | :heavy_check_mark: | :white_check_mark: |
-| History      | :heavy_check_mark: | :heavy_check_mark: |
+| AutoFill     | :white_check_mark: | ❌                  |
+| Bookmarks    | :white_check_mark: | ❌                  |
+| Cookies      | :white_check_mark: | :white_check_mark: |
+| Passwords    | :white_check_mark: | ❌                  |
+| Credit cards | :white_check_mark: | ❌                  |
+| Downloads    | :white_check_mark: | ❌                  |
+| History      | :white_check_mark: | :white_check_mark: |
 
 ### Messengers
 - [x] Discord
