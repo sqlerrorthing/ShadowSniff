@@ -21,3 +21,4 @@ wee_alloc = "0.4.5"
 shadowsniff = { path = "shadowsniff" }
 tasks = { path = "tasks" }
 utils = { path = "utils" }
+ipinfo = { path = "ipinfo" }
