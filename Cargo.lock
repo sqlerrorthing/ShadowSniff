@@ -27,6 +27,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
+name = "country-emoji"
+version = "0.1.0"
+
+[[package]]
 name = "ftp"
 version = "0.1.0"
 dependencies = [
@@ -40,6 +44,7 @@ dependencies = [
 name = "ipinfo"
 version = "0.1.0"
 dependencies = [
+ "country-emoji",
  "json",
  "requests",
 ]
