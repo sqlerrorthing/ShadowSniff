@@ -52,22 +52,28 @@ impl Response {
 }
 
 impl Request {
-    pub fn get(url: String) -> GetBuilder {
+    pub fn get<S>(url: S) -> GetBuilder
+    where 
+        S: Into<String>
+    {
         GetBuilder {
             inner: Request {
                 method: HttpMethod::GET,
-                url,
+                url: url.into(),
                 headers: BTreeMap::default(),
                 body: None
             }
         }
     }
 
-    pub fn post(url: String) -> PostBuilder {
+    pub fn post<S>(url: S) -> PostBuilder
+    where 
+        S: Into<String>
+    {
         PostBuilder {
             inner: Request {
                 method: HttpMethod::POST,
-                url,
+                url: url.into(),
                 headers: BTreeMap::default(),
                 body: None
             }
@@ -103,9 +109,12 @@ impl Request {
                 return Err(GetLastError());
             }
 
-            let host = slice::from_raw_parts(url_comp.lpszHostName, url_comp.dwHostNameLength as usize);
-            let path = slice::from_raw_parts(url_comp.lpszUrlPath, url_comp.dwUrlPathLength as usize);
-
+            let mut host = slice::from_raw_parts(url_comp.lpszHostName, url_comp.dwHostNameLength as usize).to_vec();
+            host.push(0);
+            
+            let mut path = slice::from_raw_parts(url_comp.lpszUrlPath, url_comp.dwUrlPathLength as usize).to_vec();
+            path.push(0);
+            
             let connection = WinHttpConnect(
                 session,
                 host.as_ptr(),
