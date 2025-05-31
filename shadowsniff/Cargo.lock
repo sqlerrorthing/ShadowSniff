@@ -19,6 +19,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ipinfo"
+version = "0.1.0"
+dependencies = [
+ "json",
+ "requests",
+]
+
+[[package]]
 name = "json"
 version = "0.1.0"
 
@@ -65,10 +73,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "requests"
+version = "0.1.0"
+dependencies = [
+ "json",
+ "utils",
+ "windows-sys",
+]
+
+[[package]]
 name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
  "ftp",
+ "ipinfo",
  "messengers",
  "miniz_oxide",
  "obfstr",

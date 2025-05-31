@@ -19,3 +19,4 @@ miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-a
 ftp = { path = "ftp" }
 messengers = { path = "messengers" }
 obfstr = "0.4.4"
+ipinfo = { path = "../ipinfo" }

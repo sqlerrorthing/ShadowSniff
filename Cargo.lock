@@ -6,6 +6,7 @@ version = 4
 name = "ShadowSniff"
 version = "0.1.0"
 dependencies = [
+ "ipinfo",
  "shadowsniff",
  "tasks",
  "utils",
@@ -33,6 +34,14 @@ dependencies = [
  "tasks",
  "utils",
  "windows",
+]
+
+[[package]]
+name = "ipinfo"
+version = "0.1.0"
+dependencies = [
+ "json",
+ "requests",
 ]
 
 [[package]]
@@ -94,10 +103,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "requests"
+version = "0.1.0"
+dependencies = [
+ "json",
+ "utils",
+ "windows-sys",
+]
+
+[[package]]
 name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
  "ftp",
+ "ipinfo",
  "messengers",
  "miniz_oxide",
  "obfstr",
