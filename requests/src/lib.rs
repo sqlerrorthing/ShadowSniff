@@ -6,16 +6,15 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
-use core::ffi::c_void;
 use core::mem::zeroed;
 use core::ptr::{null, null_mut};
 use core::slice;
-use windows_sys::core::{PCWSTR, PWSTR};
+use json::{parse, ParseError, Value};
+use utils::WideString;
+use windows_sys::core::PCWSTR;
 use windows_sys::w;
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_INSUFFICIENT_BUFFER};
 use windows_sys::Win32::Networking::WinHttp::{WinHttpAddRequestHeaders, WinHttpCloseHandle, WinHttpConnect, WinHttpCrackUrl, WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable, WinHttpQueryHeaders, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest, URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_ADDREQ_FLAG_ADD, WINHTTP_FLAG_SECURE, WINHTTP_INTERNET_SCHEME_HTTPS, WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_QUERY_STATUS_CODE};
-use json::{parse, ParseError, Value};
-use utils::WideString;
 
 macro_rules! close {
     ( $( $handle:expr ),* ) => {
