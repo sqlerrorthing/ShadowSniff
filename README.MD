@@ -5,6 +5,7 @@
 <div align="center">
     <h1>ShadowSniff</h1>
     <p>Lightweight information stealer written in Rust, targeting Windows systems. It interacts directly with the Windows API and avoids unnecessary external dependencies, resulting in a compact, efficient, and low-footprint binary. (PoC. For Educational Purposes only)</p>
+    <p>Made in Russia.</p> 
     <div align="center">
         <a href="https://github.com/sqlerrorthing/ShadowSniff/network/members"><img src="https://img.shields.io/github/forks/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Forks"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/stargazers"><img src="https://img.shields.io/github/stars/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stargazers"></a>
@@ -14,6 +15,42 @@
 </div>
 
 ---
+
+## Features
+Despite its lightweight design, ShadowSniff delivers extensive functionality, 
+covering all essential data extraction capabilities for Windows targets.
+
+### Browsers
+| Feature      | Chromium           | Gecko              |
+|--------------|--------------------|--------------------|
+| AutoFill     | :heavy_check_mark: | :white_check_mark: |
+| Bookmarks    | :heavy_check_mark: | :white_check_mark: |
+| Cookies      | :heavy_check_mark: | :heavy_check_mark: |
+| Passwords    | :heavy_check_mark: | :white_check_mark: |
+| Credit cards | :heavy_check_mark: | :white_check_mark: |
+| Downloads    | :heavy_check_mark: | :white_check_mark: |
+| History      | :heavy_check_mark: | :heavy_check_mark: |
+
+### Messengers
+- [x] Discord
+- [x] Telegram sessions
+
+### System
+- [x] Process list
+- [x] Clipboard
+- [x] Screenshot
+- [x] System info
+- [x] User info
+
+### VPN
+- [x] OpenVPN
+- [x] ProtonVPN
+- [x] NordVPN
+
+_... more_
+
+If you'd like the stealer to support additional features, feel free to open an [issue](https://github.com/sqlerrorthing/ShadowSniff/issues/new/choose) here to request the functionality —
+or implement it yourself.
 
 ## Contributing
 Feel free to open issues or submit pull requests — all contributions are welcome,
