@@ -16,6 +16,10 @@
 
 ---
 
+_This project is currently under development, and a fully functional version has not been released yet.
+Features and stability may change.
+Please consider enabling notifications to stay informed about updates and important announcements._
+
 ## Features
 Despite its lightweight design, ShadowSniff delivers extensive functionality, 
 covering all essential data extraction capabilities for Windows targets.
