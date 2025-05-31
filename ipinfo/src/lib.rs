@@ -5,6 +5,7 @@ extern crate alloc;
 use alloc::borrow::ToOwned;
 use alloc::string::String;
 use core::cell::UnsafeCell;
+use core::fmt::{Display, Formatter};
 use json::Value;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
 
@@ -19,6 +20,23 @@ pub struct IpInfo {
     pub org: String,
     pub postal: String,
     pub timezone: String,
+}
+
+impl Display for IpInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "IP: {}\n\
+            \tCity:\t({}) {}\n\
+            \tRegion:\t{}\n\
+            \tPostal:\t{}",
+            self.ip,
+            self.country,
+            self.city,
+            self.region,
+            self.postal
+        )
+    }
 }
 
 #[allow(static_mut_refs)]
