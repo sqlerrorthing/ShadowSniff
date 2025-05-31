@@ -24,16 +24,21 @@ Please consider enabling notifications to stay informed about updates and import
 Despite its lightweight design, ShadowSniff delivers extensive functionality, 
 covering all essential data extraction capabilities for Windows targets.
 
+### Log Sending
+- [ ] Discord webhook
+- [ ] Telegram bot
+
 ### Browsers
-| Feature      | Chromium | Gecko |
-|--------------|----------|-------|
-| AutoFill     | ✅        | ❌     |
-| Bookmarks    | ✅        | ❌     |
-| Cookies      | ✅        | ✅     |
-| Passwords    | ✅        | ❌     |
-| Credit cards | ✅        | ❌     |
-| Downloads    | ✅        | ❌     |
-| History      | ✅        | ✅     |
+| Feature      |                                                                                        Chromium                                                                                         |           Gecko            |
+|--------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------:|
+| AutoFill     |                                                                                            ✅                                                                                            |             ❌              |
+| Bookmarks    |                                                                                            ✅                                                                                            |             ❌              |
+| Cookies      |                                                                                            ✅                                                                                            |             ✅              |
+| Passwords    |                                                                                            ✅                                                                                            |             ❌              |
+| Credit cards |                                                                                            ✅                                                                                            |             ❌              |
+| Downloads    |                                                                                            ✅                                                                                            |             ❌              |
+| History      |                                                                                            ✅                                                                                            |             ✅              |
+| Supported    | Amingo, Torch, Kometa, Orbitum, Epic Private, Cent, Vivaldi, **Chromium**, Thorium, **Opera**, **Opera GX**, 7Star, Chrome SxS, **Chrome**, **Edge**, Uran, **Yandex**, **Brave**, Atom | **Firefox**, **Librewolf** |
 
 ### Messengers
 - [x] Discord
@@ -48,8 +53,6 @@ covering all essential data extraction capabilities for Windows targets.
 
 ### VPN
 - [x] OpenVPN
-- [x] ProtonVPN
-- [x] NordVPN
 
 _... more_
 
