@@ -31,6 +31,7 @@ covering all essential data extraction capabilities for Windows targets.
 ### Browsers
 | Feature      |                                                                                        Chromium                                                                                         |           Gecko            |
 |--------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------:|
+| Supported    | Amingo, Torch, Kometa, Orbitum, Epic Private, Cent, Vivaldi, **Chromium**, Thorium, **Opera**, **Opera GX**, 7Star, Chrome SxS, **Chrome**, **Edge**, Uran, **Yandex**, **Brave**, Atom | **Firefox**, **Librewolf** |
 | AutoFill     |                                                                                            ✅                                                                                            |             ❌              |
 | Bookmarks    |                                                                                            ✅                                                                                            |             ❌              |
 | Cookies      |                                                                                            ✅                                                                                            |             ✅              |
@@ -38,7 +39,6 @@ covering all essential data extraction capabilities for Windows targets.
 | Credit cards |                                                                                            ✅                                                                                            |             ❌              |
 | Downloads    |                                                                                            ✅                                                                                            |             ❌              |
 | History      |                                                                                            ✅                                                                                            |             ✅              |
-| Supported    | Amingo, Torch, Kometa, Orbitum, Epic Private, Cent, Vivaldi, **Chromium**, Thorium, **Opera**, **Opera GX**, 7Star, Chrome SxS, **Chrome**, **Edge**, Uran, **Yandex**, **Brave**, Atom | **Firefox**, **Librewolf** |
 
 ### Messengers
 - [x] Discord
