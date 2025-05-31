@@ -8,12 +8,12 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::mem::zeroed;
-use core::ptr::null_mut;
+use core::ptr::{null, null_mut};
 use core::slice;
 use windows_sys::core::{PCWSTR, PWSTR};
 use windows_sys::w;
-use windows_sys::Win32::Foundation::GetLastError;
-use windows_sys::Win32::Networking::WinHttp::{WinHttpCloseHandle, WinHttpConnect, WinHttpCrackUrl, WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest, URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_FLAG_SECURE};
+use windows_sys::Win32::Foundation::{GetLastError, ERROR_INSUFFICIENT_BUFFER};
+use windows_sys::Win32::Networking::WinHttp::{WinHttpAddRequestHeaders, WinHttpCloseHandle, WinHttpConnect, WinHttpCrackUrl, WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable, WinHttpQueryHeaders, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest, URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_ADDREQ_FLAG_ADD, WINHTTP_FLAG_SECURE, WINHTTP_INTERNET_SCHEME_HTTPS, WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_QUERY_STATUS_CODE};
 use utils::WideString;
 
 macro_rules! close {
@@ -29,6 +29,26 @@ pub struct Request {
     url: String,
     headers: BTreeMap<String, String>,
     body: Option<Vec<u8>>,
+}
+
+pub struct Response {
+    status_code: u16,
+    headers: BTreeMap<String, String>,
+    body: Vec<u8>,
+}
+
+impl Response {
+    pub fn status_code(&self) -> u16 {
+        self.status_code
+    }
+    
+    pub fn headers(&self) -> &BTreeMap<String, String> {
+        &self.headers
+    }
+    
+    pub fn body(&self) -> &Vec<u8> {
+        &self.body
+    }
 }
 
 impl Request {
@@ -54,7 +74,7 @@ impl Request {
         }
     }
     
-    pub fn send(&self) -> Result<Vec<u8>, u32> {
+    pub fn send(&self) -> Result<Response, u32> {
         unsafe {
             let session = WinHttpOpen(
                 w!("PSZAGENTW"),
@@ -86,9 +106,6 @@ impl Request {
             let host = slice::from_raw_parts(url_comp.lpszHostName, url_comp.dwHostNameLength as usize);
             let path = slice::from_raw_parts(url_comp.lpszUrlPath, url_comp.dwUrlPathLength as usize);
 
-            let host_str = String::from_utf16_lossy(host);
-            let path_str = String::from_utf16_lossy(path);
-
             let connection = WinHttpConnect(
                 session,
                 host.as_ptr(),
@@ -110,7 +127,7 @@ impl Request {
                 null_mut(),
                 null_mut(),
                 null_mut(),
-                WINHTTP_FLAG_SECURE,
+                if url_comp.nScheme == WINHTTP_INTERNET_SCHEME_HTTPS { WINHTTP_FLAG_SECURE } else { 0 },
             );
 
             if request.is_null() {
@@ -118,65 +135,101 @@ impl Request {
                 return Err(GetLastError());
             }
 
-            let mut body_ptr: *const c_void = null_mut();
-            let mut body_len = 0;
-
-            if let Some(ref body) = self.body {
-                body_ptr = body.as_ptr() as *const c_void;
-                body_len = body.len() as u32;
+            for (key, value) in &self.headers {
+                let header = alloc::format!("{}: {}\0", key, value);
+                let header_wide: Vec<u16> = header.encode_utf16().collect();
+                if WinHttpAddRequestHeaders(request, header_wide.as_ptr(), header.len() as u32, WINHTTP_ADDREQ_FLAG_ADD) == 0 {
+                    close!(request, connection, session);
+                    return Err(GetLastError());
+                }
             }
 
-            let success = WinHttpSendRequest(
-                request,
-                null_mut(),
-                0,
-                body_ptr as _,
-                body_len,
-                body_len,
-                0,
-            );
-            
-            if success == 0 {
+            let (body_ptr, body_len) = match &self.body {
+                Some(b) => (b.as_ptr(), b.len() as u32),
+                None => (null(), 0),
+            };
+
+            if WinHttpSendRequest(request, null(), 0, body_ptr as _, body_len, body_len, 0) == 0 {
                 close!(request, connection, session);
                 return Err(GetLastError());
             }
-            
+
             if WinHttpReceiveResponse(request, null_mut()) == 0 {
                 close!(request, connection, session);
                 return Err(GetLastError());
             }
 
-            let mut result: Vec<u8> = Vec::new();
-            
+            let mut status_code: u32 = 0;
+            let mut size = size_of::<u32>() as u32;
+            if WinHttpQueryHeaders(
+                request,
+                WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                null(),
+                &mut status_code as *mut _ as *mut _,
+                &mut size,
+                null_mut(),
+            ) == 0 {
+                close!(request, connection, session);
+                return Err(GetLastError());
+            }
+
+            let mut headers = BTreeMap::new();
+            let mut buffer_len: u32 = 0;
+            let result = WinHttpQueryHeaders(
+                request,
+                WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                null(),
+                null_mut(),
+                &mut buffer_len,
+                null_mut(),
+            );
+
+            if result == 0 && GetLastError() == ERROR_INSUFFICIENT_BUFFER {
+                let mut buffer: Vec<u16> = vec![0; buffer_len as usize / 2];
+                if WinHttpQueryHeaders(
+                    request,
+                    WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                    null(),
+                    buffer.as_mut_ptr() as *mut _,
+                    &mut buffer_len,
+                    null_mut(),
+                ) != 0
+                {
+                    let headers_str = String::from_utf16_lossy(&buffer[..(buffer_len as usize / 2)]);
+                    for line in headers_str.lines().skip(1) {
+                        if let Some(colon_pos) = line.find(':') {
+                            let key = line[..colon_pos].trim().to_string();
+                            let value = line[colon_pos + 1..].trim().to_string();
+                            headers.insert(key, value);
+                        }
+                    }
+                }
+            }
+
+            let mut body = Vec::new();
             loop {
                 let mut bytes_available: u32 = 0;
-                if WinHttpQueryDataAvailable(request, &mut bytes_available) == 0 {
-                    break;
-                }
-                if bytes_available == 0 {
+                if WinHttpQueryDataAvailable(request, &mut bytes_available) == 0 || bytes_available == 0 {
                     break;
                 }
 
                 let mut buffer = vec![0u8; bytes_available as usize];
                 let mut bytes_read = 0;
-
-                if WinHttpReadData(
-                    request,
-                    buffer.as_mut_ptr() as _,
-                    bytes_available,
-                    &mut bytes_read,
-                ) == 0
-                {
+                if WinHttpReadData(request, buffer.as_mut_ptr() as _, bytes_available, &mut bytes_read) == 0 || bytes_read == 0 {
                     break;
                 }
 
                 buffer.truncate(bytes_read as usize);
-                result.extend_from_slice(&buffer);
+                body.extend_from_slice(&buffer);
             }
 
             close!(request, connection, session);
-            
-            Ok(result)
+
+            Ok(Response {
+                status_code: status_code as u16,
+                headers,
+                body,
+            })
         }
     }
 }
