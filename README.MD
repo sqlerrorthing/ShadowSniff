@@ -68,8 +68,20 @@ a small action that makes a big difference!
 
 Thanks for being part of the project ❤️
 
+## Acknowledgments
+This project has been inspired by a variety of open-source infostealers available on GitHub.
+Many functions and critical paths were adapted from publicly available repositories.
+The goal was to build something original by learning from and evolving existing work.
+I’d like to thank everyone whose contributions helped shape this project — with special appreciation to:
+
+- [davimiku](https://github.com/davimiku/json_parser) — for a clean and efficient JSON parser implementation
+- [CasualX](https://github.com/CasualX/obfstr) — for compile-time string obfuscation
+
+...and many others whose code, ideas, or techniques helped shape this project —
+even if only through a single clever line of Rust.
+
 ## License
-This library is released under the MIT License. See LICENSE file for more informations.
+This library is released under the MIT License. See LICENSE file for more information.
 
 ---
 
