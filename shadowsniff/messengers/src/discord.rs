@@ -176,7 +176,19 @@ struct TokenInfo {
 
 impl Display for TokenInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, ";ol")
+        write!(
+            f, 
+            "Token: {}\
+            Username: {}\
+            Phone: {}\
+            Email: {}\
+            MFA: {}",
+            self.token,
+            self.username,
+            self.phone.as_ref().unwrap_or(&"None".to_string()),
+            self.email.as_ref().unwrap_or(&"None".to_string()),
+            if self.mfa { "Enabled" } else { "Disabled" },
+        )
     }
 }
 
