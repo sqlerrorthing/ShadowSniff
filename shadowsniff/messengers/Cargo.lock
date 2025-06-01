@@ -11,6 +11,7 @@ name = "messengers"
 version = "0.1.0"
 dependencies = [
  "obfstr",
+ "requests",
  "tasks",
  "utils",
 ]
@@ -20,6 +21,15 @@ name = "obfstr"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0d354e9a302760d07e025701d40534f17dd1fe4c4db955b4e3bd2907c63bdee"
+
+[[package]]
+name = "requests"
+version = "0.1.0"
+dependencies = [
+ "json",
+ "utils",
+ "windows-sys",
+]
 
 [[package]]
 name = "tasks"
