@@ -98,8 +98,7 @@ impl DatabaseReader for Sqlite3BindingsReader {
     {
         Sqlite3BindingsReader::new_from_file(path)
     }
-
-
+    
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>

