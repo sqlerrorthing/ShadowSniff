@@ -3,9 +3,14 @@
 version = 4
 
 [[package]]
+name = "country-emoji"
+version = "0.1.0"
+
+[[package]]
 name = "ipinfo"
 version = "0.1.0"
 dependencies = [
+ "country-emoji",
  "json",
  "requests",
 ]

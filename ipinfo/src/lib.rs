@@ -6,6 +6,7 @@ use alloc::borrow::ToOwned;
 use alloc::string::String;
 use core::cell::UnsafeCell;
 use core::fmt::{Display, Formatter};
+use country_emoji::internal_code_to_flag;
 use json::Value;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
 
@@ -31,7 +32,7 @@ impl Display for IpInfo {
             \tRegion:\t{}\n\
             \tPostal:\t{}",
             self.ip,
-            self.country,
+            internal_code_to_flag(&self.country).unwrap_or_else(|| self.country.clone()),
             self.city,
             self.region,
             self.postal
