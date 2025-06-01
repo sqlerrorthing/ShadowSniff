@@ -9,8 +9,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
+name = "browsers"
+version = "0.1.0"
+dependencies = [
+ "database",
+ "json",
+ "obfstr",
+ "tasks",
+ "utils",
+]
+
+[[package]]
+name = "cc"
+version = "1.2.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0fc897dc1e865cc67c0e05a836d9d3f1df3cbe442aa4a9473b18e12624a4951"
+dependencies = [
+ "shlex",
+]
+
+[[package]]
 name = "country-emoji"
 version = "0.1.0"
+
+[[package]]
+name = "database"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "obfstr",
+ "utils",
+]
 
 [[package]]
 name = "ftp"
@@ -90,6 +119,7 @@ dependencies = [
 name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
+ "browsers",
  "ftp",
  "ipinfo",
  "messengers",
@@ -99,6 +129,12 @@ dependencies = [
  "utils",
  "windows-sys",
 ]
+
+[[package]]
+name = "shlex"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "syn"
