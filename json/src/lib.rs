@@ -11,6 +11,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
 
+#[cfg_attr(test, derive(Debug))]
 pub enum Value {
     Null,
     Boolean(bool),
@@ -125,7 +126,7 @@ pub fn parse(input: &[u8]) -> Result<Value, ParseError> {
     parse_str(str::from_utf8(input).unwrap())
 }
 
-#[derive(Debug)]
+#[cfg_attr(test, derive(Debug))]
 pub enum ParseError {
     TokenizeError(TokenizeError),
     ParseError(TokenParseError),
@@ -140,5 +141,26 @@ impl From<TokenParseError> for ParseError {
 impl From<TokenizeError> for ParseError {
     fn from(err: TokenizeError) -> Self {
         Self::TokenizeError(err)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    extern crate std;
+
+    #[test]
+    fn test_parse_str() {
+        let input = r#"
+        {"id":"***","username":"***","avatar":null,"discriminator":"0","public_flags":0,"flags":0,"banner":null,"accent_color":null,"global_name":"***","avatar_decoration_data":null,"collectibles":null,"banner_color":null,"clan":null,"primary_guild":null,"mfa_enabled":false,"locale":"***","premium_type":0,"email":"***","verified":true,"phone":null,"nsfw_allowed":true,"linked_users":[],"bio":"","authenticator_types":[],"age_verification_status":1}
+        "#;
+
+        match parse_str(input) {
+            Ok(result) => {
+                std::dbg!(&result);
+            }
+            Err(err) => panic!("parse_str failed: {:?}", err),
+        }
     }
 }

@@ -23,7 +23,6 @@ pub enum TokenizeError {
     ParseNumberError(ParseFloatError),
     UnclosedQuotes,
     UnfinishedLiteralValue,
-    UnexpectedEof,
 }
 
 pub fn tokenize<S>(input: S) -> Result<Vec<Token>, TokenizeError>
@@ -35,22 +34,26 @@ where
 
     let mut tokens = Vec::new();
     while index < chars.len() {
-        let token = make_token(&chars, &mut index)?;
+        let Some(token) = make_token(&chars, &mut index)? else {
+            break; // no more tokens
+        };
+        
         tokens.push(token);
         index += 1;
     }
     Ok(tokens)
 }
 
-fn make_token(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
+fn make_token(chars: &Vec<char>, index: &mut usize) -> Result<Option<Token>, TokenizeError> {
     let mut ch = chars[*index];
     while ch.is_ascii_whitespace() {
         *index += 1;
         if *index >= chars.len() {
-            return Err(TokenizeError::UnexpectedEof);
+            return Ok(None);
         }
         ch = chars[*index];
     }
+    
     let token = match ch {
         '[' => Token::LeftBracket,
         ']' => Token::RightBracket,
@@ -70,7 +73,7 @@ fn make_token(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeErr
         ch => return Err(TokenizeError::CharNotRecognized(ch)),
     };
 
-    Ok(token)
+    Ok(Some(token))
 }
 
 fn tokenize_null(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
