@@ -29,7 +29,7 @@ covering all essential data extraction capabilities for Windows targets.
 - [ ] Telegram bot
 
 ### Browsers
-| Feature      |                                                                                        Chromium                                                                                         |           Gecko            |
+| Feature      |                                Chromium (<127, see [here](https://github.com/sqlerrorthing/ShadowSniff/blob/master/utils/src/browsers/chromium.rs#L79))                                 |           Gecko            |
 |--------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------:|
 | Supported    | Amingo, Torch, Kometa, Orbitum, Epic Private, Cent, Vivaldi, **Chromium**, Thorium, **Opera**, **Opera GX**, 7Star, Chrome SxS, **Chrome**, **Edge**, Uran, **Yandex**, **Brave**, Atom | **Firefox**, **Librewolf** |
 | AutoFill     |                                                                                            ✅                                                                                            |             ❌              |
