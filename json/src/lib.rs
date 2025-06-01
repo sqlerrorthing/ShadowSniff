@@ -149,7 +149,7 @@ mod tests {
     use super::*;
 
     extern crate std;
-    
+
     #[test]
     fn test_parse_str() {
         let input = r#"
