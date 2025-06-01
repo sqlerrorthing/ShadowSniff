@@ -34,3 +34,37 @@ pub fn base64_decode(input: &[u8]) -> Option<Vec<u8>> {
 
     Some(output)
 }
+
+pub fn base64_encode(input: &[u8]) -> Vec<u8> {
+    const BASE64_CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    let mut output = Vec::with_capacity((input.len() + 2) / 3 * 4);
+
+    let mut i = 0;
+    while i < input.len() {
+        let b0 = input[i];
+        let b1 = if i + 1 < input.len() { input[i + 1] } else { 0 };
+        let b2 = if i + 2 < input.len() { input[i + 2] } else { 0 };
+
+        let triple = ((b0 as u32) << 16) | ((b1 as u32) << 8) | (b2 as u32);
+
+        output.push(BASE64_CHARS[((triple >> 18) & 0x3F) as usize]);
+        output.push(BASE64_CHARS[((triple >> 12) & 0x3F) as usize]);
+
+        if i + 1 < input.len() {
+            output.push(BASE64_CHARS[((triple >> 6) & 0x3F) as usize]);
+        } else {
+            output.push(b'=');
+        }
+
+        if i + 2 < input.len() {
+            output.push(BASE64_CHARS[(triple & 0x3F) as usize]);
+        } else {
+            output.push(b'=');
+        }
+
+        i += 3;
+    }
+
+    output
+}

