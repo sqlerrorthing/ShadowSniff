@@ -70,6 +70,7 @@ name = "messengers"
 version = "0.1.0"
 dependencies = [
  "obfstr",
+ "requests",
  "tasks",
  "utils",
 ]

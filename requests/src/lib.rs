@@ -256,7 +256,7 @@ impl Request {
 }
 
 pub trait RequestBuilder {
-    fn header<S>(&mut self, key: S, value: S) -> &mut Self
+    fn header<S>(self, key: S, value: S) -> Self
     where
         S: AsRef<str>;
 
@@ -264,7 +264,7 @@ pub trait RequestBuilder {
 }
 
 pub trait BodyRequestBuilder: RequestBuilder {
-    fn body<B>(&mut self, body: B) -> &mut Self
+    fn body<B>(self, body: B) -> Self
     where
         B: Into<Vec<u8>>;
 }
@@ -285,7 +285,7 @@ impl From<HttpMethod> for PCWSTR {
 }
 
 impl RequestBuilder for Request {
-    fn header<S>(&mut self, key: S, value: S) -> &mut Self
+    fn header<S>(mut self, key: S, value: S) -> Self
     where
         S: AsRef<str>
     {
@@ -303,11 +303,11 @@ pub struct GetBuilder {
 }
 
 impl RequestBuilder for GetBuilder {
-    fn header<S>(&mut self, key: S, value: S) -> &mut Self
+    fn header<S>(mut self, key: S, value: S) -> Self
     where
         S: AsRef<str>
     {
-        self.inner.header(key, value);
+        self.inner = self.inner.header(key, value);
         self
     }
 
@@ -321,11 +321,11 @@ pub struct PostBuilder {
 }
 
 impl RequestBuilder for PostBuilder {
-    fn header<S>(&mut self, key: S, value: S) -> &mut Self
+    fn header<S>(mut self, key: S, value: S) -> Self
     where
         S: AsRef<str>
     {
-        self.inner.header(key, value);
+        self.inner = self.inner.header(key, value);
         self
     }
 
@@ -335,7 +335,7 @@ impl RequestBuilder for PostBuilder {
 }
 
 impl BodyRequestBuilder for PostBuilder {
-    fn body<B>(&mut self, body: B) -> &mut Self
+    fn body<B>(mut self, body: B) -> Self
     where
         B: Into<Vec<u8>>
     {
