@@ -97,14 +97,60 @@ pub enum Databases {
 impl Databases {
     pub fn read_from_path(&self, path: &Path) -> Result<impl DatabaseReader, i32> {
         match self {
-            Databases::Sqlite => Sqlite3BindingsReader::from_path(path),
+            Databases::Sqlite => Ok(DummyReader),
         }
     }
 
     pub fn read_from_bytes(&self, bytes: &[u8]) -> Result<impl DatabaseReader, i32> {
         match self {
-            Databases::Sqlite => Sqlite3BindingsReader::from_bytes(bytes),
+            Databases::Sqlite => Ok(DummyReader),
         }
+    }
+}
+
+struct DummyRecord;
+
+impl TableRecord for DummyRecord {
+    fn get_value(&self, key: usize) -> Option<&Value> {
+        None
+    }
+}
+
+struct DummyReader;
+
+struct DummyIter;
+
+impl Iterator for DummyIter {
+    type Item = DummyRecord;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
+}
+
+impl DatabaseReader for DummyReader {
+    type Iter = DummyIter;
+    type Record = DummyRecord;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, i32>
+    where
+        Self: Sized
+    {
+        todo!()
+    }
+
+    fn from_path(path: &Path) -> Result<Self, i32>
+    where
+        Self: Sized
+    {
+        todo!()
+    }
+
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
+    where
+        S: AsRef<str>
+    {
+        todo!()
     }
 }
 
