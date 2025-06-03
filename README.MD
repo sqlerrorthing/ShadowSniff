@@ -87,7 +87,7 @@ use utils::path::Path;
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
 
-fn example() {
+fn main() {
     if !init_ip_info() {
         panic!("Failed to initialize IP info");
     }
