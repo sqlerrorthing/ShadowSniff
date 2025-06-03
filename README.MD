@@ -10,7 +10,7 @@
         <a href="https://github.com/sqlerrorthing/ShadowSniff/network/members"><img src="https://img.shields.io/github/forks/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Forks"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/stargazers"><img src="https://img.shields.io/github/stars/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stargazers"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/issues"><img src="https://img.shields.io/github/issues/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Issues"></a>
-        <img src="https://img.shields.io/badge/STUB%20SIZE-700KB-red?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stub size">
+        <img src="https://img.shields.io/badge/STUB%20SIZE-200KB-red?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stub size">
         <a href="https://github.com/sqlerrorthing/ShadowSniff/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="License"></a>
     </div>
 </div>
@@ -108,6 +108,7 @@ I’d like to thank everyone whose contributions helped shape this project — w
 
 - [davimiku](https://github.com/davimiku/json_parser) — for a clean and efficient JSON parser implementation
 - [CasualX](https://github.com/CasualX/obfstr) — for compile-time string obfuscation
+- [geoffreycopin](https://github.com/geoffreycopin/rqlite) — for a sqlite3 raw reader
 
 ...and many others whose code, ideas, or techniques helped shape this project —
 even if only through a single clever line of Rust.
