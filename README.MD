@@ -77,6 +77,7 @@ I’d like to thank everyone whose contributions helped shape this project — w
 
 - [davimiku](https://github.com/davimiku/json_parser) — for a clean and efficient JSON parser implementation
 - [CasualX](https://github.com/CasualX/obfstr) — for compile-time string obfuscation
+- [geoffreycopin](https://github.com/geoffreycopin/rqlite) — for a sqlite3 raw reader
 
 ...and many others whose code, ideas, or techniques helped shape this project —
 even if only through a single clever line of Rust.
