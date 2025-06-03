@@ -71,7 +71,7 @@ Thanks for being part of the project ❤️
 
 ## Use as a library
 This stealer is task-based.
-Each task can spawn subtasks, but the main task is `SniffTask`, 
+Each task can spawn subtasks, but the main task is `shadowsniff::SniffTask`, 
 which is responsible for collecting the entire log.
 
 There are also composite tasks that contain other tasks.
@@ -79,9 +79,9 @@ When started, each task runs in its own thread.
 A composite task waits for all its subtasks to finish before it completes.
 
 The stealer **does not use the Rust standard library**.
-The `Path` type used in `run` comes from the crate `utils::path::Path`.
+The `utils::path::Path` type used in `run` comes from the crate `utils`.
 
-Before calling `SniffTask::new().run(base_path)`, you **must** call `init_ip_info()`, otherwise it won't work.
+Before calling `SniffTask::new().run(&base_path)`, you **must** call `ipinfo::init_ip_info()`, otherwise it won't work.
 ```rust
 use utils::path::Path;
 use ipinfo::init_ip_info;
@@ -95,7 +95,7 @@ fn main() {
     let base_path = Path::new("output");
     
     unsafe {
-        SniffTask::new().run(base_path);
+        SniffTask::new().run(&base_path);
     }
 }
 ```
