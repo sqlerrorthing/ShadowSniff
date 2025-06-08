@@ -47,7 +47,6 @@ where
     collect_and_read_from_all_profiles(profiles, Databases::Sqlite, path, table, mapper)
 }
 
-
 pub(crate) fn collect_and_read_from_all_profiles<D, P, R, F, T, S>(
     profiles: &[Path],
     db_type: D,
@@ -73,7 +72,6 @@ where
         }
     })
 }
-
 
 pub(crate) fn collect_from_all_profiles<F, T>(profiles: &[Path], f: F) -> Option<Vec<T>>
 where
