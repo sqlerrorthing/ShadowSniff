@@ -3,6 +3,22 @@ name = "ShadowSniff"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+resolver = "3"
+members = [
+    "country-emoji",
+    "database",
+    "ipinfo",
+    "json",
+    "requests",
+    "shadowsniff",
+    "shadowsniff/browsers",
+    "shadowsniff/ftp",
+    "shadowsniff/messengers",
+    "tasks",
+    "utils"
+]
+
 [profile.release]
 strip = true
 opt-level = "z"
