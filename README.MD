@@ -108,6 +108,7 @@ I’d like to thank everyone whose contributions helped shape this project — w
 
 - [davimiku](https://github.com/davimiku/json_parser) — for a clean and efficient JSON parser implementation
 - [CasualX](https://github.com/CasualX/obfstr) — for compile-time string obfuscation
+- [dk0m](https://github.com/dk0m/ZeroCrumb) — for chromium-based cookies and password decryption method
 
 ...and many others whose code, ideas, or techniques helped shape this project —
 even if only through a single clever line of Rust.

