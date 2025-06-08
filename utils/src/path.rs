@@ -13,7 +13,7 @@ use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_F
 use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FIND_DATAW};
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
-use windows_sys::Win32::UI::Shell::{FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
+use windows_sys::Win32::UI::Shell::{FOLDERID_LocalAppData, FOLDERID_ProgramFiles, FOLDERID_ProgramFilesX86, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
 
 #[derive(Clone)]
 pub struct Path {
@@ -679,6 +679,14 @@ impl Path {
     
     pub fn appdata() -> Self {
         get_known_folder_path(&FOLDERID_RoamingAppData).unwrap()
+    }
+    
+    pub fn program_files() -> Self {
+        get_known_folder_path(&FOLDERID_ProgramFiles).unwrap()
+    }
+    
+    pub fn program_files_x86() -> Self {
+        get_known_folder_path(&FOLDERID_ProgramFilesX86).unwrap()
     }
     
     pub fn localappdata() -> Self {
