@@ -248,13 +248,11 @@ pub fn map_buffer_into_process(process: HANDLE, section: HANDLE) -> Option<PVoid
         )
     };
 
-    if status != STATUS_SUCCESS {
-        if status != STATUS_IMAGE_NOT_AT_BASE {
-            return None;
-        }
+    if status != STATUS_SUCCESS && status != STATUS_IMAGE_NOT_AT_BASE {
+        None
+    } else {
+        Some(section_base_address)
     }
-
-    Some(section_base_address)
 }
 
 pub fn get_payload_buffer<S>(filename: S) -> Option<Vec<u8>>
@@ -285,7 +283,7 @@ where
         )
     };
 
-    if mapping == null_mut() {
+    if mapping.is_null() {
         unsafe {
             CloseHandle(file)
         };
@@ -340,7 +338,7 @@ fn update_remove_ep(thread: HANDLE, ep_va: u64) -> bool {
     context.Rcx = ep_va;
 
     unsafe {
-        SetThreadContext(thread, &mut context) == TRUE
+        SetThreadContext(thread, &context) == TRUE
     }
 }
 
