@@ -75,6 +75,7 @@ version = "0.1.0"
 dependencies = [
  "ntapi",
  "utils",
+ "winapi",
  "windows-sys",
 ]
 

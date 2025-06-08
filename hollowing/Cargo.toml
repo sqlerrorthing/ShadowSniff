@@ -5,10 +5,12 @@ edition = "2024"
 
 [dependencies]
 windows-sys = { version = "0.59.0", features = [
-    "Win32_Security", 
-    "Win32_System", 
-    "Win32_System_Threading", 
-    "Win32_System_Memory", 
-    "Win32_System_LibraryLoader"] }
-ntapi = "0.4.1"
+    "Win32_Security",
+    "Win32_System",
+    "Win32_System_Threading",
+    "Win32_System_Memory",
+    "Win32_System_LibraryLoader"
+] }
+winapi = { version = "0.3.9", features = ["winbase"] }
+ntapi = { version = "0.4.1", features = ["user"]}
 utils = { path = "../utils" }
