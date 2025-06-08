@@ -82,10 +82,24 @@ impl Drop for Sqlite3BindingsReader {
 }
 
 impl DatabaseReader for Sqlite3BindingsReader {
-    type Iter<'a> = SqliteIterator;
+    type Iter = SqliteIterator;
     type Record = SqliteRow;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, i32>
+    where
+        Self: Sized
+    {
+        Sqlite3BindingsReader::new_from_bytes(bytes)
+    }
+
+    fn from_path(path: &Path) -> Result<Self, i32>
+    where
+        Self: Sized
+    {
+        Sqlite3BindingsReader::new_from_file(path)
+    }
     
-    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>
     {

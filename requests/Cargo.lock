@@ -7,16 +7,6 @@ name = "json"
 version = "0.1.0"
 
 [[package]]
-name = "messengers"
-version = "0.1.0"
-dependencies = [
- "obfstr",
- "requests",
- "tasks",
- "utils",
-]
-
-[[package]]
 name = "obfstr"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -27,15 +17,6 @@ name = "requests"
 version = "0.1.0"
 dependencies = [
  "json",
- "utils",
- "windows-sys",
-]
-
-[[package]]
-name = "tasks"
-version = "0.1.0"
-dependencies = [
- "obfstr",
  "utils",
  "windows-sys",
 ]

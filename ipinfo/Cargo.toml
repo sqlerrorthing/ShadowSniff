@@ -1,0 +1,9 @@
+[package]
+name = "ipinfo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+requests = { path = "../requests" }
+json = { path = "../json" }
+country-emoji = { path = "../country-emoji" }

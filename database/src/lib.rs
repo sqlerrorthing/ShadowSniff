@@ -1,14 +1,13 @@
 #![no_std]
 
+extern crate alloc;
 mod bindings;
 
-extern crate alloc;
-
+use crate::bindings::Sqlite3BindingsReader;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
 use utils::path::Path;
-use crate::bindings::Sqlite3BindingsReader;
 
 pub enum Value {
     String(String),
@@ -73,10 +72,18 @@ impl Display for Value {
 }
 
 pub trait DatabaseReader {
-    type Iter<'a>: Iterator<Item = Self::Record> where Self: 'a;
+    type Iter: Iterator<Item = Self::Record>;
     type Record: TableRecord;
-    
-    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter<'_>>
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, i32>
+    where
+        Self: Sized;
+
+    fn from_path(path: &Path) -> Result<Self, i32>
+    where
+        Self: Sized;
+
+    fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>;
 }
@@ -85,10 +92,26 @@ pub trait TableRecord {
     fn get_value(&self, key: usize) -> Option<&Value>;
 }
 
-pub fn read_sqlite3_database_by_path(path: &Path) -> Option<impl DatabaseReader> {
-    Sqlite3BindingsReader::new_from_file(path).ok()
+pub enum Databases {
+    Sqlite
 }
 
-pub fn read_sqlite3_database_by_bytes(bytes: &[u8]) -> Option<impl DatabaseReader> {
-    Sqlite3BindingsReader::new_from_bytes(bytes).ok()
+impl Databases {
+    pub fn read_from_path(&self, path: &Path) -> Result<impl DatabaseReader, i32> {
+        match self {
+            Databases::Sqlite => Sqlite3BindingsReader::from_path(path),
+        }
+    }
+
+    pub fn read_from_bytes(&self, bytes: &[u8]) -> Result<impl DatabaseReader, i32> {
+        match self {
+            Databases::Sqlite => Sqlite3BindingsReader::from_bytes(bytes),
+        }
+    }
+}
+
+impl AsRef<Databases> for Databases {
+    fn as_ref(&self) -> &Databases {
+        self
+    }
 }

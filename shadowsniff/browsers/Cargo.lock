@@ -3,18 +3,37 @@
 version = 4
 
 [[package]]
-name = "json"
-version = "0.1.0"
-
-[[package]]
-name = "messengers"
+name = "browsers"
 version = "0.1.0"
 dependencies = [
+ "database",
+ "json",
  "obfstr",
- "requests",
  "tasks",
  "utils",
 ]
+
+[[package]]
+name = "cc"
+version = "1.2.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f4ac86a9e5bc1e2b3449ab9d7d3a6a405e3d1bb28d7b9be8614f55846ae3766"
+dependencies = [
+ "shlex",
+]
+
+[[package]]
+name = "database"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "obfstr",
+ "utils",
+]
+
+[[package]]
+name = "json"
+version = "0.1.0"
 
 [[package]]
 name = "obfstr"
@@ -23,13 +42,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0d354e9a302760d07e025701d40534f17dd1fe4c4db955b4e3bd2907c63bdee"
 
 [[package]]
-name = "requests"
-version = "0.1.0"
-dependencies = [
- "json",
- "utils",
- "windows-sys",
-]
+name = "shlex"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "tasks"

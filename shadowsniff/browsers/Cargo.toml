@@ -1,10 +1,11 @@
 [package]
-name = "messengers"
+name = "browsers"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-obfstr = "0.4.4"
 tasks = { path = "../../tasks" }
 utils = { path = "../../utils" }
-requests = { path = "../../requests" }
+database = { path = "../../database" }
+json = { path = "../../json" }
+obfstr = "0.4.4"

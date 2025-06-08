@@ -3,18 +3,21 @@
 version = 4
 
 [[package]]
-name = "json"
+name = "country-emoji"
 version = "0.1.0"
 
 [[package]]
-name = "messengers"
+name = "ipinfo"
 version = "0.1.0"
 dependencies = [
- "obfstr",
+ "country-emoji",
+ "json",
  "requests",
- "tasks",
- "utils",
 ]
+
+[[package]]
+name = "json"
+version = "0.1.0"
 
 [[package]]
 name = "obfstr"
@@ -27,15 +30,6 @@ name = "requests"
 version = "0.1.0"
 dependencies = [
  "json",
- "utils",
- "windows-sys",
-]
-
-[[package]]
-name = "tasks"
-version = "0.1.0"
-dependencies = [
- "obfstr",
  "utils",
  "windows-sys",
 ]
