@@ -16,7 +16,8 @@ members = [
     "shadowsniff/ftp",
     "shadowsniff/messengers",
     "tasks",
-    "utils"
+    "utils",
+    "regedit"
 ]
 
 [profile.release]
