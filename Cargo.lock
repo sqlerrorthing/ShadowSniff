@@ -158,6 +158,7 @@ dependencies = [
  "obfstr",
  "tasks",
  "utils",
+ "vpn",
  "windows-sys",
 ]
 
@@ -200,6 +201,15 @@ dependencies = [
  "json",
  "obfstr",
  "windows-sys",
+]
+
+[[package]]
+name = "vpn"
+version = "0.1.0"
+dependencies = [
+ "obfstr",
+ "tasks",
+ "utils",
 ]
 
 [[package]]
