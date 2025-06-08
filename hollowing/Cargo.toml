@@ -16,6 +16,6 @@ windows-sys = { version = "0.59.0", features = [
     "Win32_System_SystemInformation"
 ] }
 cfg-if = "1.0.0"
-winapi = { version = "0.3.9", features = ["winbase"] }
+winapi = { version = "0.3.9", features = ["winbase", "ntdef"] }
 ntapi = { version = "0.4.1", features = ["user"]}
 utils = { path = "../utils" }

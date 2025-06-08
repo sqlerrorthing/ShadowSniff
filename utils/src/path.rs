@@ -222,12 +222,6 @@ impl AsRef<Path> for Path {
     }
 }
 
-impl AsRef<str> for Path {
-    fn as_ref(&self) -> &str {
-        self.inner.as_ref()
-    }
-}
-
 impl Deref for Path {
     type Target = str;
 
@@ -701,7 +695,7 @@ impl Path {
         S: AsRef<str>
     {
         let ms = unsafe { GetTickCount64() };
-        let name = format!("{:x}", ms);
+        let name = format!("{ms:x}");
         Self::temp() / format!("{}{name}", prefix.as_ref())
     }
 }
