@@ -5,7 +5,6 @@ mod passwords;
 mod creditcards;
 mod downloads;
 mod history;
-mod dumper;
 
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
