@@ -128,20 +128,22 @@ pub(super) struct ChromiumBasedBrowser<'a> {
     user_data: Path
 }
 
-impl<'a> ChromiumBasedBrowser<'a> {
-    pub(super) fn new(name: &'a str, has_profiles: bool, user_data: Path) -> Self {
-        Self { name, has_profiles, user_data }
-    }
-}
-
 macro_rules! browser_without_profiles {
     ($name:expr, $path:expr) => {
-        ChromiumBasedBrowser::new($name, false, $path)
+        ChromiumBasedBrowser { 
+            name: $name, 
+            has_profiles: false, 
+            user_data: $path
+        }
     };
 }
 macro_rules! browser {
     ($name:expr, $path:expr) => {
-        ChromiumBasedBrowser::new($name, true, $path)
+        ChromiumBasedBrowser { 
+            name: $name, 
+            has_profiles: true, 
+            user_data: $path
+        }
     };
 }
 
