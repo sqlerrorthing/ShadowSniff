@@ -157,7 +157,11 @@ pub fn extract_master_key(user_data: &Path) -> Option<Vec<u8>> {
     unsafe { crypt_unprotect_data(&key[5..]) }
 }
 
-pub fn extract_app_bound_encrypted_key(_executable: &Path, user_data: &Path) -> Option<Vec<u8>> {
+pub fn extract_app_bound_encrypted_key(executable: &Path, user_data: &Path) -> Option<Vec<u8>> {
+    if !executable.is_exists() {
+        return None
+    }
+    
     let key = extract_key(user_data, s!("app_bound_encrypted_key"))?;
     match &key[..4] {
         b"APPB" => Some(key[4..].to_vec()),
