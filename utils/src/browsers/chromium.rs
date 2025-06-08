@@ -152,12 +152,12 @@ unsafe fn decrypt_aes_gcm(iv: &[u8], ciphertext: &[u8], tag: &[u8], encryption_k
     Some(String::from_utf8_lossy(&decrypted[..decrypted_size as usize]).to_string())
 }
 
-pub unsafe fn extract_master_key(user_data: &Path) -> Option<Vec<u8>> {
+pub fn extract_master_key(user_data: &Path) -> Option<Vec<u8>> {
     let key = extract_key(user_data, s!("encrypted_key"))?;
-    crypt_unprotect_data(&key[5..])
+    unsafe { crypt_unprotect_data(&key[5..]) }
 }
 
-pub unsafe fn extract_app_bound_encrypted_key(user_data: &Path) -> Option<Vec<u8>> {
+pub fn extract_app_bound_encrypted_key(_executable: &Path, user_data: &Path) -> Option<Vec<u8>> {
     let key = extract_key(user_data, s!("app_bound_encrypted_key"))?;
     match &key[..4] {
         b"APPB" => Some(key[4..].to_vec()),

