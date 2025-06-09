@@ -1,0 +1,8 @@
+[package]
+name = "zip"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }
+utils = { path = "../utils" }

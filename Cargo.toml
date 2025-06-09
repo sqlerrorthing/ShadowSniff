@@ -19,7 +19,7 @@ members = [
     "hollowing",
     "utils",
     "collector"
-]
+, "zip"]
 
 [profile.release]
 strip = true
