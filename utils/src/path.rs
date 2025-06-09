@@ -1,7 +1,7 @@
 use crate::WideString;
-use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use alloc::{format, vec};
 use core::fmt::{Display, Formatter};
 use core::mem::zeroed;
 use core::ops::{Deref, Div};
@@ -13,6 +13,7 @@ use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_F
 use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FIND_DATAW};
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
+use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 use windows_sys::Win32::UI::Shell::{FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
 
 #[derive(Clone)]
@@ -59,7 +60,7 @@ impl Path {
         let current_dir = get_current_directory().unwrap();
 
         let trimmed = self.inner.trim_start_matches(['\\', '/'].as_ref());
-        let full = format!("{}\\{}", current_dir, trimmed);
+        let full = format!("{current_dir}\\{trimmed}");
 
         Path::new(full)
     }
@@ -522,7 +523,7 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, u32> {
         }
 
         let file_size = size as usize;
-        let mut buffer: Vec<u8> = Vec::with_capacity(file_size);
+        let mut buffer: Vec<u8> = vec![0u8; file_size];
         buffer.set_len(file_size);
 
         let mut bytes_read = 0;
@@ -639,7 +640,7 @@ pub fn get_current_directory() -> Option<Path> {
         return None;
     }
 
-    let mut buffer: Vec<u16> = Vec::with_capacity(required_size as usize);
+    let mut buffer = vec![0u16; required_size as usize];
     unsafe { buffer.set_len(required_size as usize); }
 
     let len = unsafe { GetCurrentDirectoryW(required_size, buffer.as_mut_ptr()) };
@@ -683,5 +684,18 @@ impl Path {
     
     pub fn localappdata() -> Self {
         get_known_folder_path(&FOLDERID_LocalAppData).unwrap()
+    }
+
+    pub fn temp() -> Self {
+        Self::localappdata() / "Temp"
+    }
+
+    pub fn temp_file<S>(prefix: S) -> Self
+    where
+        S: AsRef<str>
+    {
+        let ms = unsafe { GetTickCount64() };
+        let name = format!("{ms:x}");
+        Self::temp() / format!("{}{name}", prefix.as_ref())
     }
 }

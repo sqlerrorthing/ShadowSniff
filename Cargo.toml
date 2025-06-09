@@ -15,7 +15,8 @@ members = [
     "shadowsniff/browsers",
     "shadowsniff/ftp",
     "shadowsniff/messengers",
-    "tasks",
+    "tasks", 
+    "hollowing",
     "utils"
 ]
 
@@ -38,3 +39,4 @@ shadowsniff = { path = "shadowsniff" }
 tasks = { path = "tasks" }
 utils = { path = "utils" }
 ipinfo = { path = "ipinfo" }
+hollowing = { path = "hollowing" }
