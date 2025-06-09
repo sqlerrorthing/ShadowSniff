@@ -56,7 +56,7 @@ where
     }
 
     if !contents.is_empty() {
-        collector.software().set_telegram();
+        collector.get_software().set_telegram();
     }
     
     for path in contents {

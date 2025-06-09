@@ -28,7 +28,7 @@ impl<C: Collector> Task<C> for BookmarksTask {
             return
         };
 
-        collector.browser().increase_bookmarks_by(bookmarks.len());
+        collector.get_browser().increase_bookmarks_by(bookmarks.len());
         let _ = to_string_and_write_all(&bookmarks, "\n\n", parent);
     }
 }

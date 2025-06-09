@@ -38,7 +38,7 @@ impl<C: Collector> Task<C> for HistoryTask {
         history.sort_by(|a, b| b.last_visit_time.cmp(&a.last_visit_time));
         history.truncate(1000);
 
-        collector.browser().increase_history_by(history.len());
+        collector.get_browser().increase_history_by(history.len());
         let _ = to_string_and_write_all(&history, "\n\n", parent);
     }
 }

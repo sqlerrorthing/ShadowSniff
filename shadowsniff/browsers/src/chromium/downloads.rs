@@ -35,7 +35,7 @@ impl<C: Collector> Task<C> for DownloadsTask {
         };
 
         downloads.truncate(500);
-        collector.browser().increase_downloads_by(downloads.len());
+        collector.get_browser().increase_downloads_by(downloads.len());
         let _ = to_string_and_write_all(&downloads, "\n\n", parent);
     }
 }

