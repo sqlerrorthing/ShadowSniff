@@ -1,4 +1,4 @@
-use crate::base64::{base64_decode_string, base64_encode};
+use crate::base64::base64_decode_string;
 use crate::path::Path;
 use alloc::string::{String, ToString};
 use alloc::vec;

