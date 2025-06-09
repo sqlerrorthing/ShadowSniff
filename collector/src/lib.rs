@@ -1,37 +1,31 @@
 #![no_std]
-extern crate alloc;
 
-use alloc::string::String;
+extern crate alloc;
+mod atomic;
 
 macro_rules! increase_count {
     ($name:ident) => {
         paste::paste! {
             fn [<increase_ $name _by>](&self, count: usize);
-        
+
             fn [<increase_ $name>](&self) {
                 self.[<increase_ $name _by>](1);
             }
-            
+
             fn [<get_ $name>](&self) -> usize;
         }
     };
 }
 
+#[allow(unused_macros)]
 macro_rules! flag {
     ($name:ident) => {
         paste::paste! {
             fn [<set_ $name>](&self);
-            
+
             fn [<is_ $name>](&self) -> bool;
         }
     };
-    ($name:ident, $ty:ty) => {
-        paste::paste! {
-            fn [<set_ $name>](&self, value: $ty);
-            
-            fn [<get_ $name>](&self) -> &$ty;
-        }
-    }
 }
 
 pub trait Browser: Send + Sync + 'static {
@@ -63,8 +57,6 @@ pub trait Vpn: Send + Sync + 'static {
 }
 
 pub trait Device: Send + Sync + 'static {
-    flag!(windows_product_key, String);
-    
     increase_count!(wifi_networks);
 }
 
@@ -75,14 +67,14 @@ pub trait Collector: Send + Sync + 'static
     type FileGrabber: FileGrabber;
     type Vpn: Vpn;
     type Device: Device;
-    
-    fn browser(&self) -> &'static Self::Browser;
-    
-    fn software(&self) -> &'static Self::Software;
-    
-    fn file_grabber(&self) -> &'static Self::FileGrabber;
-    
-    fn vpn(&self) -> &'static Self::Vpn;
-    
-    fn device(&self) -> &'static Self::Device;
+
+    fn browser(&self) -> &Self::Browser;
+
+    fn software(&self) -> &Self::Software;
+
+    fn file_grabber(&self) -> &Self::FileGrabber;
+
+    fn vpn(&self) -> &Self::Vpn;
+
+    fn device(&self) -> &Self::Device;
 }
