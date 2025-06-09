@@ -8,3 +8,4 @@ obfstr = "0.4.4"
 tasks = { path = "../../tasks" }
 utils = { path = "../../utils" }
 requests = { path = "../../requests" }
+collector = { path = "../../collector" }

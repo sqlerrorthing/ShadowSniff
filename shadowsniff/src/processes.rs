@@ -1,6 +1,7 @@
 use crate::alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use collector::Collector;
 use core::ffi::CStr;
 use core::fmt::Write;
 use core::ptr::null_mut;
@@ -12,10 +13,10 @@ use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATI
 
 pub(super) struct ProcessesTask;
 
-impl Task for ProcessesTask {
+impl<C: Collector> Task<C> for ProcessesTask {
     parent_name!("Processes.txt");
     
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, _: &C) {
         let processes = get_process_list();
 
         let max_pid_width = processes

