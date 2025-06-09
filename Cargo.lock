@@ -6,7 +6,7 @@ version = 4
 name = "ShadowSniff"
 version = "0.1.0"
 dependencies = [
- "hollowing",
+ "collector",
  "ipinfo",
  "shadowsniff",
  "tasks",
@@ -25,6 +25,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 name = "browsers"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "database",
  "json",
  "obfstr",
@@ -71,6 +72,7 @@ dependencies = [
 name = "ftp"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "obfstr",
  "tasks",
  "utils",
@@ -114,6 +116,7 @@ checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 name = "messengers"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "obfstr",
  "requests",
  "tasks",
@@ -173,6 +176,7 @@ name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
  "browsers",
+ "collector",
  "ftp",
  "ipinfo",
  "messengers",
@@ -204,6 +208,7 @@ dependencies = [
 name = "tasks"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "obfstr",
  "utils",
  "windows-sys",

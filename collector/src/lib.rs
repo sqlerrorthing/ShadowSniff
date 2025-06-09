@@ -1,7 +1,7 @@
 #![no_std]
 
 extern crate alloc;
-mod atomic;
+pub mod atomic;
 
 macro_rules! increase_count {
     ($name:ident) => {
@@ -28,7 +28,7 @@ macro_rules! flag {
     };
 }
 
-pub trait Browser: Send + Sync + 'static {
+pub trait Browser: Send + Sync {
     increase_count!(cookies);
     increase_count!(passwords);
     increase_count!(credit_cards);
@@ -38,7 +38,7 @@ pub trait Browser: Send + Sync + 'static {
     increase_count!(downloads);
 }
 
-pub trait Software: Send + Sync + 'static {
+pub trait Software: Send + Sync {
     increase_count!(wallets);
     increase_count!(ftp_hosts);
     increase_count!(telegram_sessions);
@@ -46,21 +46,21 @@ pub trait Software: Send + Sync + 'static {
     increase_count!(steam_session);
 }
 
-pub trait FileGrabber: Send + Sync + 'static {
+pub trait FileGrabber: Send + Sync {
     increase_count!(source_code_files);
     increase_count!(database_files);
     increase_count!(documents);
 }
 
-pub trait Vpn: Send + Sync + 'static {
+pub trait Vpn: Send + Sync {
     increase_count!(accounts);
 }
 
-pub trait Device: Send + Sync + 'static {
+pub trait Device: Send + Sync {
     increase_count!(wifi_networks);
 }
 
-pub trait Collector: Send + Sync + 'static
+pub trait Collector: Send + Sync
 {
     type Browser: Browser;
     type Software: Software;

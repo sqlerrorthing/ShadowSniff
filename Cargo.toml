@@ -40,4 +40,4 @@ shadowsniff = { path = "shadowsniff" }
 tasks = { path = "tasks" }
 utils = { path = "utils" }
 ipinfo = { path = "ipinfo" }
-hollowing = { path = "hollowing" }
+collector = { path = "collector" }

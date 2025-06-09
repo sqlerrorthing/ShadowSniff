@@ -7,6 +7,7 @@ use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use collector::atomic::AtomicCollector;
 use core::ffi::c_void;
 use core::ptr::null_mut;
 use utils::path::Path;
@@ -39,9 +40,9 @@ macro_rules! parent_name {
 macro_rules! impl_composite_task_runner {
     ($task_type:ty) => {
         impl Task for $task_type {
-            unsafe fn run(&self, parent: &utils::path::Path) {
+            unsafe fn run(&self, parent: &utils::path::Path, collector: &collector::atomic::AtomicCollector) {
                 unsafe {
-                    self.inner.run(parent);
+                    self.inner.run(parent, collector);
                 }
             }
         }
@@ -51,9 +52,9 @@ macro_rules! impl_composite_task_runner {
         impl Task for $task_type {
             $crate::parent_name!($parent_name);
 
-            unsafe fn run(&self, parent: &utils::path::Path) {
+            unsafe fn run(&self, parent: &utils::path::Path, collector: &collector::atomic::AtomicCollector) {
                 unsafe {
-                    self.inner.run(parent);
+                    self.inner.run(parent, collector);
                 }
             }
         }
@@ -65,7 +66,7 @@ pub trait Task: Send + Sync {
         None
     }
     
-    unsafe fn run(&self, parent: &Path);
+    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector);
 }
 
 pub struct CompositeTask {
@@ -81,25 +82,26 @@ impl CompositeTask {
 }
 
 impl Task for CompositeTask {
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
         match self.subtasks.len() {
-            0 => return,
+            0 => (),
             1 => {
                 let task = &self.subtasks[0];
-                task.run(&task_path(task, parent));
+                task.run(&task_path(task, parent), collector);
             }
-            _ => run_tasks(&self.subtasks, parent)
+            _ => run_tasks(&self.subtasks, parent, collector)
         }
     }
 }
 
-unsafe fn run_tasks(tasks: &Vec<Arc<dyn Task>>, parent: &Path) {
+unsafe fn run_tasks(tasks: &[Arc<dyn Task>], parent: &Path, collector: &AtomicCollector) {
     let mut handles: Vec<HANDLE> = Vec::new();
 
-    for task in tasks.clone() {
+    for task in tasks {
         let params = Box::new(ThreadParams {
             task: task.clone(),
-            path: task_path(&task, parent)
+            path: task_path(task, parent),
+            collector
         });
 
         let handle = unsafe {
@@ -137,16 +139,17 @@ fn task_path(task: &Arc<dyn Task>, parent: &Path) -> Path {
     }
 }
 
-struct ThreadParams {
+struct ThreadParams<'a> {
     task: Arc<dyn Task>,
     path: Path,
+    collector: &'a AtomicCollector,
 }
 
 #[allow(unsafe_op_in_unsafe_fn)]
 unsafe extern "system" fn thread_proc(param: *mut c_void) -> u32 {
     let params = Box::from_raw(param as *mut ThreadParams);
 
-    params.task.run(&params.path);
+    params.task.run(&params.path, params.collector);
 
     drop(params);
     

