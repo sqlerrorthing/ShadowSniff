@@ -17,7 +17,8 @@ members = [
     "shadowsniff/messengers",
     "tasks", 
     "hollowing",
-    "utils"
+    "utils",
+    "collector"
 ]
 
 [profile.release]
