@@ -6,6 +6,7 @@ version = 4
 name = "ShadowSniff"
 version = "0.1.0"
 dependencies = [
+ "hollowing",
  "ipinfo",
  "shadowsniff",
  "tasks",
@@ -67,6 +68,14 @@ dependencies = [
  "tasks",
  "utils",
  "windows",
+]
+
+[[package]]
+name = "hollowing"
+version = "0.1.0"
+dependencies = [
+ "utils",
+ "windows-sys",
 ]
 
 [[package]]
