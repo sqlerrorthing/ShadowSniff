@@ -16,8 +16,8 @@ pub struct MessengersTask<C: Collector> {
     inner: CompositeTask<C>
 }
 
-impl<C: Collector> MessengersTask<C> {
-    pub fn new() -> Self {
+impl<C: Collector> Default for MessengersTask<C> {
+    fn default() -> Self {
         Self {
             inner: composite_task!(
                 TelegramTask,
