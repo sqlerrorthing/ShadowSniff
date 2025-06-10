@@ -14,6 +14,7 @@ pub mod logging;
 pub mod process;
 pub mod base64;
 pub mod browsers;
+pub mod random;
 
 pub trait WideString {
     fn to_wide(&self) -> Vec<u16>;

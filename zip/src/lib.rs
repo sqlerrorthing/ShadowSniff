@@ -6,7 +6,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::ops::Deref;
 use miniz_oxide::deflate::compress_to_vec;
+use rand_chacha::rand_core::RngCore;
+use rand_chacha::ChaCha20Rng;
 use utils::path::Path;
+use utils::random::ChaCha20RngExt;
 
 pub struct ZipEntry {
     path: String,
@@ -361,11 +364,11 @@ fn decrypt_byte(k2: u32) -> u8 {
 }
 
 fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> Vec<u8> {
-    let mut rng = 0u8;
+    let mut rng = ChaCha20Rng::from_nano_time();
     let mut header = Vec::with_capacity(12);
+
     for _ in 0..11 {
-        rng = rng.wrapping_add(1);
-        let enc = rng ^ decrypt_byte(*k2);
+        let enc = rng.next_u32() as u8 ^ decrypt_byte(*k2);
         header.push(enc);
         update_keys(enc, k0, k1, k2);
     }
