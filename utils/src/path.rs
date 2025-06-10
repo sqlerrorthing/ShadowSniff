@@ -285,12 +285,11 @@ where T: AsRef<[u8]> + ?Sized
 }
 
 pub fn write_file(path: &Path, data: &[u8]) -> Result<(), u32> {
-    if let Some(parent) = path.parent() {
-        if !parent.is_exists() {
-            if let Err(e) = parent.mkdirs() {
-                return Err(e);
-            }
-        }
+    if let Some(parent) = path.parent() 
+        && !parent.is_exists() 
+        && let Err(e) = parent.mkdirs() 
+    { 
+        return Err(e);
     }
     
     let wide = path.to_wide();
@@ -457,10 +456,8 @@ pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), u32>
     let src_wide = src.to_wide();
     let dst_wide = dst.to_wide();
 
-    if let Some(parent) = dst.parent() {
-        if !parent.is_exists() {
-            parent.mkdirs()?;
-        }
+    if let Some(parent) = dst.parent() && !parent.is_exists() {
+        parent.mkdirs()?;
     }
 
     unsafe {

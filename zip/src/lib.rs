@@ -356,6 +356,6 @@ fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> 
     let final_byte = ((crc >> 24) & 0xFF) as u8 ^ decrypt_byte(*k2);
     header.push(final_byte);
     update_keys(final_byte, k0, k1, k2);
-    
+
     header
 }
