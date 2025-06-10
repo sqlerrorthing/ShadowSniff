@@ -296,6 +296,7 @@ fn create_local_header(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn create_central_header(
     crc: u32,
     general_flag: u16,
