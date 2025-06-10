@@ -44,9 +44,8 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     // log_debug!("{}", DisplayCollector(collector));
 
     let zip = ZipArchive::default()
-        .comment("Lol its comment")
         .password("x")
-        .add(&out)
+        .add_file(&Path::new("hello.txt"))
         .create();
 
     let out = Path::new("output.zip");

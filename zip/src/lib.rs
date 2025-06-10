@@ -29,13 +29,13 @@ impl Deref for ZipEntry {
     }
 }
 
-#[repr(u8)]
+#[repr(u16)]
 #[derive(Copy, Clone, Default)]
 pub enum ZipCompression {
-    NONE = 0,
+    NONE = 0u16,
     
     #[default]
-    DEFLATE = 8
+    DEFLATE = 8u16
 }
 
 impl ZipCompression {
@@ -69,15 +69,46 @@ impl ZipArchive {
         self
     }
 
-    pub fn add<P>(&mut self, root: &P) -> &mut Self
+    pub fn add_folder_content<P>(&mut self, root: &P) -> &mut Self
     where
         P: AsRef<Path>
     {
-        let _ = self.add_internal(root, root);
+        let _ = self.add_folder_content_internal(root, root);
         self
     }
 
-    fn add_internal<R, F>(&mut self, root: &R, file: &F) -> Option<()>
+    pub fn add_file<P>(&mut self, file: &P) -> &mut Self
+    where
+        P: AsRef<Path>
+    {
+        let _ = self.add_file_internal(file);
+        self
+    }
+    
+    fn add_file_internal<F>(&mut self, file: &F) -> Option<()>
+    where 
+        F: AsRef<Path>
+    {
+        let file = file.as_ref();
+        
+        if !file.is_file() {
+            return None
+        }
+        
+        let full_name = file.fullname()?;
+        let data = file.read_file().ok()?;
+        
+        let entry = ZipEntry {
+            path: full_name.to_string(),
+            data
+        };
+        
+        self.entries.push(entry);
+        
+        Some(())
+    }
+
+    fn add_folder_content_internal<R, F>(&mut self, root: &R, file: &F) -> Option<()>
     where
         R: AsRef<Path>,
         F: AsRef<Path>
@@ -91,7 +122,7 @@ impl ZipArchive {
 
         for file in file.list_files()? {
             if file.is_dir() {
-                self.add_internal(root, &file)?
+                self.add_folder_content_internal(root, &file)?
             } else if file.is_file() {
                 let bytes = file.read_file().ok()?;
                 let rel_path = file.strip_prefix(root.deref())?
@@ -115,8 +146,8 @@ impl ZipArchive {
         let mut offset = 0;
 
         for entry in &self.entries {
-            let (compression_level, mut compressed) = (
-                    self.compression as u8,
+            let (compression_method, mut compressed) = (
+                    self.compression as u16,
                     self.compression.compress(&entry.data)
                 );
 
@@ -143,7 +174,7 @@ impl ZipArchive {
             let local_header = create_local_header(
                 crc,
                 general_flag,
-                compression_level,
+                compression_method,
                 compressed_size,
                 entry.data.len(),
                 path_bytes
@@ -155,8 +186,8 @@ impl ZipArchive {
 
             let central_header = create_central_header(
                 crc,
-                general_flag,
-                compression_level,
+                general_flag as _,
+                compression_method,
                 compressed_size,
                 entry.data.len(),
                 path_bytes,
@@ -196,51 +227,53 @@ macro_rules! extend {
 
 fn create_local_header(
     crc: u32,
-    general_flag: u8,
-    compression_level: u8,
+    general_flag: u16,
+    compression_method: u16,
     compressed_len: usize,
     data_len: usize,
     path: &[u8]
 ) -> Vec<u8> {
     extend!(
-        &[0x50, 0x4B, 0x03, 0x04],
-        &[20, 0],
-        &[general_flag, 0],
-        &[compression_level, 0],
-        &[0, 0, 0, 0],
-        &crc.to_le_bytes(),
-        &(compressed_len as u32).to_le_bytes(),
-        &(data_len as u32).to_le_bytes(),
-        &(path.len() as u16).to_le_bytes(),
-        &[0, 0],
+        [0x50, 0x4B, 0x03, 0x04],
+        20u16.to_le_bytes(),
+        general_flag.to_le_bytes(),
+        compression_method.to_le_bytes(),
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
+        crc.to_le_bytes(),
+        (compressed_len as u32).to_le_bytes(),
+        (data_len as u32).to_le_bytes(),
+        (path.len() as u16).to_le_bytes(),
+        0u16.to_le_bytes(),
         path,
     )
 }
 
 fn create_central_header(
     crc: u32,
-    general_flag: u8,
-    compression_level: u8,
+    general_flag: u16,
+    compression_method: u16,
     compressed_len: usize,
     data_len: usize,
     path: &[u8],
     offset: usize
 ) -> Vec<u8> {
     extend!(
-        &[0x50, 0x4B, 0x01, 0x02],
-        &[0x14, 0x00],
-        &[20, 0],
-        &[general_flag, 0],
-        &[compression_level, 0],
-        &[0, 0, 0, 0],
+        [0x50, 0x4B, 0x01, 0x02],
+        [0x14, 0x00],
+        &20u16.to_le_bytes(),
+        general_flag.to_le_bytes(),
+        compression_method.to_le_bytes(),
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
         &crc.to_le_bytes(),
         &(compressed_len as u32).to_le_bytes(),
         &(data_len as u32).to_le_bytes(),
         &(path.len() as u16).to_le_bytes(),
-        &[0, 0],
-        &[0, 0],
-        &[0, 0],
-        &[0, 0],
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
         &[0, 0, 0, 0],
         &(offset as u32).to_le_bytes(),
         path
@@ -255,8 +288,8 @@ fn create_end_of_central_directory(
 ) -> Vec<u8> {
     let mut vec = extend!(
         &[0x50, 0x4B, 0x05, 0x06],
-        &[0, 0],
-        &[0, 0],
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
         &(entries_len as u16).to_le_bytes(),
         &(entries_len as u16).to_le_bytes(),
         &(central_size as u32).to_le_bytes(),
@@ -273,35 +306,19 @@ fn create_end_of_central_directory(
 }
 
 fn crc32(data: &[u8]) -> u32 {
-    const TABLE: [u32; 256] = generate_crc32_table();
-    let mut crc = 0xFFFF_FFFF;
+    let polynomial: u32 = 0xEDB88320;
+    let mut crc: u32 = 0xFFFFFFFF;
 
-    for &b in data {
-        let idx = ((crc ^ (b as u32)) & 0xFF) as usize;
-        crc = (crc >> 8) ^ TABLE[idx];
+    for &byte in data {
+        let current_byte = byte as u32;
+        crc ^= current_byte;
+        for _ in 0..8 {
+            let mask = if crc & 1 != 0 { polynomial } else { 0 };
+            crc = (crc >> 1) ^ mask;
+        }
     }
 
     !crc
-}
-
-const fn generate_crc32_table() -> [u32; 256] {
-    let mut table = [0u32; 256];
-    let mut i = 0;
-    while i < 256 {
-        let mut crc = i as u32;
-        let mut j = 0;
-        while j < 8 {
-            crc = if (crc & 1) != 0 {
-                0xEDB88320 ^ (crc >> 1)
-            } else {
-                crc >> 1
-            };
-            j += 1;
-        }
-        table[i] = crc;
-        i += 1;
-    }
-    table
 }
 
 fn init_keys<S>(password: &S) -> (u32, u32, u32)
@@ -339,7 +356,7 @@ fn crc32_byte(crc: u32, b: u8) -> u32 {
 }
 
 fn decrypt_byte(k2: u32) -> u8 {
-    let temp = ((k2 | 2) as u64 * ((k2 ^ 1) as u64)) >> 8;
+    let temp = (k2 | 2).wrapping_mul(k2 ^ 1) >> 8;
     (temp & 0xFF) as u8
 }
 
@@ -353,7 +370,7 @@ fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> 
         update_keys(enc, k0, k1, k2);
     }
 
-    let final_byte = ((crc >> 24) & 0xFF) as u8 ^ decrypt_byte(*k2);
+    let final_byte = (crc >> 24) as u8 ^ decrypt_byte(*k2);
     header.push(final_byte);
     update_keys(final_byte, k0, k1, k2);
 
