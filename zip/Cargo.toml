@@ -6,3 +6,5 @@ edition = "2024"
 [dependencies]
 miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }
 utils = { path = "../utils" }
+rand_chacha = { version = "0.9.0", default-features = false }
+windows-sys = { version = "0.59.0", features = ["Win32_System_Time"] }

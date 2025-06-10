@@ -8,9 +8,9 @@ use core::ops::{Deref, Div};
 use core::ptr::null_mut;
 use core::slice::from_raw_parts;
 use windows_sys::core::PWSTR;
-use windows_sys::Win32::Foundation::{CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK};
+use windows_sys::Win32::Foundation::{CloseHandle, FALSE, FILETIME, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK};
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS};
-use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FIND_DATAW};
+use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesExW, GetFileAttributesW, GetFileExInfoStandard, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FILE_ATTRIBUTE_DATA, WIN32_FIND_DATAW};
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 use windows_sys::Win32::System::SystemInformation::GetTickCount64;
@@ -53,6 +53,22 @@ impl Path {
             } else {
                 Some(attr)
             }
+        }
+    }
+    
+    pub fn get_filetime(&self) -> Option<FILETIME> {
+        let mut data: WIN32_FILE_ATTRIBUTE_DATA = unsafe { zeroed() };
+
+        if unsafe {
+           GetFileAttributesExW(
+               self.to_wide().as_ptr(),
+               GetFileExInfoStandard,
+               &mut data as *mut _ as *mut _
+           )
+        } == FALSE {
+            None
+        } else {
+            Some(data.ftLastWriteTime)
         }
     }
 
@@ -285,12 +301,11 @@ where T: AsRef<[u8]> + ?Sized
 }
 
 pub fn write_file(path: &Path, data: &[u8]) -> Result<(), u32> {
-    if let Some(parent) = path.parent() {
-        if !parent.is_exists() {
-            if let Err(e) = parent.mkdirs() {
-                return Err(e);
-            }
-        }
+    if let Some(parent) = path.parent() 
+        && !parent.is_exists() 
+        && let Err(e) = parent.mkdirs() 
+    { 
+        return Err(e);
     }
     
     let wide = path.to_wide();
@@ -457,10 +472,8 @@ pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), u32>
     let src_wide = src.to_wide();
     let dst_wide = dst.to_wide();
 
-    if let Some(parent) = dst.parent() {
-        if !parent.is_exists() {
-            parent.mkdirs()?;
-        }
+    if let Some(parent) = dst.parent() && !parent.is_exists() {
+        parent.mkdirs()?;
     }
 
     unsafe {

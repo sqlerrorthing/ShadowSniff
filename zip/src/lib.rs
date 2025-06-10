@@ -3,19 +3,27 @@ extern crate alloc;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use core::mem::zeroed;
 use core::ops::Deref;
 use miniz_oxide::deflate::compress_to_vec;
+use rand_chacha::rand_core::RngCore;
+use rand_chacha::ChaCha20Rng;
 use utils::path::Path;
+use utils::random::ChaCha20RngExt;
+use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
+use windows_sys::Win32::System::Time::FileTimeToSystemTime;
 
 pub struct ZipEntry {
     path: String,
-    data: Vec<u8>
+    data: Vec<u8>,
+    modified: (u16, u16)
 }
 
 #[derive(Default)]
 pub struct ZipArchive {
     entries: Vec<ZipEntry>,
     comment: Option<String>,
+    password: Option<String>,
     compression: ZipCompression,
 }
 
@@ -27,13 +35,13 @@ impl Deref for ZipEntry {
     }
 }
 
-#[repr(u8)]
+#[repr(u16)]
 #[derive(Copy, Clone, Default)]
 pub enum ZipCompression {
-    NONE = 0,
+    NONE = 0u16,
     
     #[default]
-    DEFLATE = 8
+    DEFLATE = 8u16
 }
 
 impl ZipCompression {
@@ -54,20 +62,61 @@ impl ZipArchive {
         self
     }
     
+    pub fn password<S>(&mut self, password: S) -> &mut Self
+    where
+        S: AsRef<str>
+    {
+        self.password = Some(password.as_ref().to_string());
+        self
+    }
+    
     pub fn compression(&mut self, compression: ZipCompression) -> &mut Self {
         self.compression = compression;
         self
     }
 
-    pub fn add<P>(&mut self, root: &P) -> &mut Self
+    pub fn add_folder_content<P>(&mut self, root: &P) -> &mut Self
     where
         P: AsRef<Path>
     {
-        let _ = self.add_internal(root, root);
+        let _ = self.add_folder_content_internal(root, root);
         self
     }
 
-    fn add_internal<R, F>(&mut self, root: &R, file: &F) -> Option<()>
+    pub fn add_file<P>(&mut self, file: &P) -> &mut Self
+    where
+        P: AsRef<Path>
+    {
+        let _ = self.add_file_internal(file);
+        self
+    }
+    
+    fn add_file_internal<F>(&mut self, file: &F) -> Option<()>
+    where 
+        F: AsRef<Path>
+    {
+        let file = file.as_ref();
+        
+        if !file.is_file() {
+            return None
+        }
+        
+        let full_name = file.fullname()?;
+        let file_time = file.get_filetime()?;
+        let data = file.read_file().ok()?;
+        
+        let entry = ZipEntry {
+            path: full_name.to_string(),
+            data,
+            modified: filetime_to_dos_date_time(&file_time)
+        };
+        
+        self.entries.push(entry);
+        
+        Some(())
+    }
+
+    fn add_folder_content_internal<R, F>(&mut self, root: &R, file: &F) -> Option<()>
     where
         R: AsRef<Path>,
         F: AsRef<Path>
@@ -81,15 +130,17 @@ impl ZipArchive {
 
         for file in file.list_files()? {
             if file.is_dir() {
-                self.add_internal(root, &file)?
+                self.add_folder_content_internal(root, &file)?
             } else if file.is_file() {
-                let bytes = file.read_file().ok()?;
+                let data = file.read_file().ok()?;
+                let file_time = file.get_filetime()?;
                 let rel_path = file.strip_prefix(root.deref())?
                     .strip_prefix("\\")?;
 
                 let entry = ZipEntry {
                     path: rel_path.to_string(),
-                    data: bytes
+                    data,
+                    modified: filetime_to_dos_date_time(&file_time)
                 };
 
                 self.entries.push(entry);
@@ -105,49 +156,106 @@ impl ZipArchive {
         let mut offset = 0;
 
         for entry in &self.entries {
-            let (compression_level, compressed) = (
-                    self.compression as u8,
+            let (compression_method, compressed) = (
+                    self.compression as u16,
                     self.compression.compress(&entry.data)
                 );
 
-            let path_bytes = entry.path.as_bytes();
             let crc = crc32(&entry.data);
+            let path_bytes = entry.path.as_bytes();
+
+            let(compressed, encryption_header, general_flag) =
+                protect_data(crc, compressed, self.password.as_ref());
+
+            let compressed_size = encryption_header
+                .map_or(0, |h| h.len()) + compressed.len();
 
             let local_header = create_local_header(
                 crc,
-                compression_level,
-                compressed.len(),
+                general_flag,
+                compression_method,
+                entry.modified,
+                compressed_size,
                 entry.data.len(),
                 path_bytes
             );
 
             zip_data.extend(&local_header);
+
+            if let Some(header) = encryption_header.as_ref() {
+                zip_data.extend(header)
+            }
+
             zip_data.extend(&compressed);
 
             let central_header = create_central_header(
                 crc,
-                compressed.len(),
+                general_flag,
+                compression_method,
+                entry.modified,
+                compressed_size,
                 entry.data.len(),
                 path_bytes,
                 offset
             );
 
             central_directory.extend(&central_header);
-            offset += local_header.len() + compressed.len();
+            offset += local_header.len() + compressed_size;
         }
 
         zip_data.extend(&central_directory);
 
-        let end_of_central_directory = create_end_of_central_directory(
+        let eocd = create_end_of_central_directory(
             self.entries.len(),
             central_directory.len(),
             offset,
             self.comment.as_ref()
         );
 
-        zip_data.extend(end_of_central_directory);
+        zip_data.extend(eocd);
 
         zip_data
+    }
+}
+
+fn filetime_to_dos_date_time(file_time: &FILETIME) -> (u16, u16) {
+    let mut sys_time: SYSTEMTIME = unsafe { zeroed() };
+
+    unsafe {
+        if FileTimeToSystemTime(file_time, &mut sys_time) == 0 {
+            return (0, 0);
+        }
+    }
+
+    let dos_time: u16 = (sys_time.wHour << 11)
+        | (sys_time.wMinute << 5) | (sys_time.wSecond / 2);
+
+    let year = sys_time.wYear as i32;
+    let dos_date: u16 = (((year - 1980) as u16) << 9)
+        | sys_time.wMonth << 5
+        | sys_time.wDay;
+
+    (dos_time, dos_date)
+}
+
+fn protect_data(
+    crc: u32,
+    mut payload: Vec<u8>,
+    password: Option<&String>
+) -> (Vec<u8>, Option<[u8; 12]>, u16) {
+    if let Some(password) = password {
+        let (mut k0, mut k1, mut k2) = init_keys(password);
+        let header = gen_encryption_header(crc, &mut k0, &mut k1, &mut k2);
+
+        for byte in &mut payload {
+            let plain = *byte;
+            *byte ^= decrypt_byte(k2);
+            update_keys(plain, &mut k0, &mut k1, &mut k2);
+        }
+
+        (payload, Some(header), 0x01)
+    } else {
+        (payload, None, 0x00)
     }
 }
 
@@ -165,48 +273,56 @@ macro_rules! extend {
 
 fn create_local_header(
     crc: u32,
-    compression_level: u8,
+    general_flag: u16,
+    compression_method: u16,
+    modified: (u16, u16),
     compressed_len: usize,
     data_len: usize,
     path: &[u8]
 ) -> Vec<u8> {
     extend!(
-        &[0x50, 0x4B, 0x03, 0x04],
-        &[20, 0],
-        &[0, 0],
-        &[compression_level, 0],
-        &[0, 0, 0, 0],
-        &crc.to_le_bytes(),
-        &(compressed_len as u32).to_le_bytes(),
-        &(data_len as u32).to_le_bytes(),
-        &(path.len() as u16).to_le_bytes(),
-        &[0, 0],
+        [0x50, 0x4B, 0x03, 0x04],
+        20u16.to_le_bytes(),
+        general_flag.to_le_bytes(),
+        compression_method.to_le_bytes(),
+        modified.0.to_le_bytes(),
+        modified.1.to_le_bytes(),
+        crc.to_le_bytes(),
+        (compressed_len as u32).to_le_bytes(),
+        (data_len as u32).to_le_bytes(),
+        (path.len() as u16).to_le_bytes(),
+        0u16.to_le_bytes(),
         path,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn create_central_header(
     crc: u32,
+    general_flag: u16,
+    compression_method: u16,
+    modified: (u16, u16),
     compressed_len: usize,
     data_len: usize,
     path: &[u8],
     offset: usize
 ) -> Vec<u8> {
     extend!(
-        &[0x50, 0x4B, 0x01, 0x02],
-        &[0x14, 0x00],
-        &[20, 0],
-        &[0, 0],
-        &[8, 0],
-        &[0, 0, 0, 0],
+        [0x50, 0x4B, 0x01, 0x02],
+        [0x14, 0x00],
+        &20u16.to_le_bytes(),
+        general_flag.to_le_bytes(),
+        compression_method.to_le_bytes(),
+        modified.0.to_le_bytes(),
+        modified.1.to_le_bytes(),
         &crc.to_le_bytes(),
         &(compressed_len as u32).to_le_bytes(),
         &(data_len as u32).to_le_bytes(),
         &(path.len() as u16).to_le_bytes(),
-        &[0, 0],
-        &[0, 0],
-        &[0, 0],
-        &[0, 0],
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
         &[0, 0, 0, 0],
         &(offset as u32).to_le_bytes(),
         path
@@ -221,8 +337,8 @@ fn create_end_of_central_directory(
 ) -> Vec<u8> {
     let mut vec = extend!(
         &[0x50, 0x4B, 0x05, 0x06],
-        &[0, 0],
-        &[0, 0],
+        0u16.to_le_bytes(),
+        0u16.to_le_bytes(),
         &(entries_len as u16).to_le_bytes(),
         &(entries_len as u16).to_le_bytes(),
         &(central_size as u32).to_le_bytes(),
@@ -239,33 +355,75 @@ fn create_end_of_central_directory(
 }
 
 fn crc32(data: &[u8]) -> u32 {
-    const TABLE: [u32; 256] = generate_crc32_table();
-    let mut crc = 0xFFFF_FFFF;
+    let polynomial: u32 = 0xEDB88320;
+    let mut crc: u32 = 0xFFFFFFFF;
 
-    for &b in data {
-        let idx = ((crc ^ (b as u32)) & 0xFF) as usize;
-        crc = (crc >> 8) ^ TABLE[idx];
+    for &byte in data {
+        let current_byte = byte as u32;
+        crc ^= current_byte;
+        for _ in 0..8 {
+            let mask = if crc & 1 != 0 { polynomial } else { 0 };
+            crc = (crc >> 1) ^ mask;
+        }
     }
 
     !crc
 }
 
-const fn generate_crc32_table() -> [u32; 256] {
-    let mut table = [0u32; 256];
-    let mut i = 0;
-    while i < 256 {
-        let mut crc = i as u32;
-        let mut j = 0;
-        while j < 8 {
-            crc = if (crc & 1) != 0 {
-                0xEDB88320 ^ (crc >> 1)
-            } else {
-                crc >> 1
-            };
-            j += 1;
-        }
-        table[i] = crc;
-        i += 1;
+fn init_keys<S>(password: &S) -> (u32, u32, u32)
+where 
+    S: AsRef<str>
+{
+    let mut k0 = 0x12345678;
+    let mut k1 = 0x23456789;
+    let mut k2 = 0x34567890;
+    
+    for b in password.as_ref().bytes() {
+        update_keys(b, &mut k0, &mut k1, &mut k2);
     }
-    table
+
+    (k0, k1, k2)
+}
+
+fn update_keys(byte: u8, k0: &mut u32, k1: &mut u32, k2: &mut u32) {
+    *k0 = crc32_byte(*k0, byte);
+    *k1 = k1.wrapping_add(*k0 & 0xFF);
+    *k1 = k1.wrapping_mul(134775813).wrapping_add(1);
+    *k2 = crc32_byte(*k2, (*k1 >> 24) as u8);
+}
+
+fn crc32_byte(crc: u32, b: u8) -> u32 {
+    let mut c = crc ^ (b as u32);
+    for _ in 0..8 {
+        c = if c & 1 != 0 {
+            0xEDB88320 ^ (c >> 1)
+        } else {
+            c >> 1
+        };
+    }
+
+    c
+}
+
+fn decrypt_byte(k2: u32) -> u8 {
+    let temp = (k2 | 2).wrapping_mul(k2 ^ 1) >> 8;
+    (temp & 0xFF) as u8
+}
+
+fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> [u8; 12] {
+    let mut rng = ChaCha20Rng::from_nano_time();
+    let mut header = [0u8; 12];
+
+    for i in header.iter_mut().take(11) {
+        let plain = rng.next_u32() as u8;
+        *i = plain ^ decrypt_byte(*k2);
+        update_keys(plain, k0, k1, k2);
+    }
+
+    let final_byte = (crc >> 24) as u8 ^ decrypt_byte(*k2);
+
+    header[11] = final_byte;
+    update_keys(final_byte, k0, k1, k2);
+
+    header
 }
