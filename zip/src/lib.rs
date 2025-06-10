@@ -2,7 +2,6 @@
 extern crate alloc;
 
 use alloc::string::{String, ToString};
-use alloc::vec;
 use alloc::vec::Vec;
 use core::ops::Deref;
 use miniz_oxide::deflate::compress_to_vec;
@@ -149,30 +148,18 @@ impl ZipArchive {
         let mut offset = 0;
 
         for entry in &self.entries {
-            let (compression_method, mut compressed) = (
+            let (compression_method, compressed) = (
                     self.compression as u16,
                     self.compression.compress(&entry.data)
                 );
 
-            let path_bytes = entry.path.as_bytes();
             let crc = crc32(&entry.data);
-            
-            let (final_data, encryption_header, general_flag) = if let Some(password) = &self.password {
-                let (mut key0, mut key1, mut key2) = init_keys(password);
-                let header = gen_encryption_header(crc, &mut key0, &mut key1, &mut key2);
-                
-                for byte in &mut compressed {
-                    let k = decrypt_byte(key2);
-                    *byte ^= k;
-                    update_keys(*byte, &mut key0, &mut key1, &mut key2);
-                }
+            let path_bytes = entry.path.as_bytes();
 
-                (compressed, header, 0x01)
-            } else {
-                (compressed, vec![0u8; 0], 0x00)
-            };
+            let(compressed, encryption_header, general_flag) =
+                protect_data(crc, compressed, self.password.as_ref());
 
-            let compressed_size = encryption_header.len() + final_data.len();
+            let compressed_size = encryption_header.len() + compressed.len();
 
             let local_header = create_local_header(
                 crc,
@@ -185,11 +172,11 @@ impl ZipArchive {
 
             zip_data.extend(&local_header);
             zip_data.extend(&encryption_header);
-            zip_data.extend(&final_data);
+            zip_data.extend(&compressed);
 
             let central_header = create_central_header(
                 crc,
-                general_flag as _,
+                general_flag,
                 compression_method,
                 compressed_size,
                 entry.data.len(),
@@ -213,6 +200,27 @@ impl ZipArchive {
         zip_data.extend(eocd);
 
         zip_data
+    }
+}
+
+fn protect_data(
+    crc: u32,
+    mut payload: Vec<u8>,
+    password: Option<&String>
+) -> (Vec<u8>, [u8; 12], u16) {
+    if let Some(password) = password {
+        let (mut key0, mut key1, mut key2) = init_keys(password);
+        let header = gen_encryption_header(crc, &mut key0, &mut key1, &mut key2);
+
+        for byte in &mut payload {
+            let k = decrypt_byte(key2);
+            *byte ^= k;
+            update_keys(*byte, &mut key0, &mut key1, &mut key2);
+        }
+
+        (payload, header, 0x01)
+    } else {
+        (payload, [0u8; 12], 0x00)
     }
 }
 
@@ -363,19 +371,30 @@ fn decrypt_byte(k2: u32) -> u8 {
     (temp & 0xFF) as u8
 }
 
-fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> Vec<u8> {
+fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> [u8; 12] {
     let mut rng = ChaCha20Rng::from_nano_time();
-    let mut header = Vec::with_capacity(12);
+    let mut header = [0u8; 12];
 
-    for _ in 0..11 {
+    for i in 0..11 {
         let enc = rng.next_u32() as u8 ^ decrypt_byte(*k2);
-        header.push(enc);
+        header[i] = enc;
         update_keys(enc, k0, k1, k2);
     }
 
     let final_byte = (crc >> 24) as u8 ^ decrypt_byte(*k2);
-    header.push(final_byte);
+
+    header[11] = final_byte;
     update_keys(final_byte, k0, k1, k2);
 
     header
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::crc32;
+
+    #[test]
+    fn test() {
+        assert_eq!(crc32(b"hi"), 0xBE417BB4);
+    }
 }
