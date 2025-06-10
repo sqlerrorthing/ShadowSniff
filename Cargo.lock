@@ -509,4 +509,5 @@ dependencies = [
  "miniz_oxide",
  "rand_chacha",
  "utils",
+ "windows-sys",
 ]

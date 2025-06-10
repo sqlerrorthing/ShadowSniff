@@ -3,16 +3,20 @@ extern crate alloc;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use core::mem::zeroed;
 use core::ops::Deref;
 use miniz_oxide::deflate::compress_to_vec;
 use rand_chacha::rand_core::RngCore;
 use rand_chacha::ChaCha20Rng;
 use utils::path::Path;
 use utils::random::ChaCha20RngExt;
+use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
+use windows_sys::Win32::System::Time::FileTimeToSystemTime;
 
 pub struct ZipEntry {
     path: String,
     data: Vec<u8>,
+    modified: (u16, u16)
 }
 
 #[derive(Default)]
@@ -98,11 +102,13 @@ impl ZipArchive {
         }
         
         let full_name = file.fullname()?;
+        let file_time = file.get_filetime()?;
         let data = file.read_file().ok()?;
         
         let entry = ZipEntry {
             path: full_name.to_string(),
-            data
+            data,
+            modified: filetime_to_dos_date_time(&file_time)
         };
         
         self.entries.push(entry);
@@ -126,13 +132,15 @@ impl ZipArchive {
             if file.is_dir() {
                 self.add_folder_content_internal(root, &file)?
             } else if file.is_file() {
-                let bytes = file.read_file().ok()?;
+                let data = file.read_file().ok()?;
+                let file_time = file.get_filetime()?;
                 let rel_path = file.strip_prefix(root.deref())?
                     .strip_prefix("\\")?;
 
                 let entry = ZipEntry {
                     path: rel_path.to_string(),
-                    data: bytes
+                    data,
+                    modified: filetime_to_dos_date_time(&file_time)
                 };
 
                 self.entries.push(entry);
@@ -166,6 +174,7 @@ impl ZipArchive {
                 crc,
                 general_flag,
                 compression_method,
+                entry.modified,
                 compressed_size,
                 entry.data.len(),
                 path_bytes
@@ -183,6 +192,7 @@ impl ZipArchive {
                 crc,
                 general_flag,
                 compression_method,
+                entry.modified,
                 compressed_size,
                 entry.data.len(),
                 path_bytes,
@@ -206,6 +216,26 @@ impl ZipArchive {
 
         zip_data
     }
+}
+
+fn filetime_to_dos_date_time(file_time: &FILETIME) -> (u16, u16) {
+    let mut sys_time: SYSTEMTIME = unsafe { zeroed() };
+
+    unsafe {
+        if FileTimeToSystemTime(file_time, &mut sys_time) == 0 {
+            return (0, 0);
+        }
+    }
+
+    let dos_time: u16 = (sys_time.wHour << 11)
+        | (sys_time.wMinute << 5) | (sys_time.wSecond / 2);
+
+    let year = sys_time.wYear as i32;
+    let dos_date: u16 = (((year - 1980) as u16) << 9)
+        | sys_time.wMonth << 5
+        | sys_time.wDay;
+
+    (dos_time, dos_date)
 }
 
 fn protect_data(
@@ -245,6 +275,7 @@ fn create_local_header(
     crc: u32,
     general_flag: u16,
     compression_method: u16,
+    modified: (u16, u16),
     compressed_len: usize,
     data_len: usize,
     path: &[u8]
@@ -254,8 +285,8 @@ fn create_local_header(
         20u16.to_le_bytes(),
         general_flag.to_le_bytes(),
         compression_method.to_le_bytes(),
-        0u16.to_le_bytes(),
-        0u16.to_le_bytes(),
+        modified.0.to_le_bytes(),
+        modified.1.to_le_bytes(),
         crc.to_le_bytes(),
         (compressed_len as u32).to_le_bytes(),
         (data_len as u32).to_le_bytes(),
@@ -269,6 +300,7 @@ fn create_central_header(
     crc: u32,
     general_flag: u16,
     compression_method: u16,
+    modified: (u16, u16),
     compressed_len: usize,
     data_len: usize,
     path: &[u8],
@@ -280,8 +312,8 @@ fn create_central_header(
         &20u16.to_le_bytes(),
         general_flag.to_le_bytes(),
         compression_method.to_le_bytes(),
-        0u16.to_le_bytes(),
-        0u16.to_le_bytes(),
+        modified.0.to_le_bytes(),
+        modified.1.to_le_bytes(),
         &crc.to_le_bytes(),
         &(compressed_len as u32).to_le_bytes(),
         &(data_len as u32).to_le_bytes(),
@@ -368,7 +400,7 @@ fn crc32_byte(crc: u32, b: u8) -> u32 {
             c >> 1
         };
     }
-    
+
     c
 }
 
