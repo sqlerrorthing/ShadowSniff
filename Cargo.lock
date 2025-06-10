@@ -13,6 +13,7 @@ dependencies = [
  "utils",
  "wee_alloc",
  "windows-sys",
+ "zip",
 ]
 
 [[package]]

@@ -343,17 +343,17 @@ where
     F: Fn(&Path) -> bool
 {
     let search_path = if path.ends_with('\\') {
-        format!("{}*", path)
+        format!("{path}*")
     } else {
-        format!("{}\\*", path)
+        format!("{path}\\*")
     };
 
-    let wide_search = search_path.to_wide();
+    let search_path = search_path.to_wide();
     
     unsafe {
         let mut data: WIN32_FIND_DATAW = zeroed();
 
-        let handle = FindFirstFileW(wide_search.as_ptr(), &mut data);
+        let handle = FindFirstFileW(search_path.as_ptr(), &mut data);
         if handle == INVALID_HANDLE_VALUE {
             return None
         }
