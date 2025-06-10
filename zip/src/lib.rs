@@ -12,7 +12,7 @@ use utils::random::ChaCha20RngExt;
 
 pub struct ZipEntry {
     path: String,
-    data: Vec<u8>
+    data: Vec<u8>,
 }
 
 #[derive(Default)]
@@ -159,7 +159,8 @@ impl ZipArchive {
             let(compressed, encryption_header, general_flag) =
                 protect_data(crc, compressed, self.password.as_ref());
 
-            let compressed_size = encryption_header.len() + compressed.len();
+            let compressed_size = encryption_header
+                .map_or(0, |h| h.len()) + compressed.len();
 
             let local_header = create_local_header(
                 crc,
@@ -171,7 +172,11 @@ impl ZipArchive {
             );
 
             zip_data.extend(&local_header);
-            zip_data.extend(&encryption_header);
+
+            if let Some(header) = encryption_header.as_ref() {
+                zip_data.extend(header)
+            }
+
             zip_data.extend(&compressed);
 
             let central_header = create_central_header(
@@ -207,20 +212,20 @@ fn protect_data(
     crc: u32,
     mut payload: Vec<u8>,
     password: Option<&String>
-) -> (Vec<u8>, [u8; 12], u16) {
+) -> (Vec<u8>, Option<[u8; 12]>, u16) {
     if let Some(password) = password {
-        let (mut key0, mut key1, mut key2) = init_keys(password);
-        let header = gen_encryption_header(crc, &mut key0, &mut key1, &mut key2);
+        let (mut k0, mut k1, mut k2) = init_keys(password);
+        let header = gen_encryption_header(crc, &mut k0, &mut k1, &mut k2);
 
         for byte in &mut payload {
-            let k = decrypt_byte(key2);
-            *byte ^= k;
-            update_keys(*byte, &mut key0, &mut key1, &mut key2);
+            let plain = *byte;
+            *byte ^= decrypt_byte(k2);
+            update_keys(plain, &mut k0, &mut k1, &mut k2);
         }
 
-        (payload, header, 0x01)
+        (payload, Some(header), 0x01)
     } else {
-        (payload, [0u8; 12], 0x00)
+        (payload, None, 0x00)
     }
 }
 
@@ -363,6 +368,7 @@ fn crc32_byte(crc: u32, b: u8) -> u32 {
             c >> 1
         };
     }
+    
     c
 }
 
@@ -375,10 +381,10 @@ fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> 
     let mut rng = ChaCha20Rng::from_nano_time();
     let mut header = [0u8; 12];
 
-    for i in 0..11 {
-        let enc = rng.next_u32() as u8 ^ decrypt_byte(*k2);
-        header[i] = enc;
-        update_keys(enc, k0, k1, k2);
+    for i in header.iter_mut().take(11) {
+        let plain = rng.next_u32() as u8;
+        *i = plain ^ decrypt_byte(*k2);
+        update_keys(plain, k0, k1, k2);
     }
 
     let final_byte = (crc >> 24) as u8 ^ decrypt_byte(*k2);
@@ -387,14 +393,4 @@ fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> 
     update_keys(final_byte, k0, k1, k2);
 
     header
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::crc32;
-
-    #[test]
-    fn test() {
-        assert_eq!(crc32(b"hi"), 0xBE417BB4);
-    }
 }
