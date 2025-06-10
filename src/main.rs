@@ -45,6 +45,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
 
     let zip = ZipArchive::default()
         .comment("Lol its comment")
+        .password("x")
         .add(&out)
         .create();
 

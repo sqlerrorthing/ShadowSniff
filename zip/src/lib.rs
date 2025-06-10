@@ -2,6 +2,7 @@
 extern crate alloc;
 
 use alloc::string::{String, ToString};
+use alloc::vec;
 use alloc::vec::Vec;
 use core::ops::Deref;
 use miniz_oxide::deflate::compress_to_vec;
@@ -16,6 +17,7 @@ pub struct ZipEntry {
 pub struct ZipArchive {
     entries: Vec<ZipEntry>,
     comment: Option<String>,
+    password: Option<String>,
     compression: ZipCompression,
 }
 
@@ -51,6 +53,14 @@ impl ZipArchive {
         S: AsRef<str>
     {
         self.comment = Some(comment.as_ref().to_string());
+        self
+    }
+    
+    pub fn password<S>(&mut self, password: S) -> &mut Self
+    where
+        S: AsRef<str>
+    {
+        self.password = Some(password.as_ref().to_string());
         self
     }
     
@@ -105,47 +115,68 @@ impl ZipArchive {
         let mut offset = 0;
 
         for entry in &self.entries {
-            let (compression_level, compressed) = (
+            let (compression_level, mut compressed) = (
                     self.compression as u8,
                     self.compression.compress(&entry.data)
                 );
 
             let path_bytes = entry.path.as_bytes();
             let crc = crc32(&entry.data);
+            
+            let (final_data, encryption_header, general_flag) = if let Some(password) = &self.password {
+                let (mut key0, mut key1, mut key2) = init_keys(password);
+                let header = gen_encryption_header(crc, &mut key0, &mut key1, &mut key2);
+                
+                for byte in &mut compressed {
+                    let k = decrypt_byte(key2);
+                    *byte ^= k;
+                    update_keys(*byte, &mut key0, &mut key1, &mut key2);
+                }
+
+                (compressed, header, 0x01)
+            } else {
+                (compressed, vec![0u8; 0], 0x00)
+            };
+
+            let compressed_size = encryption_header.len() + final_data.len();
 
             let local_header = create_local_header(
                 crc,
+                general_flag,
                 compression_level,
-                compressed.len(),
+                compressed_size,
                 entry.data.len(),
                 path_bytes
             );
 
             zip_data.extend(&local_header);
-            zip_data.extend(&compressed);
+            zip_data.extend(&encryption_header);
+            zip_data.extend(&final_data);
 
             let central_header = create_central_header(
                 crc,
-                compressed.len(),
+                general_flag,
+                compression_level,
+                compressed_size,
                 entry.data.len(),
                 path_bytes,
                 offset
             );
 
             central_directory.extend(&central_header);
-            offset += local_header.len() + compressed.len();
+            offset += local_header.len() + compressed_size;
         }
 
         zip_data.extend(&central_directory);
 
-        let end_of_central_directory = create_end_of_central_directory(
+        let eocd = create_end_of_central_directory(
             self.entries.len(),
             central_directory.len(),
             offset,
             self.comment.as_ref()
         );
 
-        zip_data.extend(end_of_central_directory);
+        zip_data.extend(eocd);
 
         zip_data
     }
@@ -165,6 +196,7 @@ macro_rules! extend {
 
 fn create_local_header(
     crc: u32,
+    general_flag: u8,
     compression_level: u8,
     compressed_len: usize,
     data_len: usize,
@@ -173,7 +205,7 @@ fn create_local_header(
     extend!(
         &[0x50, 0x4B, 0x03, 0x04],
         &[20, 0],
-        &[0, 0],
+        &[general_flag, 0],
         &[compression_level, 0],
         &[0, 0, 0, 0],
         &crc.to_le_bytes(),
@@ -187,6 +219,8 @@ fn create_local_header(
 
 fn create_central_header(
     crc: u32,
+    general_flag: u8,
+    compression_level: u8,
     compressed_len: usize,
     data_len: usize,
     path: &[u8],
@@ -196,8 +230,8 @@ fn create_central_header(
         &[0x50, 0x4B, 0x01, 0x02],
         &[0x14, 0x00],
         &[20, 0],
-        &[0, 0],
-        &[8, 0],
+        &[general_flag, 0],
+        &[compression_level, 0],
         &[0, 0, 0, 0],
         &crc.to_le_bytes(),
         &(compressed_len as u32).to_le_bytes(),
@@ -268,4 +302,60 @@ const fn generate_crc32_table() -> [u32; 256] {
         i += 1;
     }
     table
+}
+
+fn init_keys<S>(password: &S) -> (u32, u32, u32)
+where 
+    S: AsRef<str>
+{
+    let mut k0 = 0x12345678;
+    let mut k1 = 0x23456789;
+    let mut k2 = 0x34567890;
+    
+    for b in password.as_ref().bytes() {
+        update_keys(b, &mut k0, &mut k1, &mut k2);
+    }
+
+    (k0, k1, k2)
+}
+
+fn update_keys(byte: u8, k0: &mut u32, k1: &mut u32, k2: &mut u32) {
+    *k0 = crc32_byte(*k0, byte);
+    *k1 = k1.wrapping_add(*k0 & 0xFF);
+    *k1 = k1.wrapping_mul(134775813).wrapping_add(1);
+    *k2 = crc32_byte(*k2, (*k1 >> 24) as u8);
+}
+
+fn crc32_byte(crc: u32, b: u8) -> u32 {
+    let mut c = crc ^ (b as u32);
+    for _ in 0..8 {
+        c = if c & 1 != 0 {
+            0xEDB88320 ^ (c >> 1)
+        } else {
+            c >> 1
+        };
+    }
+    c
+}
+
+fn decrypt_byte(k2: u32) -> u8 {
+    let temp = ((k2 | 2) as u64 * ((k2 ^ 1) as u64)) >> 8;
+    (temp & 0xFF) as u8
+}
+
+fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> Vec<u8> {
+    let mut rng = 0u8;
+    let mut header = Vec::with_capacity(12);
+    for _ in 0..11 {
+        rng = rng.wrapping_add(1);
+        let enc = rng ^ decrypt_byte(*k2);
+        header.push(enc);
+        update_keys(enc, k0, k1, k2);
+    }
+
+    let final_byte = ((crc >> 24) & 0xFF) as u8 ^ decrypt_byte(*k2);
+    header.push(final_byte);
+    update_keys(final_byte, k0, k1, k2);
+    
+    header
 }
