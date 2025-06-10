@@ -1,6 +1,7 @@
 #![no_std]
 extern crate alloc;
 
+use crate::ZipCompression::DEFLATE;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::ops::Deref;
@@ -15,7 +16,8 @@ pub struct ZipEntry {
 #[derive(Default)]
 pub struct ZipArchive {
     entries: Vec<ZipEntry>,
-    comment: Option<String>
+    comment: Option<String>,
+    compression: ZipCompression,
 }
 
 impl Deref for ZipEntry {
@@ -26,10 +28,26 @@ impl Deref for ZipEntry {
     }
 }
 
+#[repr(u8)]
+#[derive(Copy, Clone, Default)]
+pub enum ZipCompression {
+    #[default]
+    DEFLATE = 8
+}
+
+impl ZipCompression {
+    pub fn compress(&self, data: &[u8]) -> Vec<u8> {
+        match self {
+            DEFLATE => {
+                compress_to_vec(data, 9)
+            }
+        }
+    }
+}
 
 impl ZipArchive {
     pub fn with_comment<S>(comment: S) -> Self
-    where 
+    where
         S: AsRef<str>,
     {
         Self {
@@ -83,89 +101,137 @@ impl ZipArchive {
         let mut offset = 0;
 
         for entry in &self.entries {
-            let compressed = compress_to_vec(&entry.data, 9);
+            let (compression_level, compressed) = (
+                    self.compression as u8,
+                    self.compression.compress(&entry.data)
+                );
 
             let path_bytes = entry.path.as_bytes();
             let crc = crc32(&entry.data);
 
-            let local_header = {
-                let mut h = Vec::new();
-
-                h.extend(&[0x50, 0x4B, 0x03, 0x04]);
-                h.extend(&[20, 0]);
-                h.extend(&[0, 0]);
-                h.extend(&[8, 0]);
-                h.extend(&[0, 0, 0, 0]);
-                h.extend(&crc.to_le_bytes());
-                h.extend(&(compressed.len() as u32).to_le_bytes());
-                h.extend(&(entry.data.len() as u32).to_le_bytes());
-                h.extend(&(path_bytes.len() as u16).to_le_bytes());
-                h.extend(&[0, 0]);
-                h.extend(path_bytes);
-
-                h
-            };
+            let local_header = create_local_header(
+                crc,
+                compression_level,
+                compressed.len(),
+                entry.data.len(),
+                path_bytes
+            );
 
             zip_data.extend(&local_header);
             zip_data.extend(&compressed);
 
-            let central_header = {
-                let mut c = Vec::new();
-
-                c.extend(&[0x50, 0x4B, 0x01, 0x02]);
-                c.extend(&[0x14, 0x00]);
-                c.extend(&[20, 0]);
-                c.extend(&[0, 0]);
-                c.extend(&[8, 0]);
-                c.extend(&[0, 0, 0, 0]);
-                c.extend(&crc.to_le_bytes());
-                c.extend(&(compressed.len() as u32).to_le_bytes());
-                c.extend(&(entry.data.len() as u32).to_le_bytes());
-                c.extend(&(path_bytes.len() as u16).to_le_bytes());
-                c.extend(&[0, 0]);
-                c.extend(&[0, 0]);
-                c.extend(&[0, 0]);
-                c.extend(&[0, 0]);
-                c.extend(&[0, 0, 0, 0]);
-                c.extend(&(offset as u32).to_le_bytes());
-                c.extend(path_bytes);
-
-                c
-            };
+            let central_header = create_central_header(
+                crc,
+                compressed.len(),
+                entry.data.len(),
+                path_bytes,
+                offset
+            );
 
             central_directory.extend(&central_header);
             offset += local_header.len() + compressed.len();
         }
 
-        let central_offset = offset;
-        let central_size = central_directory.len();
-
         zip_data.extend(&central_directory);
 
-        let end_of_central_directory = {
-            let mut e: Vec<u8> = Vec::new();
-
-            e.extend(&[0x50, 0x4B, 0x05, 0x06]);
-            e.extend(&[0, 0]);
-            e.extend(&[0, 0]);
-            e.extend(&(self.entries.len() as u16).to_le_bytes());
-            e.extend(&(self.entries.len() as u16).to_le_bytes());
-            e.extend(&(central_size as u32).to_le_bytes());
-            e.extend(&(central_offset as u32).to_le_bytes());
-
-            if let Some(comment) = &self.comment {
-                let comment = comment.as_bytes();
-                e.extend(&(comment.len() as u16).to_le_bytes());
-                e.extend(comment);
-            }
-
-            e
-        };
+        let end_of_central_directory = create_end_of_central_directory(
+            self.entries.len(),
+            central_directory.len(),
+            offset,
+            self.comment.as_ref()
+        );
 
         zip_data.extend(end_of_central_directory);
 
         zip_data
     }
+}
+
+macro_rules! extend {
+    ($($data:expr),+ $(,)?) => {{
+        let mut extended = Vec::new();
+
+        $(
+            extended.extend($data);
+        )+
+
+        extended
+    }};
+}
+
+fn create_local_header(
+    crc: u32,
+    compression_level: u8,
+    compressed_len: usize,
+    data_len: usize,
+    path: &[u8]
+) -> Vec<u8> {
+    extend!(
+        &[0x50, 0x4B, 0x03, 0x04],
+        &[20, 0],
+        &[0, 0],
+        &[compression_level, 0],
+        &[0, 0, 0, 0],
+        &crc.to_le_bytes(),
+        &(compressed_len as u32).to_le_bytes(),
+        &(data_len as u32).to_le_bytes(),
+        &(path.len() as u16).to_le_bytes(),
+        &[0, 0],
+        path,
+    )
+}
+
+fn create_central_header(
+    crc: u32,
+    compressed_len: usize,
+    data_len: usize,
+    path: &[u8],
+    offset: usize
+) -> Vec<u8> {
+    extend!(
+        &[0x50, 0x4B, 0x01, 0x02],
+        &[0x14, 0x00],
+        &[20, 0],
+        &[0, 0],
+        &[8, 0],
+        &[0, 0, 0, 0],
+        &crc.to_le_bytes(),
+        &(compressed_len as u32).to_le_bytes(),
+        &(data_len as u32).to_le_bytes(),
+        &(path.len() as u16).to_le_bytes(),
+        &[0, 0],
+        &[0, 0],
+        &[0, 0],
+        &[0, 0],
+        &[0, 0, 0, 0],
+        &(offset as u32).to_le_bytes(),
+        path
+    )
+}
+
+fn create_end_of_central_directory(
+    entries_len: usize,
+    central_size: usize,
+    central_offset: usize,
+    comment: Option<&String>
+) -> Vec<u8> {
+    let mut vec = extend!(
+        &[0x50, 0x4B, 0x05, 0x06],
+        &[0, 0],
+        &[0, 0],
+        &(entries_len as u16).to_le_bytes(),
+        &(entries_len as u16).to_le_bytes(),
+        &(central_size as u32).to_le_bytes(),
+        &(central_offset as u32).to_le_bytes()
+    );
+
+    if let Some(comment) = comment {
+        let comment = comment.as_bytes();
+        vec.extend(&(comment.len() as u16).to_le_bytes());
+        vec.extend(comment);
+    }
+
+    vec
 }
 
 fn crc32(data: &[u8]) -> u32 {
