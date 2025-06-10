@@ -1,7 +1,6 @@
 #![no_std]
 extern crate alloc;
 
-use crate::ZipCompression::DEFLATE;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::ops::Deref;
@@ -31,6 +30,8 @@ impl Deref for ZipEntry {
 #[repr(u8)]
 #[derive(Copy, Clone, Default)]
 pub enum ZipCompression {
+    NONE = 0,
+    
     #[default]
     DEFLATE = 8
 }
@@ -38,29 +39,32 @@ pub enum ZipCompression {
 impl ZipCompression {
     pub fn compress(&self, data: &[u8]) -> Vec<u8> {
         match self {
-            DEFLATE => {
-                compress_to_vec(data, 9)
-            }
+            ZipCompression::DEFLATE => compress_to_vec(data, 9),
+            ZipCompression::NONE => Vec::from(data)
         }
     }
 }
 
 impl ZipArchive {
-    pub fn with_comment<S>(comment: S) -> Self
+    pub fn comment<S>(&mut self, comment: S) -> &mut Self
     where
-        S: AsRef<str>,
+        S: AsRef<str>
     {
-        Self {
-            comment: Some(comment.as_ref().to_string()),
-            ..Self::default()
-        }
+        self.comment = Some(comment.as_ref().to_string());
+        self
+    }
+    
+    pub fn compression(&mut self, compression: ZipCompression) -> &mut Self {
+        self.compression = compression;
+        self
     }
 
-    pub fn add<P>(&mut self, root: &P) -> Option<()>
+    pub fn add<P>(&mut self, root: &P) -> &mut Self
     where
         P: AsRef<Path>
     {
-        self.add_internal(root, root)
+        let _ = self.add_internal(root, root);
+        self
     }
 
     fn add_internal<R, F>(&mut self, root: &R, file: &F) -> Option<()>
@@ -95,7 +99,7 @@ impl ZipArchive {
         Some(())
     }
 
-    pub fn create_zip(&self) -> Vec<u8> {
+    pub fn create(&self) -> Vec<u8> {
         let mut zip_data = Vec::new();
         let mut central_directory = Vec::new();
         let mut offset = 0;

@@ -34,19 +34,22 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let out = Path::new("output");
     // let _ = out.remove_dir_all();
     // let _ = out.mkdir();
-    // 
+    //
     // let collector = AtomicCollector::default();
-    // 
+    //
     // unsafe {
     //     SniffTask::new().run(&out, &collector);
     // }
-    // 
+    //
     // log_debug!("{}", DisplayCollector(collector));
-    
-    let mut zip = ZipArchive::with_comment("lasdlsadlas");
-    zip.add(&out);
+
+    let zip = ZipArchive::default()
+        .comment("Lol its comment")
+        .add(&out)
+        .create();
+
     let out = Path::new("output.zip");
-    let _ = out.write_file(&zip.create_zip());
+    let _ = out.write_file(&zip);
 
     0
 }
