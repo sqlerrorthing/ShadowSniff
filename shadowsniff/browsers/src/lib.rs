@@ -24,8 +24,8 @@ pub struct BrowsersTask<C: Collector> {
     inner: CompositeTask<C>
 }
 
-impl<C: Collector + 'static> BrowsersTask<C> {
-    pub fn new() -> Self {
+impl<C: Collector + 'static> Default for BrowsersTask<C> {
+    fn default() -> Self {
         Self {
             inner: composite_task!(
                 ChromiumTask::new(),

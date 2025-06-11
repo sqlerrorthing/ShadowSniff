@@ -14,8 +14,8 @@ pub struct FtpTask<C: Collector> {
     inner: CompositeTask<C>
 }
 
-impl<C: Collector> FtpTask<C> {
-    pub fn new() -> Self {
+impl<C: Collector> Default for FtpTask<C> {
+    fn default() -> Self {
         Self {
             inner: composite_task!(
                 FileZillaTask
