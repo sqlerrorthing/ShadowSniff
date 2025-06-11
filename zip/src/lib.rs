@@ -2,6 +2,7 @@
 extern crate alloc;
 
 use alloc::string::{String, ToString};
+use alloc::vec;
 use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ops::Deref;
@@ -196,7 +197,7 @@ impl ZipArchive {
         let mut offset = 0;
 
         for entry in &self.entries {
-            let (compression_method, compressed) = (
+            let (compression_method, mut compressed) = (
                     self.compression as u16,
                     self.compression.compress(&entry.data)
                 );
@@ -204,28 +205,30 @@ impl ZipArchive {
             let crc = crc32(&entry.data);
             let path_bytes = entry.path.as_bytes();
 
-            let(compressed, encryption_header, general_flag) =
-                protect_data(crc, compressed, self.password.as_ref());
+            let (encryption_header, general_flag) = protect_data(crc, &mut compressed, self.password.as_ref())
+                .unwrap_or((vec![], 0));
 
-            let compressed_size = encryption_header
-                .map_or(0, |h| h.len()) + compressed.len();
+            let compressed_size = encryption_header.len() + compressed.len();
+            
+            let (local_crc, local_compressed_size, local_uncompressed_size) = if encryption_header.is_empty() {
+                (0, 0, 0)
+            } else {
+                (crc, compressed_size, entry.data.len())
+            };
+
 
             let local_header = create_local_header(
-                crc,
+                local_crc,
                 general_flag,
                 compression_method,
                 entry.modified,
-                compressed_size,
-                entry.data.len(),
+                local_compressed_size,
+                local_uncompressed_size,
                 path_bytes
             );
 
             zip_data.extend(&local_header);
-
-            if let Some(header) = encryption_header.as_ref() {
-                zip_data.extend(header)
-            }
-
+            zip_data.extend(&encryption_header);
             zip_data.extend(&compressed);
 
             let central_header = create_central_header(
@@ -281,23 +284,23 @@ fn filetime_to_dos_date_time(file_time: &FILETIME) -> (u16, u16) {
 
 fn protect_data(
     crc: u32,
-    mut payload: Vec<u8>,
+    payload: &mut Vec<u8>,
     password: Option<&String>
-) -> (Vec<u8>, Option<[u8; 12]>, u16) {
+) -> Option<(Vec<u8>, u16)> {
     if let Some(password) = password {
         let (mut k0, mut k1, mut k2) = init_keys(password);
         let header = gen_encryption_header(crc, &mut k0, &mut k1, &mut k2);
 
-        for byte in &mut payload {
+        for byte in payload {
             let plain = *byte;
             let cipher = plain ^ decrypt_byte(k2);
             *byte = cipher;
             update_keys(plain, &mut k0, &mut k1, &mut k2);
         }
 
-        (payload, Some(header), 0x01)
+        Some((header.to_vec(), 0x01))
     } else {
-        (payload, None, 0x00)
+        None
     }
 }
 
@@ -450,7 +453,8 @@ fn crc32_byte(crc: u32, b: u8) -> u32 {
 }
 
 fn decrypt_byte(k2: u32) -> u8 {
-    ((k2.wrapping_mul(0xFFFF_FFFF).wrapping_add(1) >> 24) & 0xFF) as u8
+    let temp = (k2 & 0xFFFF) | 0x0002;
+    ((temp * (temp ^ 1)) >> 8) as u8
 }
 
 fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> [u8; 12] {
