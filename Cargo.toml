@@ -18,7 +18,8 @@ members = [
     "tasks", 
     "hollowing",
     "utils",
-    "collector"
+    "collector",
+    "zip"
 ]
 
 [profile.release]
@@ -41,3 +42,4 @@ tasks = { path = "tasks" }
 utils = { path = "utils" }
 ipinfo = { path = "ipinfo" }
 collector = { path = "collector" }
+zip = { path = "zip" }
