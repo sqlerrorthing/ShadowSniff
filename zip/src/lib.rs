@@ -7,6 +7,7 @@ use core::mem::zeroed;
 use core::ops::Deref;
 use miniz_oxide::deflate::compress_to_vec;
 use rand_chacha::rand_core::RngCore;
+use rand_chacha::ChaCha20Rng;
 use utils::path::Path;
 use utils::random::ChaCha20RngExt;
 use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
@@ -100,6 +101,7 @@ impl ZipArchive {
     where
         S: AsRef<str>
     {
+        assert!(password.as_ref().is_ascii(), "Password must be ASCII only");
         self.password = Some(password.as_ref().to_string());
         self
     }
@@ -241,12 +243,13 @@ impl ZipArchive {
             offset += local_header.len() + compressed_size;
         }
 
+        let central_offset = zip_data.len();
         zip_data.extend(&central_directory);
 
         let eocd = create_end_of_central_directory(
             self.entries.len(),
             central_directory.len(),
-            offset,
+            central_offset,
             self.comment.as_ref()
         );
 
@@ -287,7 +290,8 @@ fn protect_data(
 
         for byte in &mut payload {
             let plain = *byte;
-            *byte ^= decrypt_byte(k2);
+            let cipher = plain ^ decrypt_byte(k2);
+            *byte = cipher;
             update_keys(plain, &mut k0, &mut k1, &mut k2);
         }
 
@@ -347,22 +351,22 @@ fn create_central_header(
 ) -> Vec<u8> {
     extend!(
         [0x50, 0x4B, 0x01, 0x02],
-        [0x14, 0x00],
-        &20u16.to_le_bytes(),
+        20u16.to_le_bytes(),
+        20u16.to_le_bytes(),
         general_flag.to_le_bytes(),
         compression_method.to_le_bytes(),
         modified.0.to_le_bytes(),
         modified.1.to_le_bytes(),
-        &crc.to_le_bytes(),
-        &(compressed_len as u32).to_le_bytes(),
-        &(data_len as u32).to_le_bytes(),
-        &(path.len() as u16).to_le_bytes(),
+        crc.to_le_bytes(),
+        (compressed_len as u32).to_le_bytes(),
+        (data_len as u32).to_le_bytes(),
+        (path.len() as u16).to_le_bytes(),
         0u16.to_le_bytes(),
         0u16.to_le_bytes(),
         0u16.to_le_bytes(),
         0u16.to_le_bytes(),
-        &[0, 0, 0, 0],
-        &(offset as u32).to_le_bytes(),
+        [0, 0, 0, 0],
+        (offset as u32).to_le_bytes(),
         path
     )
 }
@@ -374,19 +378,21 @@ fn create_end_of_central_directory(
     comment: Option<&String>
 ) -> Vec<u8> {
     let mut vec = extend!(
-        &[0x50, 0x4B, 0x05, 0x06],
+        [0x50, 0x4B, 0x05, 0x06],
         0u16.to_le_bytes(),
         0u16.to_le_bytes(),
-        &(entries_len as u16).to_le_bytes(),
-        &(entries_len as u16).to_le_bytes(),
-        &(central_size as u32).to_le_bytes(),
-        &(central_offset as u32).to_le_bytes()
+        (entries_len as u16).to_le_bytes(),
+        (entries_len as u16).to_le_bytes(),
+        (central_size as u32).to_le_bytes(),
+        (central_offset as u32).to_le_bytes()
     );
 
     if let Some(comment) = comment {
         let comment = comment.as_bytes();
         vec.extend(&(comment.len() as u16).to_le_bytes());
         vec.extend(comment);
+    } else {
+        vec.extend(0u16.to_le_bytes());
     }
 
     vec
@@ -425,8 +431,8 @@ where
 
 fn update_keys(byte: u8, k0: &mut u32, k1: &mut u32, k2: &mut u32) {
     *k0 = crc32_byte(*k0, byte);
-    *k1 = k1.wrapping_add(*k0 & 0xFF);
-    *k1 = k1.wrapping_mul(134775813).wrapping_add(1);
+    *k1 = (*k1).wrapping_add(*k0 & 0xFF);
+    *k1 = (*k1).wrapping_mul(134775813).wrapping_add(1);
     *k2 = crc32_byte(*k2, (*k1 >> 24) as u8);
 }
 
@@ -444,39 +450,40 @@ fn crc32_byte(crc: u32, b: u8) -> u32 {
 }
 
 fn decrypt_byte(k2: u32) -> u8 {
-    let temp = (k2 | 2).wrapping_mul(k2 ^ 1) >> 8;
-    (temp & 0xFF) as u8
+    ((k2.wrapping_mul(0xFFFF_FFFF).wrapping_add(1) >> 24) & 0xFF) as u8
 }
 
 fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> [u8; 12] {
     let mut header = [0u8; 12];
+    let mut rng = ChaCha20Rng::from_nano_time();
 
-    for (idx, val) in header.iter_mut().enumerate().take(11) {
-        let plain = idx as u8;
-        *val = plain ^ decrypt_byte(*k2);
+    for i in header.iter_mut().take(11) {
+        let plain = rng.next_u32() as u8;
+        *i = plain ^ decrypt_byte(*k2);
         update_keys(plain, k0, k1, k2);
     }
 
-    let final_byte = (crc >> 24) as u8 ^ decrypt_byte(*k2);
+    let final_plain = (crc >> 24) as u8;
 
-    header[11] = final_byte;
-    update_keys(final_byte, k0, k1, k2);
+    header[11] = final_plain ^ decrypt_byte(*k2);
+    update_keys(final_plain, k0, k1, k2);
 
     header
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{decrypt_byte, gen_encryption_header, init_keys, update_keys};
+    use crate::{crc32, decrypt_byte, gen_encryption_header, init_keys, update_keys};
     use alloc::vec::Vec;
 
     #[test]
     fn test_enc_dec() {
         let password = "12345";
         let data = b"hello world";
+        let crc = crc32(data);
 
         let (mut k0, mut k1, mut k2) = init_keys(password);
-        let _ = gen_encryption_header(0, &mut k0, &mut k1, &mut k2);
+        let _ = gen_encryption_header(crc, &mut k0, &mut k1, &mut k2);
         let mut encrypted = Vec::new();
         for &b in data {
             let k = decrypt_byte(k2);
@@ -485,7 +492,7 @@ mod tests {
         }
 
         let (mut dk0, mut dk1, mut dk2) = init_keys(password);
-        let _ = gen_encryption_header(0, &mut dk0, &mut dk1, &mut dk2);
+        let _ = gen_encryption_header(crc, &mut dk0, &mut dk1, &mut dk2);
         let mut decrypted = Vec::new();
         for &b in &encrypted {
             let k = decrypt_byte(dk2);
