@@ -1,18 +1,19 @@
 use crate::WideString;
-use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use alloc::{format, vec};
 use core::fmt::{Display, Formatter};
 use core::mem::zeroed;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
 use core::slice::from_raw_parts;
 use windows_sys::core::PWSTR;
-use windows_sys::Win32::Foundation::{CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK};
+use windows_sys::Win32::Foundation::{CloseHandle, FALSE, FILETIME, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK};
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS};
-use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesW, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FIND_DATAW};
+use windows_sys::Win32::Storage::FileSystem::{CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesExW, GetFileAttributesW, GetFileExInfoStandard, GetFileSizeEx, ReadFile, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, WIN32_FILE_ATTRIBUTE_DATA, WIN32_FIND_DATAW};
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
+use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 use windows_sys::Win32::UI::Shell::{FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath};
 
 #[derive(Clone)]
@@ -54,12 +55,28 @@ impl Path {
             }
         }
     }
+    
+    pub fn get_filetime(&self) -> Option<FILETIME> {
+        let mut data: WIN32_FILE_ATTRIBUTE_DATA = unsafe { zeroed() };
+
+        if unsafe {
+           GetFileAttributesExW(
+               self.to_wide().as_ptr(),
+               GetFileExInfoStandard,
+               &mut data as *mut _ as *mut _
+           )
+        } == FALSE {
+            None
+        } else {
+            Some(data.ftLastWriteTime)
+        }
+    }
 
     pub fn as_absolute(&self) -> Path {
         let current_dir = get_current_directory().unwrap();
 
         let trimmed = self.inner.trim_start_matches(['\\', '/'].as_ref());
-        let full = format!("{}\\{}", current_dir, trimmed);
+        let full = format!("{current_dir}\\{trimmed}");
 
         Path::new(full)
     }
@@ -284,12 +301,11 @@ where T: AsRef<[u8]> + ?Sized
 }
 
 pub fn write_file(path: &Path, data: &[u8]) -> Result<(), u32> {
-    if let Some(parent) = path.parent() {
-        if !parent.is_exists() {
-            if let Err(e) = parent.mkdirs() {
-                return Err(e);
-            }
-        }
+    if let Some(parent) = path.parent() 
+        && !parent.is_exists() 
+        && let Err(e) = parent.mkdirs() 
+    { 
+        return Err(e);
     }
     
     let wide = path.to_wide();
@@ -342,17 +358,17 @@ where
     F: Fn(&Path) -> bool
 {
     let search_path = if path.ends_with('\\') {
-        format!("{}*", path)
+        format!("{path}*")
     } else {
-        format!("{}\\*", path)
+        format!("{path}\\*")
     };
 
-    let wide_search = search_path.to_wide();
+    let search_path = search_path.to_wide();
     
     unsafe {
         let mut data: WIN32_FIND_DATAW = zeroed();
 
-        let handle = FindFirstFileW(wide_search.as_ptr(), &mut data);
+        let handle = FindFirstFileW(search_path.as_ptr(), &mut data);
         if handle == INVALID_HANDLE_VALUE {
             return None
         }
@@ -456,10 +472,8 @@ pub fn copy_file(src: &Path, dst: &Path, with_filename: bool) -> Result<(), u32>
     let src_wide = src.to_wide();
     let dst_wide = dst.to_wide();
 
-    if let Some(parent) = dst.parent() {
-        if !parent.is_exists() {
-            parent.mkdirs()?;
-        }
+    if let Some(parent) = dst.parent() && !parent.is_exists() {
+        parent.mkdirs()?;
     }
 
     unsafe {
@@ -522,7 +536,7 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, u32> {
         }
 
         let file_size = size as usize;
-        let mut buffer: Vec<u8> = Vec::with_capacity(file_size);
+        let mut buffer: Vec<u8> = vec![0u8; file_size];
         buffer.set_len(file_size);
 
         let mut bytes_read = 0;
@@ -639,7 +653,7 @@ pub fn get_current_directory() -> Option<Path> {
         return None;
     }
 
-    let mut buffer: Vec<u16> = Vec::with_capacity(required_size as usize);
+    let mut buffer = vec![0u16; required_size as usize];
     unsafe { buffer.set_len(required_size as usize); }
 
     let len = unsafe { GetCurrentDirectoryW(required_size, buffer.as_mut_ptr()) };
@@ -683,5 +697,18 @@ impl Path {
     
     pub fn localappdata() -> Self {
         get_known_folder_path(&FOLDERID_LocalAppData).unwrap()
+    }
+
+    pub fn temp() -> Self {
+        Self::localappdata() / "Temp"
+    }
+
+    pub fn temp_file<S>(prefix: S) -> Self
+    where
+        S: AsRef<str>
+    {
+        let ms = unsafe { GetTickCount64() };
+        let name = format!("{ms:x}");
+        Self::temp() / format!("{}{name}", prefix.as_ref())
     }
 }

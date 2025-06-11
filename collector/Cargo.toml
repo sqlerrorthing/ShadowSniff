@@ -1,0 +1,8 @@
+[package]
+name = "collector"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+paste = "1.0.15"
+indoc = "2.0.6"

