@@ -7,7 +7,6 @@ use core::mem::zeroed;
 use core::ops::Deref;
 use miniz_oxide::deflate::compress_to_vec;
 use rand_chacha::rand_core::RngCore;
-use rand_chacha::ChaCha20Rng;
 use utils::path::Path;
 use utils::random::ChaCha20RngExt;
 use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
@@ -44,6 +43,41 @@ pub enum ZipCompression {
     DEFLATE = 8u16
 }
 
+pub enum IntoPath<'a, 'b>
+{
+    Reference(&'a Path),
+    Borrowed(Path),
+    StringReference(&'b str)
+}
+
+impl<'a> From<IntoPath<'a, '_>> for Path {
+    fn from(value: IntoPath) -> Self {
+        match value {
+            IntoPath::Reference(val) => val.clone(),
+            IntoPath::Borrowed(val) => val,
+            IntoPath::StringReference(val) => Path::new(val)
+        }
+    }
+}
+
+impl<'a> From<Path> for IntoPath<'a, '_> {
+    fn from(value: Path) -> Self {
+        IntoPath::Borrowed(value)
+    }
+}
+
+impl<'a> From<&'a Path> for IntoPath<'a, '_> {
+    fn from(value: &'a Path) -> Self {
+        IntoPath::Reference(value)
+    }
+}
+
+impl<'b> From<&'b str> for IntoPath<'_, 'b> {
+    fn from(value: &'b str) -> Self {
+        IntoPath::StringReference(value)
+    }
+}
+
 impl ZipCompression {
     pub fn compress(&self, data: &[u8]) -> Vec<u8> {
         match self {
@@ -75,28 +109,34 @@ impl ZipArchive {
         self
     }
 
-    pub fn add_folder_content<P>(&mut self, root: &P) -> &mut Self
+    pub fn add_folder_content<'a, 'b, P>(&mut self, root: P) -> &mut Self
     where
-        P: AsRef<Path>
+        P: Into<IntoPath<'a, 'b>>,
     {
-        let _ = self.add_folder_content_internal(root, root);
+        let root = &Path::from(root.into());
+        let _ = self.add_folder_content_internal(root, root, true);
         self
     }
 
-    pub fn add_file<P>(&mut self, file: &P) -> &mut Self
+    pub fn add_folder<'a, 'b, P>(&mut self, folder: P) -> &mut Self
     where
-        P: AsRef<Path>
+        P: Into<IntoPath<'a, 'b>>,
     {
+        let folder = &Path::from(folder.into());
+        let _ = self.add_folder_content_internal(folder, folder, false);
+        self
+    }
+
+    pub fn add_file<'a, 'b, P>(&mut self, file: P) -> &mut Self
+    where
+        P: Into<IntoPath<'a, 'b>>,
+    {
+        let file = &Path::from(file.into());
         let _ = self.add_file_internal(file);
         self
     }
     
-    fn add_file_internal<F>(&mut self, file: &F) -> Option<()>
-    where 
-        F: AsRef<Path>
-    {
-        let file = file.as_ref();
-        
+    fn add_file_internal(&mut self, file: &Path) -> Option<()> {
         if !file.is_file() {
             return None
         }
@@ -116,26 +156,24 @@ impl ZipArchive {
         Some(())
     }
 
-    fn add_folder_content_internal<R, F>(&mut self, root: &R, file: &F) -> Option<()>
-    where
-        R: AsRef<Path>,
-        F: AsRef<Path>
-    {
-        let file = file.as_ref();
-        let root = root.as_ref();
-
+    fn add_folder_content_internal(&mut self, root: &Path, file: &Path, use_parent: bool) -> Option<()> {
         if !file.is_exists() || !root.is_exists() {
             return None
         }
 
         for file in file.list_files()? {
             if file.is_dir() {
-                self.add_folder_content_internal(root, &file)?
+                self.add_folder_content_internal(root, &file, use_parent)?
             } else if file.is_file() {
                 let data = file.read_file().ok()?;
                 let file_time = file.get_filetime()?;
-                let rel_path = file.strip_prefix(root.deref())?
-                    .strip_prefix("\\")?;
+
+                let rel_path = if use_parent {
+                    file.strip_prefix(root.deref())?
+                        .strip_prefix("\\")?
+                } else {
+                    file.deref()
+                };
 
                 let entry = ZipEntry {
                     path: rel_path.to_string(),
@@ -372,7 +410,7 @@ fn crc32(data: &[u8]) -> u32 {
 
 fn init_keys<S>(password: &S) -> (u32, u32, u32)
 where 
-    S: AsRef<str>
+    S: AsRef<str> + ?Sized
 {
     let mut k0 = 0x12345678;
     let mut k1 = 0x23456789;
@@ -411,12 +449,11 @@ fn decrypt_byte(k2: u32) -> u8 {
 }
 
 fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> [u8; 12] {
-    let mut rng = ChaCha20Rng::from_nano_time();
     let mut header = [0u8; 12];
 
-    for i in header.iter_mut().take(11) {
-        let plain = rng.next_u32() as u8;
-        *i = plain ^ decrypt_byte(*k2);
+    for (idx, val) in header.iter_mut().enumerate().take(11) {
+        let plain = idx as u8;
+        *val = plain ^ decrypt_byte(*k2);
         update_keys(plain, k0, k1, k2);
     }
 
@@ -426,4 +463,36 @@ fn gen_encryption_header(crc: u32, k0: &mut u32, k1: &mut u32, k2: &mut u32) -> 
     update_keys(final_byte, k0, k1, k2);
 
     header
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{decrypt_byte, gen_encryption_header, init_keys, update_keys};
+    use alloc::vec::Vec;
+
+    #[test]
+    fn test_enc_dec() {
+        let password = "12345";
+        let data = b"hello world";
+
+        let (mut k0, mut k1, mut k2) = init_keys(password);
+        let _ = gen_encryption_header(0, &mut k0, &mut k1, &mut k2);
+        let mut encrypted = Vec::new();
+        for &b in data {
+            let k = decrypt_byte(k2);
+            encrypted.push(b ^ k);
+            update_keys(b, &mut k0, &mut k1, &mut k2);
+        }
+
+        let (mut dk0, mut dk1, mut dk2) = init_keys(password);
+        let _ = gen_encryption_header(0, &mut dk0, &mut dk1, &mut dk2);
+        let mut decrypted = Vec::new();
+        for &b in &encrypted {
+            let k = decrypt_byte(dk2);
+            decrypted.push(b ^ k);
+            update_keys(decrypted.last().copied().unwrap(), &mut dk0, &mut dk1, &mut dk2);
+        }
+
+        assert_eq!(decrypted, data);
+    }
 }
