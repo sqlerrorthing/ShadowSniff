@@ -15,8 +15,10 @@ members = [
     "shadowsniff/browsers",
     "shadowsniff/ftp",
     "shadowsniff/messengers",
-    "tasks",
-    "utils"
+    "tasks", 
+    "hollowing",
+    "utils",
+    "collector"
 ]
 
 [profile.release]
@@ -38,3 +40,4 @@ shadowsniff = { path = "shadowsniff" }
 tasks = { path = "tasks" }
 utils = { path = "utils" }
 ipinfo = { path = "ipinfo" }
+collector = { path = "collector" }

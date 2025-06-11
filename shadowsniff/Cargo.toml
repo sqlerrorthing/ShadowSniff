@@ -21,3 +21,4 @@ messengers = { path = "messengers" }
 browsers = { path = "browsers" }
 obfstr = "0.4.4"
 ipinfo = { path = "../ipinfo" }
+collector = { path = "../collector" }
