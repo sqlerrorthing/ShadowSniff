@@ -42,7 +42,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let collector = AtomicCollector::default();
     
     unsafe {
-        SniffTask::new().run(&out, &collector);
+        SniffTask::default().run(&out, &collector);
     }
     
     log_debug!("{}", DisplayCollector(collector));
