@@ -209,21 +209,14 @@ impl ZipArchive {
                 .unwrap_or((vec![], 0));
 
             let compressed_size = encryption_header.len() + compressed.len();
-            
-            let (local_crc, local_compressed_size, local_uncompressed_size) = if encryption_header.is_empty() {
-                (0, 0, 0)
-            } else {
-                (crc, compressed_size, entry.data.len())
-            };
-
 
             let local_header = create_local_header(
-                local_crc,
+                crc,
                 general_flag,
                 compression_method,
                 entry.modified,
-                local_compressed_size,
-                local_uncompressed_size,
+                compressed_size,
+                entry.data.len(),
                 path_bytes
             );
 
