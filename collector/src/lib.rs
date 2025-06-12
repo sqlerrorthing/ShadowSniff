@@ -64,8 +64,7 @@ pub trait Device: Send + Sync {
     increase_count!(wifi_networks);
 }
 
-pub trait Collector: Send + Sync
-{
+pub trait Collector: Send + Sync {
     type Browser: Browser;
     type Software: Software;
     type FileGrabber: FileGrabber;
