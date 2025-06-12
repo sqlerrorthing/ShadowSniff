@@ -51,7 +51,7 @@ pub enum IntoPath<'a, 'b>
     StringReference(&'b str)
 }
 
-impl<'a> From<IntoPath<'a, '_>> for Path {
+impl From<IntoPath<'_, '_>> for Path {
     fn from(value: IntoPath) -> Self {
         match value {
             IntoPath::Reference(val) => val.clone(),
