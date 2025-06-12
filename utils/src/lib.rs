@@ -16,6 +16,13 @@ pub mod base64;
 pub mod browsers;
 pub mod random;
 
+#[macro_export]
+macro_rules! str {
+    ($buffer:expr) => {{
+        alloc::string::String::from_utf8_lossy($buffer)
+    }};
+}
+
 pub trait WideString {
     fn to_wide(&self) -> Vec<u16>;
 }
