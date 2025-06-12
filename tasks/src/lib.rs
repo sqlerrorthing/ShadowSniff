@@ -40,10 +40,8 @@ macro_rules! parent_name {
 macro_rules! impl_composite_task_runner {
     ($task_type:ty) => {
         impl<C: collector::Collector> Task<C> for $task_type {
-            unsafe fn run(&self, parent: &utils::path::Path, collector: &C) {
-                unsafe {
-                    self.inner.run(parent, collector);
-                }
+            fn run(&self, parent: &utils::path::Path, collector: &C) {
+                self.inner.run(parent, collector);
             }
         }
     };
@@ -52,10 +50,8 @@ macro_rules! impl_composite_task_runner {
         impl<C: collector::Collector> Task<C> for $task_type {
             $crate::parent_name!($parent_name);
 
-            unsafe fn run(&self, parent: &utils::path::Path, collector: &C) {
-                unsafe {
-                    self.inner.run(parent, collector);
-                }
+            fn run(&self, parent: &utils::path::Path, collector: &C) {
+                self.inner.run(parent, collector);
             }
         }
     };
@@ -66,7 +62,7 @@ pub trait Task<C: Collector>: Send + Sync {
         None
     }
     
-    unsafe fn run(&self, parent: &Path, collector: &C);
+    fn run(&self, parent: &Path, collector: &C);
 }
 
 pub struct CompositeTask<C: Collector> {
@@ -82,7 +78,7 @@ impl<C: Collector> CompositeTask<C> {
 }
 
 impl<C: Collector> Task<C> for CompositeTask<C> {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         match self.subtasks.len() {
             0 => (),
             1 => {
@@ -94,7 +90,7 @@ impl<C: Collector> Task<C> for CompositeTask<C> {
     }
 }
 
-unsafe fn run_tasks<C>(tasks: &[Arc<dyn Task<C>>], parent: &Path, collector: &C)
+fn run_tasks<C>(tasks: &[Arc<dyn Task<C>>], parent: &Path, collector: &C)
 where
     C: Collector
 {
@@ -123,15 +119,19 @@ where
         }
     }
 
-    WaitForMultipleObjects(
-        handles.len() as _,
-        handles.as_ptr(),
-        TRUE,
-        0xFFFFFFFF,
-    );
+    unsafe {
+        WaitForMultipleObjects(
+            handles.len() as _,
+            handles.as_ptr(),
+            TRUE,
+            0xFFFFFFFF,
+        );
+    }
 
     for handle in handles {
-        CloseHandle(handle);
+        unsafe {
+            CloseHandle(handle);
+        }
     }
 }
 
