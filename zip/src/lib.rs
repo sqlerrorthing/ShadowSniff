@@ -35,15 +35,6 @@ impl Deref for ZipEntry {
     }
 }
 
-#[repr(u16)]
-#[derive(Copy, Clone, Default)]
-pub enum ZipCompression {
-    NONE = 0u16,
-    
-    #[default]
-    DEFLATE = 8u16
-}
-
 pub enum IntoPath<'a, 'b>
 {
     Reference(&'a Path),
@@ -79,13 +70,33 @@ impl<'b> From<&'b str> for IntoPath<'_, 'b> {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum ZipCompression {
+    NONE,
+
+    DEFLATE(u8)
+}
+
+impl Default for ZipCompression {
+    fn default() -> Self { 
+        ZipCompression::DEFLATE(10)
+    }
+}
+
 impl ZipCompression {
     pub fn compress(&self, data: &[u8]) -> Vec<u8> {
         match self {
-            ZipCompression::DEFLATE => compress_to_vec(data, 9),
-            ZipCompression::NONE => Vec::from(data)
+            ZipCompression::DEFLATE(level) => compress_to_vec(data, *level),
+            ZipCompression::NONE => Vec::from(data),
         }
     }
+    
+    pub fn method(&self) -> u16 {
+        match self {
+            ZipCompression::DEFLATE(_) => 8u16,
+            ZipCompression::NONE => 0u16,
+        }
+    } 
 }
 
 impl ZipArchive {

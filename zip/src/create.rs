@@ -13,7 +13,7 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
 
     for entry in &archive.entries {
         let (compression_method, mut compressed) = (
-            archive.compression as u16,
+            archive.compression.method(),
             archive.compression.compress(&entry.data)
         );
 
