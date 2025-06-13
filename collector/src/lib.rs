@@ -62,6 +62,7 @@ pub trait Vpn: Send + Sync {
 
 pub trait Device: Send + Sync {
     increase_count!(wifi_networks);
+    increase_count!(installed_apps);
 }
 
 pub trait Collector: Send + Sync

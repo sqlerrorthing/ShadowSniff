@@ -96,11 +96,13 @@ impl Vpn for AtomicUsizeVpn {
 
 #[derive(Default)]
 pub struct AtomicDevice {
-    wifi_networks: AtomicUsize
+    wifi_networks: AtomicUsize,
+    installed_apps: AtomicUsize,
 }
 
 impl Device for AtomicDevice {
     impl_atomic_usize_counter!(wifi_networks);
+    impl_atomic_usize_counter!(installed_apps);
 }
 
 #[derive(Default)]
