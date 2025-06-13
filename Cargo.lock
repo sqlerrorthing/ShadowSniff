@@ -211,6 +211,7 @@ dependencies = [
  "browsers",
  "collector",
  "ftp",
+ "indoc",
  "ipinfo",
  "messengers",
  "miniz_oxide",
