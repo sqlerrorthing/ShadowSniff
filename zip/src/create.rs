@@ -204,7 +204,7 @@ fn crc32(data: &[u8]) -> u32 {
     !crc
 }
 
-fn init_keys<S>(password: &S) -> (u32, u32, u32)
+fn init_keys<S>(password: &S) -> (u32, u32, u32)ццццццц
 where
     S: AsRef<str> + ?Sized
 {
