@@ -2,15 +2,18 @@ use crate::sqlite::cursor::{Cursor, Scanner};
 use crate::sqlite::pager::{parse_header, Pager, HEADER_SIZE};
 use crate::sqlite::sql;
 use crate::sqlite::sql::ast::ColumnDef;
+use crate::sqlite::value::OwnedValue;
 use crate::{DatabaseReader, TableRecord, Value};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
+use alloc::vec;
 use alloc::vec::Vec;
 use anyhow::{anyhow, Context};
 use embedded_io::Read;
 use half_io::VecReader;
 use utils::log_debug;
 
+#[derive(Clone)]
 pub(super) struct TableMetadata {
     pub name: Arc<str>,
     pub columns: Vec<ColumnDef>,
@@ -58,33 +61,61 @@ impl TableMetadata {
     }
 }
 
-pub struct DummyRecord;
+pub struct SqliteTableRecord {
+    row: Arc<[OwnedValue]>
+}
 
-impl TableRecord for DummyRecord {
-    fn get_value(&self, key: usize) -> Option<&Value> {
-        None
+impl TableRecord for SqliteTableRecord {
+    fn get_value(&self, key: usize) -> Option<Value> {
+        let value = self.row.get(key)?;
+        Some(value.into())
     }
 }
 
-pub struct DummyIter;
+pub struct SqliteTableIterator {
+    fields: Vec<usize>,
+    scanner: Scanner,
+    row_buffer: Vec<OwnedValue>
+}
 
-impl Iterator for DummyIter {
-    type Item = DummyRecord;
+impl Iterator for SqliteTableIterator {
+    type Item = SqliteTableRecord;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let mut record = self.scanner.next_record().ok()??;
+
+        for (i, &n) in self.fields.iter().enumerate() {
+            self.row_buffer[i] = record.owned_field(n).ok()??;
+        }
+
         None
     }
 }
 
 impl DatabaseReader for SqliteDatabase {
-    type Iter = DummyIter;
-    type Record = DummyRecord;
+    type Iter = SqliteTableIterator;
+    type Record = SqliteTableRecord;
 
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>
     {
-        todo!()
+        let table = self
+            .tables_metadata
+            .iter()
+            .find(|m| *m.name == *table_name.as_ref())?;
+
+        let mut columns = Vec::with_capacity(table.columns.len());
+        let len = columns.len();
+        for i in 0..table.columns.len() {
+            columns.push(i);
+        }
+
+        Some(SqliteTableIterator {
+            fields: columns,
+            scanner: self.scanner(table.first_page),
+            row_buffer: vec![OwnedValue::Null; len]
+        })
     }
 }
 

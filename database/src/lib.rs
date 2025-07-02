@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 #![no_std]
 
 extern crate alloc;
@@ -5,22 +6,23 @@ pub mod sqlite;
 
 use crate::sqlite::db::SqliteDatabase;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Error;
 use core::fmt::{Display, Formatter};
 
 pub enum Value {
-    String(String),
+    String(Arc<str>),
     Integer(i64),
     Float(f64),
-    Blob(Vec<u8>),
+    Blob(Arc<[u8]>),
     Null
 }
 
 impl Value {
-    pub fn as_string(&self) -> Option<&String> {
+    pub fn as_string(&self) -> Option<Arc<str>> {
         if let Value::String(s) = self {
-            Some(s)
+            Some(s.clone())
         } else {
             None
         }
@@ -42,9 +44,9 @@ impl Value {
         }
     }
 
-    pub fn as_blob(&self) -> Option<&Vec<u8>> {
+    pub fn as_blob(&self) -> Option<Arc<[u8]>> {
         if let Value::Blob(b) = self {
-            Some(b)
+            Some(b.clone())
         } else {
             None
         }
@@ -81,7 +83,7 @@ pub trait DatabaseReader {
 }
 
 pub trait TableRecord {
-    fn get_value(&self, key: usize) -> Option<&Value>;
+    fn get_value(&self, key: usize) -> Option<Value>;
 }
 
 pub enum Databases {

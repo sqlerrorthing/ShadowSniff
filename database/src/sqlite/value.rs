@@ -1,6 +1,7 @@
 use alloc::borrow::Cow;
 use alloc::rc::Rc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 #[derive(Clone)]
@@ -37,6 +38,22 @@ pub enum OwnedValue {
     Blob(Rc<Vec<u8>>),
     Int(i64),
     Float(f64),
+}
+
+impl From<&OwnedValue> for crate::Value {
+    fn from(value: &OwnedValue) -> Self {
+        match value {
+            OwnedValue::Null => crate::Value::Null,
+            OwnedValue::Int(i) => crate::Value::Integer(*i),
+            OwnedValue::Float(f) => crate::Value::Float(*f),
+            OwnedValue::String(rc_str) => {
+                crate::Value::String(Arc::<str>::from(rc_str.as_str()))
+            }
+            OwnedValue::Blob(rc_blob) => {
+                crate::Value::Blob(Arc::<[u8]>::from(rc_blob.as_slice()))
+            }
+        }
+    }
 }
 
 impl<'p> From<Value<'p>> for OwnedValue {
