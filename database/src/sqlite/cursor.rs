@@ -1,7 +1,6 @@
 use crate::sqlite::page::{Cell, Page, PageType};
 use crate::sqlite::pager::{read_varint_at, Pager};
-use crate::sqlite::value::{OwnedValue, Value};
-use alloc::borrow::Cow;
+use crate::Value;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::anyhow;
@@ -105,10 +104,6 @@ pub struct Cursor {
 }
 
 impl Cursor {
-    pub fn owned_field(&mut self, n: usize) -> anyhow::Result<Option<OwnedValue>> {
-        Ok(self.field(n)?.map(Into::into))
-    }
-
     pub fn field(&mut self, n: usize) -> anyhow::Result<Option<Value>> {
         let Some(record_field) = self.header.fields.get(n) else {
             return Ok(None);
@@ -129,21 +124,21 @@ impl Cursor {
 
         let value = match record_field.field_type {
             RecordFieldType::Null => Some(Value::Null),
-            RecordFieldType::I8 => Some(Value::Int(read_i8_at(&self.payload, record_field.offset))),
+            RecordFieldType::I8 => Some(Value::Integer(read_i8_at(&self.payload, record_field.offset))),
             RecordFieldType::I16 => {
-                Some(Value::Int(read_i16_at(&self.payload, record_field.offset)))
+                Some(Value::Integer(read_i16_at(&self.payload, record_field.offset)))
             }
             RecordFieldType::I24 => {
-                Some(Value::Int(read_i24_at(&self.payload, record_field.offset)))
+                Some(Value::Integer(read_i24_at(&self.payload, record_field.offset)))
             }
             RecordFieldType::I32 => {
-                Some(Value::Int(read_i32_at(&self.payload, record_field.offset)))
+                Some(Value::Integer(read_i32_at(&self.payload, record_field.offset)))
             }
             RecordFieldType::I48 => {
-                Some(Value::Int(read_i48_at(&self.payload, record_field.offset)))
+                Some(Value::Integer(read_i48_at(&self.payload, record_field.offset)))
             }
             RecordFieldType::I64 => {
-                Some(Value::Int(read_i64_at(&self.payload, record_field.offset)))
+                Some(Value::Integer(read_i64_at(&self.payload, record_field.offset)))
             }
             RecordFieldType::Float => Some(Value::Float(read_f64_at(
                 &self.payload,
@@ -154,14 +149,14 @@ impl Cursor {
                     &self.payload[record_field.offset..record_field.offset + length],
                 )
                     .expect("invalid utf8");
-                Some(Value::String(Cow::Borrowed(value)))
+                Some(Value::String(Arc::from(value)))
             }
             RecordFieldType::Blob(length) => {
                 let value = &self.payload[record_field.offset..record_field.offset + length];
-                Some(Value::Blob(Cow::Borrowed(value)))
+                Some(Value::Blob(Arc::from(value)))
             }
-            RecordFieldType::One => Some(Value::Int(1)),
-            RecordFieldType::Zero => Some(Value::Int(0)),
+            RecordFieldType::One => Some(Value::Integer(1)),
+            RecordFieldType::Zero => Some(Value::Integer(0)),
         };
 
         Ok(value)

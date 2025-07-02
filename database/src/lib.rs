@@ -11,6 +11,7 @@ use alloc::vec::Vec;
 use anyhow::Error;
 use core::fmt::{Display, Formatter};
 
+#[derive(Clone)]
 pub enum Value {
     String(Arc<str>),
     Integer(i64),

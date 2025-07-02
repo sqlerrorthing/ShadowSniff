@@ -2,7 +2,6 @@ use crate::sqlite::cursor::{Cursor, Scanner};
 use crate::sqlite::pager::{parse_header, Pager, HEADER_SIZE};
 use crate::sqlite::sql;
 use crate::sqlite::sql::ast::ColumnDef;
-use crate::sqlite::value::OwnedValue;
 use crate::{DatabaseReader, TableRecord, Value};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
@@ -32,7 +31,7 @@ impl TableMetadata {
             .context("missing type field")
             .context("invalid type field")?;
 
-        if type_value.as_str() != Some("table") {
+        if type_value.as_str() != Some(Arc::from("table")) {
             return Ok(None);
         }
 
@@ -50,7 +49,7 @@ impl TableMetadata {
         let first_page = cursor
             .field(3)?
             .context("missing table first page")?
-            .as_int()
+            .as_integer()
             .context("table first page should be an integer")? as usize;
 
         Ok(Some(TableMetadata {
@@ -62,20 +61,20 @@ impl TableMetadata {
 }
 
 pub struct SqliteTableRecord {
-    row: Arc<[OwnedValue]>
+    row: Arc<[Value]>
 }
 
 impl TableRecord for SqliteTableRecord {
     fn get_value(&self, key: usize) -> Option<Value> {
         let value = self.row.get(key)?;
-        Some(value.into())
+        Some(value.clone())
     }
 }
 
 pub struct SqliteTableIterator {
     fields: Vec<usize>,
     scanner: Scanner,
-    row_buffer: Vec<OwnedValue>
+    row_buffer: Vec<Value>
 }
 
 impl Iterator for SqliteTableIterator {
@@ -85,7 +84,7 @@ impl Iterator for SqliteTableIterator {
         let mut record = self.scanner.next_record().ok()??;
 
         for (i, &n) in self.fields.iter().enumerate() {
-            self.row_buffer[i] = record.owned_field(n).ok()??;
+            self.row_buffer[i] = record.field(n).ok()??;
         }
 
         None
@@ -114,7 +113,7 @@ impl DatabaseReader for SqliteDatabase {
         Some(SqliteTableIterator {
             fields: columns,
             scanner: self.scanner(table.first_page),
-            row_buffer: vec![OwnedValue::Null; len]
+            row_buffer: vec![Value::Null; len]
         })
     }
 }
