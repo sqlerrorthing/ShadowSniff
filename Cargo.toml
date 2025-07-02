@@ -19,7 +19,8 @@ members = [
     "hollowing",
     "utils",
     "collector",
-    "zip"
+    "zip", 
+    "half-io"
 ]
 
 [profile.release]

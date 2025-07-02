@@ -7,3 +7,6 @@ edition = "2024"
 utils = { path = "../utils" }
 obfstr = "0.4.4"
 anyhow = { version = "1.0.98", default-features = false }
+half-io = { path = "../half-io" }
+embedded-io = "0.6.1"
+spin = "0.10.0"

@@ -121,7 +121,7 @@ where
     F: Fn(&dyn TableRecord) -> Option<T>,
 {
     let bytes = path.read_file().ok()?;
-    let db = db_type.as_ref().read_from_bytes(&bytes).ok()?;
+    let db = db_type.as_ref().read_from_bytes(bytes).ok()?;
     let table = db.read_table(table_name)?;
 
     let records = table

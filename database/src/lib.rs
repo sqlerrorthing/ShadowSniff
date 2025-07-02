@@ -89,7 +89,7 @@ pub enum Databases {
 }
 
 impl Databases {
-    pub fn read_from_bytes(&self, bytes: &[u8]) -> Result<impl DatabaseReader, Error> {
+    pub fn read_from_bytes(&self, bytes: Vec<u8>) -> Result<impl DatabaseReader, Error> {
         match self {
             Databases::Sqlite => SqliteDatabase::try_from(bytes)
         }
@@ -99,5 +99,23 @@ impl Databases {
 impl AsRef<Databases> for Databases {
     fn as_ref(&self) -> &Databases {
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Databases;
+    use utils::path::get_current_directory;
+
+    extern crate alloc;
+
+    #[test]
+    fn load() {
+        let absolute = get_current_directory().unwrap().parent().unwrap() / "test.db";
+        let Ok(file) = absolute.read_file() else {
+            panic!("file {absolute} not found")
+        };
+
+        let _ = Databases::Sqlite.read_from_bytes(file);
     }
 }
