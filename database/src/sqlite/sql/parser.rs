@@ -27,6 +27,7 @@ impl ParserState {
 
     fn parse_create_table(&mut self) -> anyhow::Result<CreateTableStatement> {
         self.expect_eq(Token::Create)?;
+        let _ = self.expect_eq(Token::Primary);
         self.expect_eq(Token::Table)?;
         let name = self.expect_identifier()?.to_string();
         self.expect_eq(Token::LPar)?;

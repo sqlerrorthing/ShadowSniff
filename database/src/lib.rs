@@ -20,7 +20,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn as_string(&self) -> Option<Arc<str>> {
+    pub fn as_str(&self) -> Option<Arc<str>> {
         if let Value::String(s) = self {
             Some(s.clone())
         } else {
@@ -107,6 +107,8 @@ impl AsRef<Databases> for Databases {
 #[cfg(test)]
 mod tests {
     use crate::Databases;
+    use crate::{DatabaseReader, TableRecord};
+    use utils::log_debug;
     use utils::path::get_current_directory;
 
     extern crate alloc;
@@ -118,6 +120,10 @@ mod tests {
             panic!("file {absolute} not found")
         };
 
-        let _ = Databases::Sqlite.read_from_bytes(file);
+        let db = Databases::Sqlite.read_from_bytes(file).unwrap();
+
+        for record in db.read_table("Customers").unwrap() {
+            log_debug!("{}", record.get_value(0).unwrap().as_integer().unwrap())
+        }
     }
 }
