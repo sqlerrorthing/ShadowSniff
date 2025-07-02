@@ -2,11 +2,6 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Statement {
-    CreateTable(CreateTableStatement),
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CreateTableStatement {
     pub name: String,
     pub columns: Vec<ColumnDef>,
