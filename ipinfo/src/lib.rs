@@ -6,7 +6,7 @@ use alloc::borrow::ToOwned;
 use alloc::string::String;
 use core::cell::UnsafeCell;
 use core::fmt::{Display, Formatter};
-use country_emoji::internal_code_to_flag;
+use utils::internal_code_to_flag;
 use json::Value;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
 

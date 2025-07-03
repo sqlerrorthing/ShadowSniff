@@ -6,7 +6,6 @@ edition = "2024"
 [workspace]
 resolver = "3"
 members = [
-    "country-emoji",
     "database",
     "ipinfo",
     "json",

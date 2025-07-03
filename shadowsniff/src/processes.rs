@@ -16,8 +16,8 @@ pub(super) struct ProcessesTask;
 impl<C: Collector> Task<C> for ProcessesTask {
     parent_name!("Processes.txt");
     
-    unsafe fn run(&self, parent: &Path, _: &C) {
-        let processes = get_process_list();
+    fn run(&self, parent: &Path, _: &C) {
+        let processes = unsafe { get_process_list() };
 
         let max_pid_width = processes
             .iter()
