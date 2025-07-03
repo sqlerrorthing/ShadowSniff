@@ -17,16 +17,14 @@ pub mod base64;
 pub mod browsers;
 pub mod random;
 
-<<<<<<< HEAD
+const FLAG_MAGIC_NUMBER: u32 = 0x1F1E6 /* 🇦 */ - 'A' as u32;
+
 #[macro_export]
 macro_rules! str {
     ($buffer:expr) => {{
         alloc::string::String::from_utf8_lossy($buffer)
     }};
 }
-=======
-const FLAG_MAGIC_NUMBER: u32 = 0x1F1E6 /* 🇦 */ - 'A' as u32;
->>>>>>> origin/master
 
 pub trait WideString {
     fn to_wide(&self) -> Vec<u16>;
@@ -59,9 +57,6 @@ pub fn get_time_nanoseconds() -> u128 {
 
         (counter as u128 * 1_000_000_000u128) / freq as u128
     }
-<<<<<<< HEAD
-}
-=======
 }
 
 pub fn internal_code_to_flag<S>(code: &S) -> Option<String>
@@ -80,4 +75,3 @@ where
 
     Some(flag)
 }
->>>>>>> origin/master
