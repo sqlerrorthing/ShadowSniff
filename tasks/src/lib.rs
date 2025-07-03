@@ -61,19 +61,17 @@ pub trait Task<C: Collector>: Send + Sync {
     fn parent_name(&self) -> Option<String> {
         None
     }
-    
+
     fn run(&self, parent: &Path, collector: &C);
 }
 
 pub struct CompositeTask<C: Collector> {
-    subtasks: Vec<Arc<dyn Task<C>>>
+    subtasks: Vec<Arc<dyn Task<C>>>,
 }
 
 impl<C: Collector> CompositeTask<C> {
     pub fn new(subtasks: Vec<Arc<dyn Task<C>>>) -> CompositeTask<C> {
-        Self {
-            subtasks
-        }
+        Self { subtasks }
     }
 }
 
@@ -85,14 +83,14 @@ impl<C: Collector> Task<C> for CompositeTask<C> {
                 let task = &self.subtasks[0];
                 task.run(&task_path(task, parent), collector);
             }
-            _ => run_tasks(&self.subtasks, parent, collector)
+            _ => run_tasks(&self.subtasks, parent, collector),
         }
     }
 }
 
 fn run_tasks<C>(tasks: &[Arc<dyn Task<C>>], parent: &Path, collector: &C)
 where
-    C: Collector
+    C: Collector,
 {
     let mut handles: Vec<HANDLE> = Vec::new();
 
@@ -100,7 +98,7 @@ where
         let params = Box::new(ThreadParams {
             task: task.clone(),
             path: task_path(task, parent),
-            collector
+            collector,
         });
 
         let handle = unsafe {
@@ -110,7 +108,7 @@ where
                 Some(thread_proc::<C>),
                 Box::into_raw(params) as *mut _,
                 0,
-                null_mut()
+                null_mut(),
             )
         };
 
@@ -120,12 +118,7 @@ where
     }
 
     unsafe {
-        WaitForMultipleObjects(
-            handles.len() as _,
-            handles.as_ptr(),
-            TRUE,
-            0xFFFFFFFF,
-        );
+        WaitForMultipleObjects(handles.len() as _, handles.as_ptr(), TRUE, 0xFFFFFFFF);
     }
 
     for handle in handles {
@@ -155,6 +148,6 @@ unsafe extern "system" fn thread_proc<C: Collector>(param: *mut c_void) -> u32 {
     params.task.run(&params.path, params.collector);
 
     drop(params);
-    
+
     0
 }

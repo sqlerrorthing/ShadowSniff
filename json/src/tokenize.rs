@@ -26,7 +26,7 @@ pub enum TokenizeError {
 }
 
 pub fn tokenize<S>(input: S) -> Result<Vec<Token>, TokenizeError>
-where 
+where
     S: AsRef<str>,
 {
     let chars: Vec<char> = input.as_ref().chars().collect();
@@ -37,7 +37,7 @@ where
         let Some(token) = make_token(&chars, &mut index)? else {
             break; // no more tokens
         };
-        
+
         tokens.push(token);
         index += 1;
     }
@@ -53,7 +53,7 @@ fn make_token(chars: &Vec<char>, index: &mut usize) -> Result<Option<Token>, Tok
         }
         ch = chars[*index];
     }
-    
+
     let token = match ch {
         '[' => Token::LeftBracket,
         ']' => Token::RightBracket,

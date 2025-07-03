@@ -88,7 +88,7 @@ pub trait TableRecord {
 }
 
 pub enum Databases {
-    Sqlite
+    Sqlite,
 }
 
 impl Databases {

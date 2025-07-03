@@ -2,7 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use alloc::format;
 use collector::Collector;
 use ipinfo::unwrapped_ip_info;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use utils::path::{Path, WriteToFile};
 
 pub(super) struct UserInfoTask;

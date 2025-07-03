@@ -16,7 +16,7 @@ use windows_sys::Win32::System::Time::FileTimeToSystemTime;
 pub struct ZipEntry {
     path: String,
     data: Vec<u8>,
-    modified: (u16, u16)
+    modified: (u16, u16),
 }
 
 #[derive(Default)]
@@ -35,11 +35,10 @@ impl Deref for ZipEntry {
     }
 }
 
-pub enum IntoPath<'a, 'b>
-{
+pub enum IntoPath<'a, 'b> {
     Reference(&'a Path),
     Borrowed(Path),
-    StringReference(&'b str)
+    StringReference(&'b str),
 }
 
 impl From<IntoPath<'_, '_>> for Path {
@@ -47,7 +46,7 @@ impl From<IntoPath<'_, '_>> for Path {
         match value {
             IntoPath::Reference(val) => val.clone(),
             IntoPath::Borrowed(val) => val,
-            IntoPath::StringReference(val) => Path::new(val)
+            IntoPath::StringReference(val) => Path::new(val),
         }
     }
 }
@@ -74,11 +73,11 @@ impl<'b> From<&'b str> for IntoPath<'_, 'b> {
 pub enum ZipCompression {
     NONE,
 
-    DEFLATE(u8)
+    DEFLATE(u8),
 }
 
 impl Default for ZipCompression {
-    fn default() -> Self { 
+    fn default() -> Self {
         ZipCompression::DEFLATE(10)
     }
 }
@@ -90,33 +89,33 @@ impl ZipCompression {
             ZipCompression::NONE => Vec::from(data),
         }
     }
-    
+
     pub fn method(&self) -> u16 {
         match self {
             ZipCompression::DEFLATE(_) => 8u16,
             ZipCompression::NONE => 0u16,
         }
-    } 
+    }
 }
 
 impl ZipArchive {
     pub fn comment<S>(&mut self, comment: S) -> &mut Self
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         self.comment = Some(comment.as_ref().to_string());
         self
     }
-    
+
     pub fn password<S>(&mut self, password: S) -> &mut Self
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         assert!(password.as_ref().is_ascii(), "Password must be ASCII only");
         self.password = Some(password.as_ref().to_string());
         self
     }
-    
+
     pub fn compression(&mut self, compression: ZipCompression) -> &mut Self {
         self.compression = compression;
         self
@@ -148,30 +147,35 @@ impl ZipArchive {
         let _ = self.add_file_internal(file);
         self
     }
-    
+
     fn add_file_internal(&mut self, file: &Path) -> Option<()> {
         if !file.is_file() {
-            return None
+            return None;
         }
-        
+
         let full_name = file.fullname()?;
         let file_time = file.get_filetime()?;
         let data = file.read_file().ok()?;
-        
+
         let entry = ZipEntry {
             path: full_name.to_string(),
             data,
-            modified: filetime_to_dos_date_time(&file_time)
+            modified: filetime_to_dos_date_time(&file_time),
         };
-        
+
         self.entries.push(entry);
-        
+
         Some(())
     }
 
-    fn add_folder_content_internal(&mut self, root: &Path, file: &Path, use_parent: bool) -> Option<()> {
+    fn add_folder_content_internal(
+        &mut self,
+        root: &Path,
+        file: &Path,
+        use_parent: bool,
+    ) -> Option<()> {
         if !file.is_exists() || !root.is_exists() {
-            return None
+            return None;
         }
 
         for file in file.list_files()? {
@@ -182,8 +186,7 @@ impl ZipArchive {
                 let file_time = file.get_filetime()?;
 
                 let rel_path = if use_parent {
-                    file.strip_prefix(root.deref())?
-                        .strip_prefix("\\")?
+                    file.strip_prefix(root.deref())?.strip_prefix("\\")?
                 } else {
                     file.deref()
                 };
@@ -191,7 +194,7 @@ impl ZipArchive {
                 let entry = ZipEntry {
                     path: rel_path.to_string(),
                     data,
-                    modified: filetime_to_dos_date_time(&file_time)
+                    modified: filetime_to_dos_date_time(&file_time),
                 };
 
                 self.entries.push(entry);
@@ -215,13 +218,10 @@ fn filetime_to_dos_date_time(file_time: &FILETIME) -> (u16, u16) {
         }
     }
 
-    let dos_time: u16 = (sys_time.wHour << 11)
-        | (sys_time.wMinute << 5) | (sys_time.wSecond / 2);
+    let dos_time: u16 = (sys_time.wHour << 11) | (sys_time.wMinute << 5) | (sys_time.wSecond / 2);
 
     let year = sys_time.wYear as i32;
-    let dos_date: u16 = (((year - 1980) as u16) << 9)
-        | sys_time.wMonth << 5
-        | sys_time.wDay;
+    let dos_date: u16 = (((year - 1980) as u16) << 9) | sys_time.wMonth << 5 | sys_time.wDay;
 
     (dos_time, dos_date)
 }

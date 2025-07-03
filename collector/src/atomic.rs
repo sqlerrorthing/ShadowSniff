@@ -96,7 +96,7 @@ impl Vpn for AtomicUsizeVpn {
 
 #[derive(Default)]
 pub struct AtomicDevice {
-    wifi_networks: AtomicUsize
+    wifi_networks: AtomicUsize,
 }
 
 impl Device for AtomicDevice {
@@ -109,7 +109,7 @@ pub struct AtomicCollector {
     software: AtomicUsizeSoftware,
     file_grabber: AtomicFileGrabber,
     vpn: AtomicUsizeVpn,
-    device: AtomicDevice
+    device: AtomicDevice,
 }
 
 impl Collector for AtomicCollector {

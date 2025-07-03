@@ -4,8 +4,8 @@ extern crate alloc;
 mod parser;
 mod tokenize;
 
-use crate::parser::{parse_tokens, TokenParseError};
-use crate::tokenize::{tokenize, TokenizeError};
+use crate::parser::{TokenParseError, parse_tokens};
+use crate::tokenize::{TokenizeError, tokenize};
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -29,7 +29,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_bool(&self) -> Option<&bool> {
         if let Self::Boolean(val) = self {
             Some(val)
@@ -37,7 +37,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_string(&self) -> Option<&String> {
         if let Self::String(val) = self {
             Some(val)
@@ -45,7 +45,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_number(&self) -> Option<&f64> {
         if let Self::Number(val) = self {
             Some(val)
@@ -53,7 +53,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_array(&self) -> Option<&Vec<Value>> {
         if let Self::Array(val) = self {
             Some(val)
@@ -61,7 +61,7 @@ impl Value {
             None
         }
     }
-    
+
     pub fn as_object(&self) -> Option<&BTreeMap<String, Value>> {
         if let Self::Object(val) = self {
             Some(val)
@@ -103,12 +103,24 @@ impl From<usize> for Key {
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            Value::Null => { write!(f, "null") }
-            Value::Boolean(value) => { write!(f, "{}", value) }
-            Value::String(value) => { write!(f, "{}", value) }
-            Value::Number(value) => { write!(f, "{}", value) }
-            Value::Array(value) => { write!(f, "[array {}]", value.len()) }
-            Value::Object(_) => { write!(f, "{{object Object}}") }
+            Value::Null => {
+                write!(f, "null")
+            }
+            Value::Boolean(value) => {
+                write!(f, "{}", value)
+            }
+            Value::String(value) => {
+                write!(f, "{}", value)
+            }
+            Value::Number(value) => {
+                write!(f, "{}", value)
+            }
+            Value::Array(value) => {
+                write!(f, "[array {}]", value.len())
+            }
+            Value::Object(_) => {
+                write!(f, "{{object Object}}")
+            }
         }
     }
 }

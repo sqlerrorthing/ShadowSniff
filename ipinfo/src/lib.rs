@@ -6,9 +6,9 @@ use alloc::borrow::ToOwned;
 use alloc::string::String;
 use core::cell::UnsafeCell;
 use core::fmt::{Display, Formatter};
-use utils::internal_code_to_flag;
 use json::Value;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
+use utils::internal_code_to_flag;
 
 static mut GLOBAL_IP_INFO: UnsafeCell<Option<IpInfo>> = UnsafeCell::new(None);
 
@@ -71,7 +71,7 @@ impl IpInfo {
             loc,
             org,
             postal,
-            timezone
+            timezone,
         })
     }
 }
@@ -87,19 +87,20 @@ impl TryFrom<Value> for IpInfo {
 #[allow(static_mut_refs)]
 pub fn init_ip_info() -> bool {
     if !get_ip_info().is_none() {
-        return false
+        return false;
     }
 
-    let result = Request::get("https://ipinfo.io/json")
-        .build()
-        .send();
+    let result = Request::get("https://ipinfo.io/json").build().send();
 
-    let Some(json) = result.ok().and_then(|response| response.body().as_json().ok()) else {
-        return false
+    let Some(json) = result
+        .ok()
+        .and_then(|response| response.body().as_json().ok())
+    else {
+        return false;
     };
 
     let Ok(info) = IpInfo::try_from(json) else {
-        return false
+        return false;
     };
 
     let slot = unsafe { &mut *GLOBAL_IP_INFO.get() };

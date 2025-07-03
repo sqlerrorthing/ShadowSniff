@@ -9,12 +9,18 @@ use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ptr::{null, null_mut};
 use core::slice;
-use json::{parse, ParseError, Value};
+use json::{ParseError, Value, parse};
 use utils::WideString;
+use windows_sys::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, GetLastError};
+use windows_sys::Win32::Networking::WinHttp::{
+    URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_ADDREQ_FLAG_ADD, WINHTTP_FLAG_SECURE,
+    WINHTTP_INTERNET_SCHEME_HTTPS, WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_QUERY_RAW_HEADERS_CRLF,
+    WINHTTP_QUERY_STATUS_CODE, WinHttpAddRequestHeaders, WinHttpCloseHandle, WinHttpConnect,
+    WinHttpCrackUrl, WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable,
+    WinHttpQueryHeaders, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest,
+};
 use windows_sys::core::PCWSTR;
 use windows_sys::w;
-use windows_sys::Win32::Foundation::{GetLastError, ERROR_INSUFFICIENT_BUFFER};
-use windows_sys::Win32::Networking::WinHttp::{WinHttpAddRequestHeaders, WinHttpCloseHandle, WinHttpConnect, WinHttpCrackUrl, WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable, WinHttpQueryHeaders, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest, URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_ADDREQ_FLAG_ADD, WINHTTP_FLAG_SECURE, WINHTTP_INTERNET_SCHEME_HTTPS, WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_QUERY_STATUS_CODE};
 
 macro_rules! close {
     ( $( $handle:expr ),* ) => {
@@ -66,29 +72,29 @@ impl Response {
 impl Request {
     pub fn get<S>(url: S) -> GetBuilder
     where
-        S: Into<String>
+        S: Into<String>,
     {
         GetBuilder {
             inner: Request {
                 method: HttpMethod::GET,
                 url: url.into(),
                 headers: BTreeMap::default(),
-                body: None
-            }
+                body: None,
+            },
         }
     }
 
     pub fn post<S>(url: S) -> PostBuilder
     where
-        S: Into<String>
+        S: Into<String>,
     {
         PostBuilder {
             inner: Request {
                 method: HttpMethod::POST,
                 url: url.into(),
                 headers: BTreeMap::default(),
-                body: None
-            }
+                body: None,
+            },
         }
     }
 
@@ -99,11 +105,11 @@ impl Request {
                 WINHTTP_ACCESS_TYPE_NO_PROXY,
                 null_mut(),
                 null_mut(),
-                0
+                0,
             );
 
             if session.is_null() {
-                return Err(GetLastError())
+                return Err(GetLastError());
             }
 
             let mut url_comp = URL_COMPONENTS {
@@ -121,18 +127,17 @@ impl Request {
                 return Err(GetLastError());
             }
 
-            let mut host = slice::from_raw_parts(url_comp.lpszHostName, url_comp.dwHostNameLength as usize).to_vec();
+            let mut host =
+                slice::from_raw_parts(url_comp.lpszHostName, url_comp.dwHostNameLength as usize)
+                    .to_vec();
             host.push(0);
 
-            let mut path = slice::from_raw_parts(url_comp.lpszUrlPath, url_comp.dwUrlPathLength as usize).to_vec();
+            let mut path =
+                slice::from_raw_parts(url_comp.lpszUrlPath, url_comp.dwUrlPathLength as usize)
+                    .to_vec();
             path.push(0);
 
-            let connection = WinHttpConnect(
-                session,
-                host.as_ptr(),
-                url_comp.nPort,
-                0,
-            );
+            let connection = WinHttpConnect(session, host.as_ptr(), url_comp.nPort, 0);
 
             if connection.is_null() {
                 close!(session);
@@ -148,7 +153,11 @@ impl Request {
                 null_mut(),
                 null_mut(),
                 null_mut(),
-                if url_comp.nScheme == WINHTTP_INTERNET_SCHEME_HTTPS { WINHTTP_FLAG_SECURE } else { 0 },
+                if url_comp.nScheme == WINHTTP_INTERNET_SCHEME_HTTPS {
+                    WINHTTP_FLAG_SECURE
+                } else {
+                    0
+                },
             );
 
             if request.is_null() {
@@ -159,7 +168,13 @@ impl Request {
             for (key, value) in &self.headers {
                 let header = alloc::format!("{}: {}\0", key, value);
                 let header_wide: Vec<u16> = header.encode_utf16().collect();
-                if WinHttpAddRequestHeaders(request, header_wide.as_ptr(), header.len() as u32, WINHTTP_ADDREQ_FLAG_ADD) == 0 {
+                if WinHttpAddRequestHeaders(
+                    request,
+                    header_wide.as_ptr(),
+                    header.len() as u32,
+                    WINHTTP_ADDREQ_FLAG_ADD,
+                ) == 0
+                {
                     close!(request, connection, session);
                     return Err(GetLastError());
                 }
@@ -189,7 +204,8 @@ impl Request {
                 &mut status_code as *mut _ as *mut _,
                 &mut size,
                 null_mut(),
-            ) == 0 {
+            ) == 0
+            {
                 close!(request, connection, session);
                 return Err(GetLastError());
             }
@@ -216,7 +232,8 @@ impl Request {
                     null_mut(),
                 ) != 0
                 {
-                    let headers_str = String::from_utf16_lossy(&buffer[..(buffer_len as usize / 2)]);
+                    let headers_str =
+                        String::from_utf16_lossy(&buffer[..(buffer_len as usize / 2)]);
                     for line in headers_str.lines().skip(1) {
                         if let Some(colon_pos) = line.find(':') {
                             let key = line[..colon_pos].trim().to_string();
@@ -230,13 +247,22 @@ impl Request {
             let mut body = Vec::new();
             loop {
                 let mut bytes_available: u32 = 0;
-                if WinHttpQueryDataAvailable(request, &mut bytes_available) == 0 || bytes_available == 0 {
+                if WinHttpQueryDataAvailable(request, &mut bytes_available) == 0
+                    || bytes_available == 0
+                {
                     break;
                 }
 
                 let mut buffer = vec![0u8; bytes_available as usize];
                 let mut bytes_read = 0;
-                if WinHttpReadData(request, buffer.as_mut_ptr() as _, bytes_available, &mut bytes_read) == 0 || bytes_read == 0 {
+                if WinHttpReadData(
+                    request,
+                    buffer.as_mut_ptr() as _,
+                    bytes_available,
+                    &mut bytes_read,
+                ) == 0
+                    || bytes_read == 0
+                {
                     break;
                 }
 
@@ -272,14 +298,14 @@ pub trait BodyRequestBuilder: RequestBuilder {
 #[derive(Copy, Clone)]
 pub enum HttpMethod {
     GET,
-    POST
+    POST,
 }
 
 impl From<HttpMethod> for PCWSTR {
     fn from(value: HttpMethod) -> Self {
         match value {
             HttpMethod::GET => w!("GET\0"),
-            HttpMethod::POST => w!("POST\0")
+            HttpMethod::POST => w!("POST\0"),
         }
     }
 }
@@ -287,9 +313,10 @@ impl From<HttpMethod> for PCWSTR {
 impl RequestBuilder for Request {
     fn header<S>(mut self, key: S, value: S) -> Self
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
-        self.headers.insert(key.as_ref().to_string(), value.as_ref().to_string());
+        self.headers
+            .insert(key.as_ref().to_string(), value.as_ref().to_string());
         self
     }
 
@@ -299,13 +326,13 @@ impl RequestBuilder for Request {
 }
 
 pub struct GetBuilder {
-    inner: Request
+    inner: Request,
 }
 
 impl RequestBuilder for GetBuilder {
     fn header<S>(mut self, key: S, value: S) -> Self
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         self.inner = self.inner.header(key, value);
         self
@@ -317,13 +344,13 @@ impl RequestBuilder for GetBuilder {
 }
 
 pub struct PostBuilder {
-    inner: Request
+    inner: Request,
 }
 
 impl RequestBuilder for PostBuilder {
     fn header<S>(mut self, key: S, value: S) -> Self
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         self.inner = self.inner.header(key, value);
         self
@@ -337,7 +364,7 @@ impl RequestBuilder for PostBuilder {
 impl BodyRequestBuilder for PostBuilder {
     fn body<B>(mut self, body: B) -> Self
     where
-        B: Into<Vec<u8>>
+        B: Into<Vec<u8>>,
     {
         self.inner.body = Some(body.into());
         self

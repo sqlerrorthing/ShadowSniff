@@ -2,8 +2,8 @@ use crate::ZipArchive;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use rand_chacha::rand_core::RngCore;
 use rand_chacha::ChaCha20Rng;
+use rand_chacha::rand_core::RngCore;
 use utils::random::ChaCha20RngExt;
 
 pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
@@ -14,14 +14,14 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
     for entry in &archive.entries {
         let (compression_method, mut compressed) = (
             archive.compression.method(),
-            archive.compression.compress(&entry.data)
+            archive.compression.compress(&entry.data),
         );
 
         let crc = crc32(&entry.data);
         let path_bytes = entry.path.as_bytes();
 
-        let (encryption_header, general_flag) = protect_data(crc, &mut compressed, archive.password.as_ref())
-            .unwrap_or((vec![], 0));
+        let (encryption_header, general_flag) =
+            protect_data(crc, &mut compressed, archive.password.as_ref()).unwrap_or((vec![], 0));
 
         let compressed_size = encryption_header.len() + compressed.len();
 
@@ -32,7 +32,7 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
             entry.modified,
             compressed_size,
             entry.data.len(),
-            path_bytes
+            path_bytes,
         );
 
         zip_data.extend(&local_header);
@@ -47,7 +47,7 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
             compressed_size,
             entry.data.len(),
             path_bytes,
-            offset
+            offset,
         );
 
         central_directory.extend(&central_header);
@@ -61,7 +61,7 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
         archive.entries.len(),
         central_directory.len(),
         central_offset,
-        archive.comment.as_ref()
+        archive.comment.as_ref(),
     );
 
     zip_data.extend(eocd);
@@ -72,7 +72,7 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
 fn protect_data(
     crc: u32,
     payload: &mut Vec<u8>,
-    password: Option<&String>
+    password: Option<&String>,
 ) -> Option<(Vec<u8>, u16)> {
     if let Some(password) = password {
         let (mut k0, mut k1, mut k2) = init_keys(password);
@@ -110,7 +110,7 @@ fn create_local_header(
     modified: (u16, u16),
     compressed_len: usize,
     data_len: usize,
-    path: &[u8]
+    path: &[u8],
 ) -> Vec<u8> {
     extend!(
         [0x50, 0x4B, 0x03, 0x04],
@@ -137,7 +137,7 @@ fn create_central_header(
     compressed_len: usize,
     data_len: usize,
     path: &[u8],
-    offset: usize
+    offset: usize,
 ) -> Vec<u8> {
     extend!(
         [0x50, 0x4B, 0x01, 0x02],
@@ -165,7 +165,7 @@ fn create_end_of_central_directory(
     entries_len: usize,
     central_size: usize,
     central_offset: usize,
-    comment: Option<&String>
+    comment: Option<&String>,
 ) -> Vec<u8> {
     let mut vec = extend!(
         [0x50, 0x4B, 0x05, 0x06],
@@ -206,7 +206,7 @@ fn crc32(data: &[u8]) -> u32 {
 
 fn init_keys<S>(password: &S) -> (u32, u32, u32)
 where
-    S: AsRef<str> + ?Sized
+    S: AsRef<str> + ?Sized,
 {
     let mut k0 = 0x12345678;
     let mut k1 = 0x23456789;
