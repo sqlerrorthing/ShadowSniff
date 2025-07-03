@@ -6,12 +6,8 @@ use anyhow::bail;
 pub enum Token {
     Create,
     Table,
-    Select,
-    As,
-    From,
     LPar,
     RPar,
-    Star,
     Comma,
     SemiColon,
     Identifier(String),
@@ -34,7 +30,6 @@ pub fn tokenize(input: &str) -> anyhow::Result<Vec<Token>> {
         match c {
             '(' => tokens.push(Token::LPar),
             ')' => tokens.push(Token::RPar),
-            '*' => tokens.push(Token::Star),
             ',' => tokens.push(Token::Comma),
             ';' => tokens.push(Token::SemiColon),
             c if c.is_whitespace() => continue,
@@ -47,9 +42,6 @@ pub fn tokenize(input: &str) -> anyhow::Result<Vec<Token>> {
                 match ident.as_str() {
                     "create" => tokens.push(Token::Create),
                     "table" => tokens.push(Token::Table),
-                    "select" => tokens.push(Token::Select),
-                    "as" => tokens.push(Token::As),
-                    "from" => tokens.push(Token::From),
                     _ => tokens.push(Token::Identifier(ident)),
                 }
             }
