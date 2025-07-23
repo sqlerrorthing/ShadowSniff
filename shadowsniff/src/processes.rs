@@ -5,8 +5,9 @@ use collector::Collector;
 use core::ffi::CStr;
 use core::fmt::Write;
 use core::ptr::null_mut;
-use tasks::{Task, parent_name};
-use utils::path::{Path, WriteToFile};
+use filesystem::path::Path;
+use filesystem::{FileSystem, WriteTo};
+use tasks::{parent_name, Task};
 use windows_sys::Win32::Foundation::{CloseHandle, MAX_PATH};
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
 use windows_sys::Win32::System::Threading::{
@@ -15,10 +16,10 @@ use windows_sys::Win32::System::Threading::{
 
 pub(super) struct ProcessesTask;
 
-impl<C: Collector> Task<C> for ProcessesTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for ProcessesTask {
     parent_name!("Processes.txt");
 
-    fn run(&self, parent: &Path, _: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, _: &C) {
         let processes = unsafe { get_process_list() };
 
         let max_pid_width = processes
@@ -48,7 +49,7 @@ impl<C: Collector> Task<C> for ProcessesTask {
             );
         }
 
-        let _ = output.write_to(parent);
+        let _ = output.write_to(filesystem, parent);
     }
 }
 

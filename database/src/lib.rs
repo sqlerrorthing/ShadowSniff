@@ -1,4 +1,3 @@
-#![feature(let_chains)]
 #![no_std]
 
 extern crate alloc;
@@ -10,6 +9,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Error;
 use core::fmt::{Display, Formatter};
+use filesystem::path::Path;
 
 #[derive(Clone)]
 pub enum Value {

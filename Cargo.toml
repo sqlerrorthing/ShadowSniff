@@ -14,11 +14,14 @@ members = [
     "shadowsniff/browsers",
     "shadowsniff/ftp",
     "shadowsniff/messengers",
-    "tasks", 
+    "shadowsniff/games",
+    "tasks",
     "hollowing",
     "utils",
     "collector",
-    "zip", 
+    "zip",
+    "filesystem",
+    "regedit",
     "half-io"
 ]
 
@@ -43,3 +46,4 @@ utils = { path = "utils" }
 ipinfo = { path = "ipinfo" }
 collector = { path = "collector" }
 zip = { path = "zip" }
+filesystem = { path = "filesystem" }

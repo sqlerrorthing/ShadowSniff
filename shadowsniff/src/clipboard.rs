@@ -2,17 +2,18 @@ use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
 use collector::Collector;
 use core::ptr::{null_mut, slice_from_raw_parts};
-use tasks::{Task, parent_name};
-use utils::path::{Path, WriteToFile};
+use filesystem::path::Path;
+use filesystem::{FileSystem, WriteTo};
+use tasks::{parent_name, Task};
 use windows_sys::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, OpenClipboard};
 use windows_sys::Win32::System::Memory::{GlobalLock, GlobalUnlock};
 
 pub(super) struct ClipboardTask;
 
-impl<C: Collector> Task<C> for ClipboardTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for ClipboardTask {
     parent_name!("Clipboard.txt");
 
-    fn run(&self, parent: &Path, _: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, _: &C) {
         if unsafe { OpenClipboard(null_mut()) } == 0 {
             return;
         }
@@ -52,6 +53,6 @@ impl<C: Collector> Task<C> for ClipboardTask {
             return;
         }
 
-        let _ = str.write_to(parent);
+        let _ = str.write_to(filesystem, parent);
     }
 }

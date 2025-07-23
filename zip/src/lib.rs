@@ -8,8 +8,9 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ops::Deref;
+use filesystem::path::Path;
+use filesystem::{FileSystem, FileSystemExt};
 use miniz_oxide::deflate::compress_to_vec;
-use utils::path::Path;
 use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
 use windows_sys::Win32::System::Time::FileTimeToSystemTime;
 
@@ -121,41 +122,48 @@ impl ZipArchive {
         self
     }
 
-    pub fn add_folder_content<'a, 'b, P>(&mut self, root: P) -> &mut Self
+    pub fn add_folder_content<'a, 'b, F, P>(&mut self, filesystem: &F, root: P) -> &mut Self
     where
         P: Into<IntoPath<'a, 'b>>,
+        F: FileSystem,
     {
         let root = &Path::from(root.into());
-        let _ = self.add_folder_content_internal(root, root, true);
+        let _ = self.add_folder_content_internal(filesystem, root, root, true);
         self
     }
 
-    pub fn add_folder<'a, 'b, P>(&mut self, folder: P) -> &mut Self
+    pub fn add_folder<'a, 'b, F, P>(&mut self, filesystem: &F, folder: P) -> &mut Self
     where
         P: Into<IntoPath<'a, 'b>>,
+        F: FileSystem,
     {
         let folder = &Path::from(folder.into());
-        let _ = self.add_folder_content_internal(folder, folder, false);
+        let _ = self.add_folder_content_internal(filesystem, folder, folder, false);
         self
     }
 
-    pub fn add_file<'a, 'b, P>(&mut self, file: P) -> &mut Self
+    pub fn add_file<'a, 'b, F, P>(&mut self, filesystem: &F, file: P) -> &mut Self
     where
         P: Into<IntoPath<'a, 'b>>,
+        F: FileSystem,
     {
         let file = &Path::from(file.into());
-        let _ = self.add_file_internal(file);
+        let _ = self.add_file_internal(filesystem, file);
         self
     }
 
-    fn add_file_internal(&mut self, file: &Path) -> Option<()> {
-        if !file.is_file() {
+    fn add_file_internal<F>(&mut self, filesystem: &F, file: &Path) -> Option<()>
+    where
+        F: FileSystem,
+    {
+        if !filesystem.is_file(file) {
             return None;
         }
 
         let full_name = file.fullname()?;
-        let file_time = file.get_filetime()?;
-        let data = file.read_file().ok()?;
+        let file_time = filesystem.get_filetime(file).unwrap_or((0, 0));
+
+        let data = filesystem.read_file(file).ok()?;
 
         let entry = ZipEntry {
             path: full_name.to_string(),
@@ -168,22 +176,26 @@ impl ZipArchive {
         Some(())
     }
 
-    fn add_folder_content_internal(
+    fn add_folder_content_internal<F>(
         &mut self,
+        filesystem: &F,
         root: &Path,
         file: &Path,
         use_parent: bool,
-    ) -> Option<()> {
-        if !file.is_exists() || !root.is_exists() {
+    ) -> Option<()>
+    where
+        F: FileSystem,
+    {
+        if !filesystem.is_exists(file) || !filesystem.is_exists(root) {
             return None;
         }
 
-        for file in file.list_files()? {
-            if file.is_dir() {
-                self.add_folder_content_internal(root, &file, use_parent)?
-            } else if file.is_file() {
-                let data = file.read_file().ok()?;
-                let file_time = file.get_filetime()?;
+        for file in &filesystem.list_files(file)? {
+            if filesystem.is_dir(file) {
+                self.add_folder_content_internal(filesystem, root, file, use_parent)?
+            } else if filesystem.is_file(file) {
+                let data = filesystem.read_file(file).ok()?;
+                let file_time = filesystem.get_filetime(file).unwrap_or((0, 0));
 
                 let rel_path = if use_parent {
                     file.strip_prefix(root.deref())?.strip_prefix("\\")?
@@ -209,11 +221,15 @@ impl ZipArchive {
     }
 }
 
-fn filetime_to_dos_date_time(file_time: &FILETIME) -> (u16, u16) {
+fn filetime_to_dos_date_time(file_time: &(u32, u32)) -> (u16, u16) {
     let mut sys_time: SYSTEMTIME = unsafe { zeroed() };
+    let file_time = FILETIME {
+        dwLowDateTime: file_time.0,
+        dwHighDateTime: file_time.1,
+    };
 
     unsafe {
-        if FileTimeToSystemTime(file_time, &mut sys_time) == 0 {
+        if FileTimeToSystemTime(&file_time, &mut sys_time) == 0 {
             return (0, 0);
         }
     }

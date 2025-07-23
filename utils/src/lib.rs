@@ -5,15 +5,13 @@
 extern crate alloc;
 
 use alloc::string::String;
-use alloc::vec::Vec;
-use core::iter::once;
+use core::ops::Deref;
+use filesystem::FileSystem;
 use windows_sys::Win32::System::Performance::{QueryPerformanceCounter, QueryPerformanceFrequency};
 use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 
 pub mod base64;
-pub mod browsers;
 pub mod logging;
-pub mod path;
 pub mod process;
 pub mod random;
 
@@ -24,16 +22,6 @@ macro_rules! str {
     ($buffer:expr) => {{
         alloc::string::String::from_utf8_lossy($buffer)
     }};
-}
-
-pub trait WideString {
-    fn to_wide(&self) -> Vec<u16>;
-}
-
-impl WideString for str {
-    fn to_wide(&self) -> Vec<u16> {
-        self.encode_utf16().chain(once(0)).collect()
-    }
 }
 
 pub fn get_time_milliseconds() -> u64 {

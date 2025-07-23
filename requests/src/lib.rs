@@ -6,21 +6,21 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
+use core::iter::once;
 use core::mem::zeroed;
 use core::ptr::{null, null_mut};
 use core::slice;
-use json::{ParseError, Value, parse};
-use utils::WideString;
-use windows_sys::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, GetLastError};
-use windows_sys::Win32::Networking::WinHttp::{
-    URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_ADDREQ_FLAG_ADD, WINHTTP_FLAG_SECURE,
-    WINHTTP_INTERNET_SCHEME_HTTPS, WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_QUERY_RAW_HEADERS_CRLF,
-    WINHTTP_QUERY_STATUS_CODE, WinHttpAddRequestHeaders, WinHttpCloseHandle, WinHttpConnect,
-    WinHttpCrackUrl, WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable,
-    WinHttpQueryHeaders, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest,
-};
+use json::{parse, ParseError, Value};
 use windows_sys::core::PCWSTR;
 use windows_sys::w;
+use windows_sys::Win32::Foundation::{GetLastError, ERROR_INSUFFICIENT_BUFFER};
+use windows_sys::Win32::Networking::WinHttp::{
+    WinHttpAddRequestHeaders, WinHttpCloseHandle, WinHttpConnect, WinHttpCrackUrl,
+    WinHttpOpen, WinHttpOpenRequest, WinHttpQueryDataAvailable,
+    WinHttpQueryHeaders, WinHttpReadData, WinHttpReceiveResponse, WinHttpSendRequest,
+    URL_COMPONENTS, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_ADDREQ_FLAG_ADD, WINHTTP_FLAG_SECURE,
+    WINHTTP_INTERNET_SCHEME_HTTPS, WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_QUERY_STATUS_CODE,
+};
 
 macro_rules! close {
     ( $( $handle:expr ),* ) => {
@@ -121,7 +121,7 @@ impl Request {
                 ..zeroed()
             };
 
-            let url = self.url.to_wide();
+            let url: Vec<u16> = self.url.encode_utf16().chain(once(0)).collect();
             if WinHttpCrackUrl(url.as_ptr(), 0, 0, &mut url_comp) == 0 {
                 close!(session);
                 return Err(GetLastError());
