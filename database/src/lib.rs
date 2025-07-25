@@ -1,26 +1,29 @@
 #![no_std]
 
 extern crate alloc;
-mod bindings;
+pub mod sqlite;
 
-use crate::bindings::Sqlite3BindingsReader;
+use crate::sqlite::db::SqliteDatabase;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use anyhow::Error;
 use core::fmt::{Display, Formatter};
 use filesystem::path::Path;
 
+#[derive(Clone)]
 pub enum Value {
-    String(String),
+    String(Arc<str>),
     Integer(i64),
     Float(f64),
-    Blob(Vec<u8>),
-    Null,
+    Blob(Arc<[u8]>),
+    Null
 }
 
 impl Value {
-    pub fn as_string(&self) -> Option<&String> {
+    pub fn as_str(&self) -> Option<Arc<str>> {
         if let Value::String(s) = self {
-            Some(s)
+            Some(s.clone())
         } else {
             None
         }
@@ -42,9 +45,9 @@ impl Value {
         }
     }
 
-    pub fn as_blob(&self) -> Option<&Vec<u8>> {
+    pub fn as_blob(&self) -> Option<Arc<[u8]>> {
         if let Value::Blob(b) = self {
-            Some(b)
+            Some(b.clone())
         } else {
             None
         }
@@ -62,9 +65,9 @@ impl Value {
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            Value::String(value) => write!(f, "{}", value),
-            Value::Integer(value) => write!(f, "{}", value),
-            Value::Float(value) => write!(f, "{}", value),
+            Value::String(value) => write!(f, "{value}"),
+            Value::Integer(value) => write!(f, "{value}"),
+            Value::Float(value) => write!(f, "{value}"),
             Value::Blob(value) => write!(f, "{}", String::from_utf8_lossy(value)),
             Value::Null => write!(f, "null"),
         }
@@ -75,21 +78,13 @@ pub trait DatabaseReader {
     type Iter: Iterator<Item = Self::Record>;
     type Record: TableRecord;
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, i32>
-    where
-        Self: Sized;
-
-    fn from_path(path: &Path) -> Result<Self, i32>
-    where
-        Self: Sized;
-
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>;
 }
 
 pub trait TableRecord {
-    fn get_value(&self, key: usize) -> Option<&Value>;
+    fn get_value(&self, key: usize) -> Option<Value>;
 }
 
 pub enum Databases {
@@ -97,15 +92,9 @@ pub enum Databases {
 }
 
 impl Databases {
-    pub fn read_from_path(&self, path: &Path) -> Result<impl DatabaseReader, i32> {
+    pub fn read_from_bytes(&self, bytes: Vec<u8>) -> Result<impl DatabaseReader, Error> {
         match self {
-            Databases::Sqlite => Sqlite3BindingsReader::from_path(path),
-        }
-    }
-
-    pub fn read_from_bytes(&self, bytes: &[u8]) -> Result<impl DatabaseReader, i32> {
-        match self {
-            Databases::Sqlite => Sqlite3BindingsReader::from_bytes(bytes),
+            Databases::Sqlite => SqliteDatabase::try_from(bytes)
         }
     }
 }
@@ -113,5 +102,29 @@ impl Databases {
 impl AsRef<Databases> for Databases {
     fn as_ref(&self) -> &Databases {
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Databases;
+    use crate::{DatabaseReader, TableRecord};
+    use utils::log_debug;
+    use utils::path::get_current_directory;
+
+    extern crate alloc;
+
+    #[test]
+    fn load() {
+        let absolute = get_current_directory().unwrap().parent().unwrap() / "test.db";
+        let Ok(file) = absolute.read_file() else {
+            panic!("file {absolute} not found")
+        };
+
+        let db = Databases::Sqlite.read_from_bytes(file).unwrap();
+
+        for record in db.read_table("Customers").unwrap() {
+            log_debug!("{}", record.get_value(0).unwrap().as_integer().unwrap())
+        }
     }
 }

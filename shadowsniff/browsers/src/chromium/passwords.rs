@@ -54,18 +54,18 @@ fn extract_password_from_record(
 ) -> Option<Password> {
     let origin = record
         .get_value(LOGINS_ORIGIN_URL)
-        .and_then(|value| value.as_string())
+        .and_then(|value| value.as_str())
         .map(|s| s.to_owned());
 
     let username = record
         .get_value(LOGINS_USERNAME_VALUE)
-        .and_then(|value| value.as_string())
+        .and_then(|value| value.as_str())
         .map(|s| s.to_owned());
 
     let password = record
         .get_value(LOGINS_PASSWORD_VALUE)
         .and_then(|value| value.as_blob())
-        .and_then(|blob| unsafe { decrypt_data(blob, browser_data) });
+        .and_then(|blob| unsafe { decrypt_data(&blob, browser_data) });
 
     if let (None, None) = (&username, &password) {
         return None;
@@ -74,6 +74,6 @@ fn extract_password_from_record(
     Some(Password {
         origin,
         username,
-        password,
+        password: password.map(|password| password.into()),
     })
 }

@@ -21,7 +21,8 @@ members = [
     "collector",
     "zip",
     "filesystem",
-    "regedit"
+    "regedit",
+    "half-io"
 ]
 
 [profile.release]

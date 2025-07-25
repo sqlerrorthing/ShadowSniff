@@ -6,9 +6,9 @@ use database::{DatabaseReader, Databases, TableRecord};
 pub mod chromium;
 
 use crate::alloc::borrow::ToOwned;
-use alloc::string::{String, ToString};
-
 use crate::chromium::ChromiumTask;
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use collector::Collector;
@@ -135,7 +135,7 @@ where
     F: Fn(&dyn TableRecord) -> Option<T>,
 {
     let bytes = filesystem.read_file(path).ok()?;
-    let db = db_type.as_ref().read_from_bytes(&bytes).ok()?;
+    let db = db_type.as_ref().read_from_bytes(bytes).ok()?;
     let table = db.read_table(table_name)?;
 
     let records = table.filter_map(|record| mapper(&record)).collect();
@@ -145,10 +145,10 @@ where
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Cookie {
-    pub host_key: String,
-    pub name: String,
-    pub value: String,
-    pub path: String,
+    pub host_key: Arc<str>,
+    pub name: Arc<str>,
+    pub value: Arc<str>,
+    pub path: Arc<str>,
     pub expires_utc: i64,
 }
 
@@ -181,8 +181,8 @@ impl Display for Bookmark {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct AutoFill {
-    pub name: String,
-    pub value: String,
+    pub name: Arc<str>,
+    pub value: Arc<str>,
     pub last_used: i64,
 }
 
@@ -199,10 +199,10 @@ impl Display for AutoFill {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct CreditCard {
-    pub name_on_card: String,
+    pub name_on_card: Arc<str>,
     pub expiration_month: i64,
     pub expiration_year: i64,
-    pub card_number: String,
+    pub card_number: Arc<str>,
     pub use_count: i64,
 }
 
@@ -220,8 +220,8 @@ impl Display for CreditCard {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Download {
-    pub saved_as: String,
-    pub url: String,
+    pub saved_as: Arc<str>,
+    pub url: Arc<str>,
 }
 
 impl Display for Download {
@@ -237,9 +237,9 @@ impl Display for Download {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Password {
-    pub origin: Option<String>,
-    pub username: Option<String>,
-    pub password: Option<String>,
+    pub origin: Option<Arc<str>>,
+    pub username: Option<Arc<str>>,
+    pub password: Option<Arc<str>>,
 }
 
 impl Display for Password {
@@ -258,8 +258,8 @@ impl Display for Password {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct History {
-    pub url: String,
-    pub title: String,
+    pub url: Arc<str>,
+    pub title: Arc<str>,
     pub last_visit_time: i64,
 }
 

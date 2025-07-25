@@ -17,6 +17,13 @@ pub mod random;
 
 const FLAG_MAGIC_NUMBER: u32 = 0x1F1E6 /* 🇦 */ - 'A' as u32;
 
+#[macro_export]
+macro_rules! str {
+    ($buffer:expr) => {{
+        alloc::string::String::from_utf8_lossy($buffer)
+    }};
+}
+
 pub fn get_time_milliseconds() -> u64 {
     unsafe { GetTickCount64() }
 }

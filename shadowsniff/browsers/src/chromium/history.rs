@@ -47,8 +47,8 @@ impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask {
 }
 
 fn extract_history_from_record(record: &dyn TableRecord) -> Option<History> {
-    let url = record.get_value(URLS_URL)?.as_string()?.to_owned();
-    let title = record.get_value(URLS_TITLE)?.as_string()?.to_owned();
+    let url = record.get_value(URLS_URL)?.as_str()?.to_owned();
+    let title = record.get_value(URLS_TITLE)?.as_str()?.to_owned();
     let last_visit_time = record.get_value(URLS_LAST_VISIT_TIME)?.as_integer()?;
 
     Some(History {

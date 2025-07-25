@@ -49,18 +49,18 @@ fn extract_cookie_from_record(
     record: &dyn TableRecord,
     browser_data: &BrowserData,
 ) -> Option<Cookie> {
-    let host_key = record.get_value(COOKIES_HOST_KEY)?.as_string()?.to_owned();
-    let name = record.get_value(COOKIES_NAME)?.as_string()?.to_owned();
-    let path = record.get_value(COOKIES_PATH)?.as_string()?.to_owned();
+    let host_key = record.get_value(COOKIES_HOST_KEY)?.as_str()?.to_owned();
+    let name = record.get_value(COOKIES_NAME)?.as_str()?.to_owned();
+    let path = record.get_value(COOKIES_PATH)?.as_str()?.to_owned();
     let expires_utc = record.get_value(COOKIES_EXPIRES_UTC)?.as_integer()?;
 
     let encrypted_value = record.get_value(COOKIES_ENCRYPTED_VALUE)?.as_blob()?;
-    let value = unsafe { decrypt_data(encrypted_value, browser_data) }?;
+    let value = unsafe { decrypt_data(&encrypted_value, browser_data) }?;
 
     Some(Cookie {
         host_key,
         name,
-        value,
+        value: value.into(),
         path,
         expires_utc,
     })
