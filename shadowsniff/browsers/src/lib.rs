@@ -33,8 +33,8 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for BrowsersTask<C
     fn default() -> Self {
         Self {
             inner: composite_task!(
-                ChromiumTask::new(),
-                GeckoTask::new()
+                // ChromiumTask::default(),
+                GeckoTask::default()
             ),
         }
     }

