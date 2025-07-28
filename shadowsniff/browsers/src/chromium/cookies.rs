@@ -55,7 +55,7 @@ fn extract_cookie_from_record<R: TableRecord>(
     let expires_utc = record.get_value(COOKIES_EXPIRES_UTC)?.as_integer()?;
 
     let encrypted_value = record.get_value(COOKIES_ENCRYPTED_VALUE)?.as_blob()?;
-    let value = unsafe { decrypt_data(&encrypted_value, browser_data) }?.into();
+    let value = decrypt_data(&encrypted_value, browser_data)?.into();
 
     Some(Cookie {
         host_key,

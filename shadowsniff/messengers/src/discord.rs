@@ -137,7 +137,7 @@ where
 #[inline(always)]
 fn decrypt_token(token_slice: &[u8], master_key: &[u8]) -> Option<String> {
     let decoded = base64_decode(token_slice)?;
-    let decrypted = unsafe { decrypt_protected_data(&decoded, Some(master_key), None) }?;
+    let decrypted = decrypt_protected_data(&decoded, Some(master_key), None)?;
     Some(decrypted)
 }
 
