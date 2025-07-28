@@ -269,7 +269,6 @@ checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 name = "regedit"
 version = "0.1.0"
 dependencies = [
- "utils",
  "windows-sys 0.59.0",
 ]
 
@@ -374,6 +373,7 @@ dependencies = [
  "obfstr",
  "rand_chacha",
  "rand_core",
+ "regedit",
  "windows-sys 0.59.0",
 ]
 

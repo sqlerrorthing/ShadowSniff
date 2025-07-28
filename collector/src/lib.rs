@@ -91,6 +91,18 @@ pub trait Collector: Send + Sync {
     fn get_device(&self) -> &Self::Device;
 }
 
+pub struct EmojiBoolean(pub bool);
+
+impl Display for EmojiBoolean {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        if self.0 {
+            write!(f, "✅")
+        } else {
+            write!(f, "❌")
+        }
+    }
+}
+
 pub struct DisplayCollector<'a, T: Collector>(pub &'a T);
 
 impl<T: Collector> Display for DisplayCollector<'_, T> {

@@ -1,6 +1,5 @@
 #![feature(let_chains)]
 #![no_std]
-#![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
 
@@ -13,6 +12,7 @@ pub mod base64;
 pub mod logging;
 pub mod process;
 pub mod random;
+pub mod pc_info;
 
 const FLAG_MAGIC_NUMBER: u32 = 0x1F1E6 /* 🇦 */ - 'A' as u32;
 
