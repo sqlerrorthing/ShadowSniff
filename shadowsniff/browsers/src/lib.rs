@@ -1,15 +1,16 @@
 #![feature(let_chains)]
 #![no_std]
 
-mod gecko;
-mod chromium;
-
 extern crate alloc;
+mod gecko;
+pub mod chromium;
+
 use database::Database;
 
 use crate::alloc::borrow::ToOwned;
-use alloc::string::{String, ToString};
 use crate::chromium::ChromiumTask;
+use crate::gecko::GeckoTask;
+use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -21,8 +22,6 @@ use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
-use utils::path::{Path, WriteToFile};
-use crate::gecko::GeckoTask;
 
 pub(crate) type SqliteDatabase = Sqlite3BindingsDatabase;
 

