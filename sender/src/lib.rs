@@ -1,6 +1,7 @@
 #![no_std]
 
 extern crate alloc;
+pub mod catbox;
 pub mod discord_webhook;
 pub mod external_upload;
 pub mod fallback;
@@ -9,9 +10,7 @@ pub mod size_fallback;
 pub mod size_limit;
 pub mod telegram_bot;
 pub mod tmpfiles;
-pub mod catbox;
 
-use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::Collector;

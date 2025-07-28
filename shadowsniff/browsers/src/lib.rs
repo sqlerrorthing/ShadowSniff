@@ -43,7 +43,7 @@ where
 {
     let mut data: Vec<T> = profiles
         .iter()
-        .filter_map(|profile| f(profile))
+        .filter_map(f)
         .flat_map(|v| v.into_iter())
         .collect();
 
@@ -75,12 +75,7 @@ where
         if !filesystem.is_exists(db_path.as_ref()) {
             None
         } else {
-            read_table_records_mapped::<D, _>(
-                filesystem,
-                db_path.as_ref(),
-                table.as_ref(),
-                &mapper,
-            )
+            read_table_records_mapped::<D, _>(filesystem, db_path.as_ref(), table.as_ref(), &mapper)
         }
     })
 }

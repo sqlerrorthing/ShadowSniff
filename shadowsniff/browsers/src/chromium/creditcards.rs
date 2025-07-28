@@ -54,9 +54,7 @@ fn extract_card_from_record<R: TableRecord>(
     record: &R,
     browser_data: &BrowserData,
 ) -> Option<CreditCard> {
-    let name_on_card = record
-        .get_value(CREDIT_CARDS_NAME_ON_CARD)?
-        .as_string()?;
+    let name_on_card = record.get_value(CREDIT_CARDS_NAME_ON_CARD)?.as_string()?;
     let expiration_month = record
         .get_value(CREDIT_CARDS_EXPIRATION_MONTH)?
         .as_integer()?;

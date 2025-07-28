@@ -36,7 +36,11 @@ where
     C: Collector,
 {
     let link = match log {
-        LogContent::ExternalLink(ExternalLink {service_name, link, size}) => Some(format!(
+        LogContent::ExternalLink(ExternalLink {
+            service_name,
+            link,
+            size,
+        }) => Some(format!(
             r#"[Download from {service_name} [{size}]]({link})"#,
             size = format_size(*size as _)
         )),
@@ -151,7 +155,8 @@ impl LogSender for DiscordWebhookSender {
         C: Collector,
     {
         if let LogContent::ZipArchive(archive) = &log_file.content
-            && archive.len() >= 8 * 1024 * 1024 // 8 MB
+            && archive.len() >= 8 * 1024 * 1024
+        // 8 MB
         {
             return Err(SendError::LogFileTooBig);
         }

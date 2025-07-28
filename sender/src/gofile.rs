@@ -1,14 +1,10 @@
 use crate::external_upload::{base_upload, Uploader};
-use crate::{LogContent, LogFile, LogSender, SendError};
-use alloc::string::String;
+use crate::{LogFile, LogSender, SendError};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use collector::Collector;
 use delegate::delegate;
-use derive_new::new;
 use json::parse;
 use obfstr::obfstr as s;
-use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 
 /// https://gofile.io uploader wrapper around an inner [`LogSender`].
 #[derive(Clone)]

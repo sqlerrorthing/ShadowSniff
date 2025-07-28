@@ -61,7 +61,7 @@ fn extract_password_from_record<R: TableRecord>(
         .get_value(LOGINS_PASSWORD_VALUE)
         .and_then(|value| value.as_blob())
         .and_then(|blob| unsafe { decrypt_data(&blob, browser_data) })
-        .map(Arc::<str>::from);;
+        .map(Arc::<str>::from);
 
     if let (None, None) = (&username, &password) {
         return None;

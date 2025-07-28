@@ -1,11 +1,10 @@
-use crate::external_upload::{base_upload, Uploader};
+use crate::external_upload::Uploader;
 use crate::size_limit::SizeLimitWrapper;
 use crate::{LogFile, LogSender, SendError};
 use alloc::string::String;
 use alloc::sync::Arc;
 use collector::Collector;
 use delegate::delegate;
-use json::parse;
 use obfstr::obfstr as s;
 use requests::{write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 
@@ -50,9 +49,7 @@ fn upload(name: &str, bytes: &[u8]) -> Option<Arc<str>> {
         .send()
         .ok()?;
 
-    Some(
-        String::from_utf8(response.body().clone()).ok()?.into()
-    )
+    Some(String::from_utf8(response.body().clone()).ok()?.into())
 }
 
 impl<T: LogSender> LogSender for CatboxUploader<T> {

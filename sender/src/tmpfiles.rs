@@ -1,16 +1,11 @@
 use crate::external_upload::{base_upload, Uploader};
-use crate::gofile::GofileUploader;
 use crate::size_limit::SizeLimitWrapper;
-use crate::{LogContent, LogFile, LogSender, SendError};
-use alloc::string::String;
+use crate::{LogFile, LogSender, SendError};
 use alloc::sync::Arc;
 use collector::Collector;
 use delegate::delegate;
-use derive_new::new;
 use json::parse;
 use obfstr::obfstr as s;
-use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
-use utils::log_debug;
 
 const MAX_FILESIZE: usize = 100 * 1024 * 1024;
 

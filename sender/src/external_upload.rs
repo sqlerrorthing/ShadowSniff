@@ -1,11 +1,7 @@
-use crate::tmpfiles::TmpFilesUploader;
 use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
-use alloc::string::String;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use collector::Collector;
 use derive_new::new;
-use json::parse;
 use obfstr::obfstr as s;
 use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder, Response};
 
@@ -50,7 +46,8 @@ where
             LogContent::ExternalLink(_) => self.inner.send(log_file, password, collector),
             LogContent::ZipArchive(archive) => {
                 let size = archive.len();
-                let external_link = (self.upload)(&log_file.name, archive).ok_or(SendError::Network)?;
+                let external_link =
+                    (self.upload)(&log_file.name, archive).ok_or(SendError::Network)?;
                 let link = ExternalLink::new(self.service_name.clone(), external_link, size);
 
                 self.inner.send(

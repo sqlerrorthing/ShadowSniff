@@ -12,9 +12,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
-use core::mem::forget;
 use core::ptr::null_mut;
-use core::str::from_utf8_unchecked;
 use obfstr::obfstr as s;
 
 mod sqlite3_bindings;
@@ -34,7 +32,7 @@ impl Drop for Sqlite3BindingsDatabase {
 impl Database for Sqlite3BindingsDatabase {
     fn from_bytes(bytes: Vec<u8>) -> Result<Self, i32>
     where
-        Self: Sized
+        Self: Sized,
     {
         let mut db: *mut sqlite3 = null_mut();
 

@@ -43,7 +43,11 @@ where
     let caption = DisplayCollector(collector).to_string();
 
     let link = match log_content {
-        LogContent::ExternalLink(ExternalLink { service_name, link, size }) => Some(format!(
+        LogContent::ExternalLink(ExternalLink {
+            service_name,
+            link,
+            size,
+        }) => Some(format!(
             r#"<a href="{link}">Download from {service_name} [{}]</a>"#,
             format_size(*size as _)
         )),
