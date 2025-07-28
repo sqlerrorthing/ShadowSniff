@@ -6,4 +6,6 @@ edition = "2024"
 [dependencies]
 requests = { path = "../requests" }
 json = { path = "../json" }
-country-emoji = { path = "../country-emoji" }
+utils = { path = "../utils" }
+obfstr = "0.4.4"
+indoc = "2.0.6"

@@ -7,6 +7,7 @@ edition = "2024"
 obfstr = "0.4.4"
 utils = { path = "../utils" }
 collector = { path = "../collector" }
+filesystem = { path = "../filesystem" }
 windows-sys = { version = "0.59.0", features = [
     "Win32_Foundation",
     "Win32_System_Threading",

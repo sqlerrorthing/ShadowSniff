@@ -7,5 +7,6 @@ edition = "2024"
 cc = "1.0"
 
 [dependencies]
+filesystem = { path = "../filesystem" }
 utils = { path = "../utils" }
 obfstr = "0.4.4"

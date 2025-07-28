@@ -1,0 +1,48 @@
+use crate::{LogFile, LogSender, SendError};
+use collector::Collector;
+use derive_new::new;
+
+/// A log sender that attempts to send using a primary sender and falls back to another
+///
+/// [`FallbackSender`] wraps two log senders: a `primary` and a `fallback`. When
+/// sending a log file, it first tries the `primary` sender. If the primary fails
+/// with error, it retries the operation using the `fallback` sender.
+///
+/// # Type Parameters
+/// - `Primary`: A type that implements the [`LogSender`] trait and serves as the first attempt.
+/// - `Fallback`: A type that also implements [`LogSender`] and is used when the primary fails
+///   due to error.
+#[derive(Clone, new)]
+pub struct FallbackSender<Primary, Fallback>
+where
+    Primary: LogSender,
+    Fallback: LogSender,
+{
+    primary: Primary,
+    fallback: Fallback,
+}
+
+impl<Primary, Fallback> LogSender for FallbackSender<Primary, Fallback>
+where
+    Primary: LogSender,
+    Fallback: LogSender,
+{
+    fn send<P, C>(
+        &self,
+        log_file: LogFile,
+        password: Option<P>,
+        collector: &C,
+    ) -> Result<(), SendError>
+    where
+        P: AsRef<str> + Clone,
+        C: Collector,
+    {
+        match self
+            .primary
+            .send(log_file.clone(), password.clone(), collector)
+        {
+            ok @ Ok(_) => ok,
+            Err(_) => self.fallback.send(log_file, password, collector),
+        }
+    }
+}

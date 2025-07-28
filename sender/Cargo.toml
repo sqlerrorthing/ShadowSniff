@@ -1,0 +1,16 @@
+[package]
+name = "sender"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+collector = { path = "../collector" }
+derive-new = "0.7.0"
+indoc = "2.0.6"
+utils = { path = "../utils" }
+requests = { path = "../requests" }
+json = { path = "../json" }
+zip = { path = "../zip" }
+obfstr = "0.4.4"
+delegate = "0.13.4"
+ipinfo = { path = "../ipinfo" }

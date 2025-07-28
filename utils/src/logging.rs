@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::Write;
 use core::ptr::null_mut;
-use windows_sys::Win32::System::Console::{GetStdHandle, WriteConsoleW, STD_OUTPUT_HANDLE};
+use windows_sys::Win32::System::Console::{GetStdHandle, STD_OUTPUT_HANDLE, WriteConsoleW};
 
 pub struct WindowsStdOutputWriter;
 
@@ -15,7 +15,7 @@ impl Write for WindowsStdOutputWriter {
             if handle == null_mut() {
                 return Err(fmt::Error);
             }
-            
+
             let mut written = 0;
             let res = WriteConsoleW(
                 handle,
@@ -24,7 +24,7 @@ impl Write for WindowsStdOutputWriter {
                 &mut written,
                 null_mut(),
             );
-            
+
             if res == 0 {
                 return Err(fmt::Error);
             }

@@ -36,7 +36,8 @@ pub fn base64_decode(input: &[u8]) -> Option<Vec<u8>> {
 }
 
 pub fn base64_encode(input: &[u8]) -> Vec<u8> {
-    const BASE64_CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const BASE64_CHARS: &[u8; 64] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     let mut output = Vec::with_capacity((input.len() + 2) / 3 * 4);
 

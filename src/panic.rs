@@ -4,7 +4,7 @@ mod panic_imports {
     pub use core::fmt::Write;
     pub use core::ptr::null_mut;
     pub use windows_sys::Win32::System::Threading::ExitProcess;
-    pub use windows_sys::Win32::UI::WindowsAndMessaging::{MessageBoxA, MB_ICONERROR, MB_OK};
+    pub use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxA};
 }
 
 #[cfg(all(not(debug_assertions), not(test)))]
@@ -27,10 +27,10 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
             null_mut(),
             msg_ptr as _,
             title.as_ptr() as _,
-            MB_OK | MB_ICONERROR
+            MB_OK | MB_ICONERROR,
         );
 
-        ExitProcess(0);   
+        ExitProcess(0);
     }
 }
 

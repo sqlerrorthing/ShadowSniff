@@ -1,7 +1,7 @@
+use crate::Value;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use crate::Value;
 
 use super::tokenize::Token;
 

