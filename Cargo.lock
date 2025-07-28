@@ -295,6 +295,7 @@ dependencies = [
  "delegate",
  "derive-new",
  "indoc",
+ "ipinfo",
  "json",
  "obfstr",
  "requests",

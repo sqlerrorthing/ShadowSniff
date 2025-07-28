@@ -13,3 +13,4 @@ json = { path = "../json" }
 zip = { path = "../zip" }
 obfstr = "0.4.4"
 delegate = "0.13.4"
+ipinfo = { path = "../ipinfo" }
