@@ -10,7 +10,7 @@
         <a href="https://github.com/sqlerrorthing/ShadowSniff/network/members"><img src="https://img.shields.io/github/forks/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Forks"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/stargazers"><img src="https://img.shields.io/github/stars/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stargazers"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/issues"><img src="https://img.shields.io/github/issues/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Issues"></a>
-        <img src="https://img.shields.io/badge/STUB%20SIZE-650KB-red?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stub size">
+        <img src="https://img.shields.io/badge/STUB%20SIZE-750KB-red?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stub size">
         <a href="https://github.com/sqlerrorthing/ShadowSniff/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="License"></a>
     </div>
 </div>
@@ -101,6 +101,92 @@ _... more_
 
 If you'd like the stealer to support additional features, feel free to open an [issue](https://github.com/sqlerrorthing/ShadowSniff/issues/new/choose) here to request the functionality —
 or implement it yourself.
+
+## Workflow
+
+This section describes the complete execution pipeline for ShadowSniff, outlining each step from environment
+initialization to data collection, archiving, and exfiltration.
+
+The stealer follows a modular, multithreaded architecture, leveraging composable tasks, virtualized filesystems, and extensible log delivery methods.
+
+```mermaid
+classDiagram
+   direction TB
+
+   class InitIPInfo {
+      <<ENTRYPOINT>>
+      +init_ip_info() : bool
+      "Initializes IP metadata lookup"
+      "If returns false → abort execution"
+   }
+
+   class Filesystem {
+      +VirtualFileSystem or StorageFileSystem
+      "Defines output destination"
+      "Can be memory-based or disk-based"
+   }
+
+   class Collector {
+      "Gathers statistics and metadata"
+      "Used to report collected content"
+   }
+
+   class OutputPath {
+      +output : Path
+      "Defines where collected data is temporarily stored"
+   }
+
+   class SniffTask {
+      <<STEALER_ENTRYPOINT>>
+      
+      +SniffTask::default().run(..) / SniffTask::with_subtask(...).run(...)
+      "Main stealer logic"
+      "Spawns sub-tasks in parallel threads"
+      "Each task gathers specific data (e.g., browsers, VPNs, system info)"
+   }
+
+   class ZipPassword {
+      "Protects archive content"
+   }
+
+   class ZipArchive {
+      +ZipArchive::create()
+      "Compresses output directory"
+      "Embeds log comment from collector"
+      "Can be stored locally or uploaded"
+   }
+
+   class LogSender {
+      +upload_discord(...) / upload_telegram(...)
+      "Sends final archive to configured platform"
+      "Chooses between direct attachment or external link (e.g., Gofile)"
+      "Handles platform file size limits"
+   }
+
+   class AdditionalSteps {
+      +CompositeTask, CustomTask
+      "Optional cleanup or post-upload actions"
+      "Example: delete local logs, notify endpoint, self-delete"
+   }
+
+%% Execution flow
+   InitIPInfo --> Filesystem
+   Filesystem --> SniffTask : "filesystem to write the content"
+   Collector --> SniffTask : "collect destination"
+   OutputPath --> SniffTask : "the output log directory"
+
+%% ZipArchive stage
+   SniffTask --> ZipArchive : "after data collection"
+   Collector --> ZipArchive : "adds comment"
+   Filesystem --> ZipArchive : "reads files"
+   OutputPath --> ZipArchive : "source directory"
+
+   ZipPassword --> ZipArchive : "sets zip password"
+   
+   Collector --> LogSender : "the entire log metadata"
+   ZipArchive --> LogSender : "uploads log archive"
+   LogSender --> AdditionalSteps : "optional cleanup"
+```
 
 ## Contributing
 
