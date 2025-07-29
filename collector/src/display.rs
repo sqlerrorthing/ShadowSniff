@@ -90,8 +90,8 @@ impl<'a, T: Browser> DisplayBuilder for BrowserDisplay<'a, T> {
                 ("💳", "Credit Cards", browser.get_credit_cards()),
                 ("✍️", "Autofills", browser.get_auto_fills()),
                 ("🕘", "History", browser.get_history()),
-                ("📑", "Bookmarks", browser.get_downloads()),
-                ("⬇️", "Downloads", browser.get_bookmarks()),
+                ("📑", "Bookmarks", browser.get_bookmarks()),
+                ("⬇️", "Downloads", browser.get_downloads()),
             ]
         )
     }
