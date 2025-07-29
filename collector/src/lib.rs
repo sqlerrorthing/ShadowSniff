@@ -4,7 +4,6 @@ extern crate alloc;
 
 use alloc::format;
 use alloc::vec::Vec;
-use core::fmt::Display;
 pub mod atomic;
 pub mod display;
 
