@@ -39,7 +39,7 @@ This flexibility allows the creation of wrappers like custom uploaders or platfo
 |-------------------------------------|---------------|-----------------------|
 | [Catbox](https://catbox.moe/)       | 200 MB        |                       |
 | [/tmp/files](https://tmpfiles.org/) | 100 MB        | 1-hour lifetime limit |
-| [Gofile](https://gofile.io/)        | _i donn know_ |                       |
+| [Gofile](https://gofile.io/)        | _unknown_     |                       |
 
 
 > **Platform Limitations**
