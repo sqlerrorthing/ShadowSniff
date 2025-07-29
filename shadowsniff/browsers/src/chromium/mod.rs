@@ -244,7 +244,8 @@ pub fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
         return None;
     }
 
-    let decrypted = unsafe { slice::from_raw_parts(out_blob.pbData, out_blob.cbData as _).to_vec() };
+    let decrypted =
+        unsafe { slice::from_raw_parts(out_blob.pbData, out_blob.cbData as _).to_vec() };
     unsafe { LocalFree(out_blob.pbData as _) };
     Some(decrypted)
 }
@@ -312,9 +313,8 @@ fn decrypt_aes_gcm(
     let mut alg: BCRYPT_ALG_HANDLE = null_mut();
     let mut key: BCRYPT_KEY_HANDLE = null_mut();
 
-    let status = unsafe {
-        BCryptOpenAlgorithmProvider(&mut alg, BCRYPT_AES_ALGORITHM, null_mut(), 0)
-    };
+    let status =
+        unsafe { BCryptOpenAlgorithmProvider(&mut alg, BCRYPT_AES_ALGORITHM, null_mut(), 0) };
 
     if status != 0 {
         return None;

