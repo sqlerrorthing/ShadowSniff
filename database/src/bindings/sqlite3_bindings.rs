@@ -3,6 +3,7 @@ pub const SQLITE_FLOAT: u32 = 2;
 pub const SQLITE_BLOB: u32 = 4;
 pub const SQLITE_NULL: u32 = 5;
 pub const SQLITE_TEXT: u32 = 3;
+pub const SQLITE_DESERIALIZE_FREEONCLOSE: u32 = 1;
 pub const SQLITE_DESERIALIZE_RESIZEABLE: u32 = 2;
 pub const SQLITE_ROW: u32 = 100;
 
@@ -55,6 +56,8 @@ unsafe extern "C" {
     pub fn sqlite3_initialize() -> core::ffi::c_int;
 
     pub fn sqlite3_finalize(pStmt: *mut sqlite3_stmt) -> core::ffi::c_int;
+
+    pub fn sqlite3_malloc(n: i32) -> *mut core::ffi::c_void;
 
     pub fn sqlite3_open(
         filename: *const core::ffi::c_char,

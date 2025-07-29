@@ -1,17 +1,11 @@
-use crate::bindings::sqlite3_bindings::{
-    sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count,
-    sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize,
-    sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step,
-    sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER,
-    SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT,
-};
+use crate::bindings::sqlite3_bindings::{sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_malloc, sqlite3_open, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_FREEONCLOSE, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT};
 use crate::{Database, DatabaseReader, TableRecord, Value};
-use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
+use core::ptr;
 use core::ptr::null_mut;
 use obfstr::obfstr as s;
 
@@ -34,21 +28,32 @@ impl Database for Sqlite3BindingsDatabase {
     where
         Self: Sized,
     {
-        let mut db: *mut sqlite3 = null_mut();
-
         unsafe {
             sqlite3_initialize();
         }
 
+        let mut db: *mut sqlite3 = null_mut();
         let rc = unsafe { sqlite3_open(c":memory:".as_ptr(), &mut db) };
 
         if rc != 0 {
             return Err(rc);
         }
 
+        if bytes.len() < 16 || &bytes[0..16] != b"SQLite format 3\0" {
+            unsafe { sqlite3_close(db) };
+            return Err(26); // SQLITE_NOTADB
+        }
+
         let data_size = bytes.len();
-        let data = bytes.to_vec().into_boxed_slice();
-        let data_ptr = Box::into_raw(data) as *mut u8;
+        let data_ptr = unsafe { sqlite3_malloc(data_size as i32) } as *mut u8;
+        if data_ptr.is_null() {
+            unsafe { sqlite3_close(db) };
+            return Err(7); // SQLITE_NOMEM
+        }
+
+        unsafe {
+            ptr::copy_nonoverlapping(bytes.as_ptr(), data_ptr, data_size);
+        }
 
         let rc = unsafe {
             sqlite3_deserialize(
@@ -57,11 +62,14 @@ impl Database for Sqlite3BindingsDatabase {
                 data_ptr,
                 data_size as i64,
                 data_size as i64,
-                SQLITE_DESERIALIZE_RESIZEABLE,
+                SQLITE_DESERIALIZE_RESIZEABLE | SQLITE_DESERIALIZE_FREEONCLOSE,
             )
         };
 
         if rc != 0 {
+            unsafe {
+                sqlite3_close(db);
+            }
             return Err(rc);
         }
 
@@ -78,8 +86,8 @@ impl DatabaseReader for Sqlite3BindingsDatabase {
         S: AsRef<str>,
     {
         let query = format!("{} {}", s!("SELECT * FROM"), table_name.as_ref());
-        let mut stmt: *mut sqlite3_stmt = null_mut();
         let c_query = CString::new(query.as_ref());
+        let mut stmt: *mut sqlite3_stmt = null_mut();
 
         let rc =
             unsafe { sqlite3_prepare_v2(self.db, c_query.as_ptr(), -1, &mut stmt, null_mut()) };
