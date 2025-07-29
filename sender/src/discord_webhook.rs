@@ -36,7 +36,7 @@ pub struct DiscordWebhookSender {
     webhook: Arc<str>,
 }
 
-struct DiscordEmbedFieldBlockDisplay<'a>(&'a CollectorBlock);
+struct DiscordEmbedFieldBlockDisplay<'a>(&'a CollectorBlock<'a>);
 
 impl Display for DiscordEmbedFieldBlockDisplay<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {

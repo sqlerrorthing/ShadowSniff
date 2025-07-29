@@ -35,7 +35,7 @@ pub struct TelegramBotSender {
     token: Arc<str>,
 }
 
-struct TelegramBlockDisplay<'a>(&'a CollectorBlock);
+struct TelegramBlockDisplay<'a>(&'a CollectorBlock<'a>);
 
 impl Display for TelegramBlockDisplay<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
