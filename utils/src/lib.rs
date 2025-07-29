@@ -10,9 +10,9 @@ use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 
 pub mod base64;
 pub mod logging;
+pub mod pc_info;
 pub mod process;
 pub mod random;
-pub mod pc_info;
 
 const FLAG_MAGIC_NUMBER: u32 = 0x1F1E6 /* 🇦 */ - 'A' as u32;
 

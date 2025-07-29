@@ -28,32 +28,39 @@ covering all essential data extraction capabilities for Windows targets.
 
 ### Log Sending
 
-- [x] Discord webhook
-  <table>
-  <tr>
-    <td align="center">
-      <img src="./.github/images/discord_internal.png" width="200"/><br/>
-    <sub>Internal File</sub>
-    </td>
-    <td align="center">
-      <img src="./.github/images/discord_external.png" width="200"/><br/>
-    <sub>External File</sub>
-    </td>
-  </tr>
-  </table>
-- [x] Telegram bot
-  <table>
-  <tr>
-    <td align="center">
-      <img src="./.github/images/telegram_internal.png" width="200"/><br/>
-    <sub>Internal File</sub>
-    </td>
-    <td align="center">
-      <img src="./.github/images/telegram_external.png" width="200"/><br/>
-    <sub>External File</sub>
-    </td>
-  </tr>
-  </table>
+This module supports sending log files either as internal attachments (uploaded directly to a platform) 
+or via external links (uploaded to a file hosting service first, then linked).
+
+This flexibility allows the creation of wrappers like custom uploaders or platform-specific limits.
+
+#### Supported Upload Destinations
+
+| Service                             | Max File Size | Notes                 |
+|-------------------------------------|---------------|-----------------------|
+| [Catbox](https://catbox.moe/)       | 200 MB        |                       |
+| [/tmp/files](https://tmpfiles.org/) | 100 MB        | 1-hour lifetime limit |
+| [Gofile](https://gofile.io/)        | _i donn know_ |                       |
+
+
+> **Platform Limitations**
+> - **Telegram:** Approx. 2 GB file limit per message
+> - **Discord:** 25 MB file size limit
+
+#### Platform Integrations
+
+##### Discord Webhook
+
+| Attachment Upload                                    | External Upload (Link)                             |
+|------------------------------------------------------|----------------------------------------------------|
+| ![Attachment](.github/images/discord_attachment.png) | ![External](./.github/images/discord_external.png) |
+
+##### Telegram Bot
+
+| Attachment Upload                                     | External Upload (Link)                              |
+|-------------------------------------------------------|-----------------------------------------------------|
+| ![Attachment](.github/images/telegram_attachment.png) | ![External](./.github/images/telegram_external.png) |
+
+---
 
 ### Browsers
 

