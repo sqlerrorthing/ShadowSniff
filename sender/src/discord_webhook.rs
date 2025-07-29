@@ -50,9 +50,7 @@ impl Display for DiscordEmbedFieldBlockDisplay<'_> {
             )?;
         }
 
-        if body.ends_with('\n') {
-            body.pop();
-        }
+        body = body.trim_end_matches(['\r', '\n']).to_string();
 
         writedoc!(
             f,
