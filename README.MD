@@ -33,7 +33,7 @@ or via external links (uploaded to a file hosting service first, then linked).
 
 This flexibility allows the creation of wrappers like custom uploaders or platform-specific limits.
 
-### Supported Upload Destinations
+#### Supported Upload Destinations
 
 | Service                             | Max File Size | Notes                 |
 |-------------------------------------|---------------|-----------------------|
@@ -46,15 +46,15 @@ This flexibility allows the creation of wrappers like custom uploaders or platfo
 > - **Telegram:** Approx. 2 GB file limit per message
 > - **Discord:** 25 MB file size limit
 
-### Platform Integrations
+#### Platform Integrations
 
-#### Discord Webhook
+##### Discord Webhook
 
 | Attachment Upload                                    | External Upload (Link)                             |
 |------------------------------------------------------|----------------------------------------------------|
 | ![Attachment](.github/images/discord_attachment.png) | ![External](./.github/images/discord_external.png) |
 
-#### Telegram Bot
+##### Telegram Bot
 
 | Attachment Upload                                     | External Upload (Link)                              |
 |-------------------------------------------------------|-----------------------------------------------------|
