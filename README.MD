@@ -157,7 +157,7 @@ classDiagram
    }
 
    class LogSender {
-      +upload_discord(...) / upload_telegram(...)
+      +upload_discord(...) / upload_telegram(...) / ...
       "Sends final archive to configured platform"
       "Chooses between direct attachment or external link (e.g., Gofile)"
       "Handles platform file size limits"
@@ -170,7 +170,7 @@ classDiagram
    }
 
 %% Execution flow
-   InitIPInfo --> Filesystem
+   InitIPInfo --> SniffTask : "after retrieve ip info"
    Filesystem --> SniffTask : "filesystem to write the content"
    Collector --> SniffTask : "collect destination"
    OutputPath --> SniffTask : "the output log directory"
