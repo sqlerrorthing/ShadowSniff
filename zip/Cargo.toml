@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }
+miniz_oxide = { version = "0.8.9", default-features = false, features = ["with-alloc"] }
 utils = { path = "../utils" }
 rand_chacha = { version = "0.9.0", default-features = false }
 windows-sys = { version = "0.60.2", features = ["Win32_System_Time"] }
