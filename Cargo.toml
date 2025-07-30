@@ -37,7 +37,7 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-windows-sys = { version = "0.59.0", features = [
+windows-sys = { version = "0.60.2", features = [
     "Win32_Foundation",
 ] }
 shadowsniff = { path = "shadowsniff" }
