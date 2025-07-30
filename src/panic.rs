@@ -11,13 +11,13 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
             use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxA};
 
             let mut message = String::with_capacity(512);
-            let _ = write!(&mut message, "{}\0", info);
+            let _ = write!(&mut message, "{info}\0");
 
             unsafe {
                 MessageBoxA(
                     null_mut(),
                     message.as_ptr() as _,
-                    b"ShadowSniff: Panic\0".as_ptr() as _,
+                    c"ShadowSniff: Panic".as_ptr() as _,
                     MB_OK | MB_ICONERROR,
                 );
 
