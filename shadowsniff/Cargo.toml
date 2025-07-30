@@ -15,7 +15,7 @@ windows-sys = { version = "0.60.2", features = [
     "Win32_System_DataExchange",
     "Win32_System_Memory",
 ] }
-miniz_oxide = { version = "0.8.8", default-features = false, features = ["with-alloc"] }
+miniz_oxide = { version = "0.8.9", default-features = false, features = ["with-alloc"] }
 ftp = { path = "ftp" }
 messengers = { path = "messengers" }
 browsers = { path = "browsers" }
