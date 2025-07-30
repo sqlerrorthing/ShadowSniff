@@ -40,7 +40,6 @@ panic = "abort"
 windows-sys = { version = "0.59.0", features = [
     "Win32_Foundation",
 ] }
-wee_alloc = "0.4.5"
 shadowsniff = { path = "shadowsniff" }
 tasks = { path = "tasks" }
 utils = { path = "utils" }

@@ -23,11 +23,13 @@ use tasks::Task;
 use utils::log_debug;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
+use crate::allocator::WinHeapAlloc;
 
 mod panic;
+mod allocator;
 
 #[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+static ALLOC: WinHeapAlloc = WinHeapAlloc;
 
 #[unsafe(no_mangle)]
 #[allow(unused_unsafe)]

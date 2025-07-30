@@ -1,4 +1,4 @@
-#[cfg(all(debug_assertions, not(test)))]
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
     use windows_sys::Win32::System::Threading::ExitProcess;
