@@ -7,6 +7,6 @@ edition = "2024"
 obfstr = "0.4.4"
 tasks = { path = "../../tasks" }
 utils = { path = "../../utils" }
-windows = { version = "0.61.1", default-features = false, features = ["Data_Xml_Dom"] }
+windows = { version = "0.61.3", default-features = false, features = ["Data_Xml_Dom"] }
 collector = { path = "../../collector" }
 filesystem = { path = "../../filesystem" }
