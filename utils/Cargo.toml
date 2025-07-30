@@ -7,7 +7,7 @@ edition = "2024"
 json = { path = "../json" }
 obfstr = "0.4.4"
 filesystem = { path = "../filesystem" }
-windows-sys = { version = "0.59.0", features = [
+windows-sys = { version = "0.60.2", features = [
     "Win32_Foundation",
     "Win32_System_Console",
     "Win32_Storage_FileSystem",
