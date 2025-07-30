@@ -5,10 +5,10 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 
     cfg_if::cfg_if! {
         if #[cfg(all(debug_assertions, not(test)))] {
-            pub use alloc::string::String;
-            pub use core::fmt::Write;
-            pub use core::ptr::null_mut;
-            pub use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxA};
+            use alloc::string::String;
+            use core::fmt::Write;
+            use core::ptr::null_mut;
+            use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxA};
 
             let mut message = String::with_capacity(512);
             let _ = write!(&mut message, "{}\0", info);

