@@ -28,8 +28,10 @@ pub enum SendError {
 #[derive(new, Clone)]
 pub struct ExternalLink {
     /// The service name where the log file is located.
+    #[new(into)]
     service_name: Arc<str>,
     /// The URL pointing to the `.zip` log archive.
+    #[new(into)]
     link: Arc<str>,
     /// The size of the log file in bytes.
     size: usize,
@@ -40,9 +42,8 @@ pub struct ExternalLink {
 pub enum LogContent {
     /// An external link to a `.zip` log archive with metadata.
     ExternalLink(ExternalLink),
-
     /// The raw bytes of a `.zip` log archive.
-    ZipArchive(Vec<u8>),
+    ZipArchive(Arc<[u8]>),
 }
 
 /// Represents a named log file with content.
@@ -67,13 +68,13 @@ impl LogFile {
 
 impl From<Vec<u8>> for LogContent {
     fn from(value: Vec<u8>) -> Self {
-        LogContent::ZipArchive(value)
+        LogContent::ZipArchive(Arc::from(value))
     }
 }
 
 impl From<ZipArchive> for LogContent {
     fn from(value: ZipArchive) -> Self {
-        LogContent::ZipArchive(value.create())
+        LogContent::ZipArchive(value.create().into())
     }
 }
 
@@ -140,8 +141,10 @@ impl<T: LogSender> LogSenderExt for T {
         let archive = archive.as_ref();
 
         let password = archive.get_password();
-        let archive = archive.create().into();
 
-        self.send(LogFile::new(name, archive), password, collector)
+        let content = archive.create().into();
+        let archive = LogFile::new(name, content);
+
+        self.send(archive, password, collector)
     }
 }

