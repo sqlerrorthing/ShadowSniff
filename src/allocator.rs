@@ -1,5 +1,5 @@
 use core::alloc::{GlobalAlloc, Layout};
-use core::ptr::null_mut;
+use core::ptr::{null_mut, NonNull};
 use windows_sys::Win32::Foundation::HANDLE;
 use windows_sys::Win32::System::Memory::{GetProcessHeap, HeapAlloc, HeapFree, VirtualAlloc, VirtualFree, MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE};
 
@@ -81,7 +81,7 @@ unsafe fn alloc_with_header(heap: HANDLE, size: usize, align: usize) -> *mut u8 
         .and_then(|v| v.checked_add(size_of::<usize>()))
         .unwrap_or(0);
     if total == 0 {
-        return null_mut();
+        return NonNull::<u8>::dangling().as_ptr();
     }
 
     let raw = HeapAlloc(heap, 0, total) as *mut u8;
@@ -91,6 +91,9 @@ unsafe fn alloc_with_header(heap: HANDLE, size: usize, align: usize) -> *mut u8 
 
     let payload = raw.add(size_of::<usize>());
     let aligned = ((payload as usize + align - 1) & !(align - 1)) as *mut u8;
+
+    debug_assert!((aligned as usize) >= (raw as usize + size_of::<usize>()));
+    debug_assert!((aligned as usize) + size <= (raw as usize) + total);
 
     ((aligned as *mut usize).offset(-1)).write(raw as usize);
     aligned
