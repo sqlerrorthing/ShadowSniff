@@ -3,7 +3,7 @@ use alloc::sync::Arc;
 use obfstr::obfstr as s;
 use regedit::{RegistryValue, read_registry_value};
 use windows_sys::Win32::Foundation::MAX_PATH;
-use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 use windows_sys::Win32::System::WindowsProgramming::{GetComputerNameW, GetUserNameW};
 
 #[derive(Clone)]

