@@ -8,5 +8,4 @@ cc = "1.2"
 
 [dependencies]
 filesystem = { path = "../filesystem" }
-utils = { path = "../utils" }
 obfstr = "0.4.4"

@@ -5,5 +5,4 @@ edition = "2024"
 
 [dependencies]
 windows-sys = { version = "0.60.2", features = ["Win32_Foundation", "Win32_Networking_WinHttp"] }
-utils = { path = "../utils" }
 json = { path = "../json" }

@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-windows-sys = { version = "0.60.2", features = ["Win32_System_Registry"] }
+windows-sys = { workspace = true }
 filesystem = { path = "../../filesystem" }
 collector = { path = "../../collector" }
 obfstr = "0.4.4"
 tasks = { path = "../../tasks" }
-utils = { path = "../../utils" }
 regedit = { path = "../../regedit" }

