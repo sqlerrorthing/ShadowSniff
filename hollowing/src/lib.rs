@@ -14,9 +14,9 @@ use core::ptr::{copy_nonoverlapping, null, null_mut};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::FileSystem;
-use windows_sys::core::{PCWSTR, PWSTR};
+use windows_sys::core::{BOOL, PCWSTR, PWSTR};
 use windows_sys::Win32::Foundation::{
-    CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS,
+    CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS,
     STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS, TRUE,
 };
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
