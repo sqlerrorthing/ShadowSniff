@@ -24,7 +24,11 @@ impl<T: LogSender> TmpFilesUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
             inner: SizeLimitWrapper::new(
-                Uploader::new(Arc::from(s!("tmpfiles")), inner, upload),
+                Uploader::new(
+                    s!("tmpfiles"),
+                    inner,
+                    upload
+                ),
                 MAX_FILESIZE,
                 false,
             ),

@@ -50,9 +50,10 @@ pub enum LogContent {
 #[derive(new, Clone)]
 pub struct LogFile {
     /// The name of the log file, including its extension.
+    #[new(into)]
     name: Arc<str>,
-
     /// The content of the log file.
+    #[new(into)]
     content: LogContent,
 }
 
@@ -121,29 +122,29 @@ pub trait LogSenderExt: LogSender {
     ///
     /// This method automatically extracts the password from the archive if one is set,
     /// and converts the archive into a [`LogContent::ZipArchive`].
-    fn send_archive<A, C>(
+    fn send_archive<N, A, C>(
         &self,
-        name: Arc<str>,
+        name: N,
         archive: A,
         collector: &C,
     ) -> Result<(), SendError>
     where
+        N: Into<Arc<str>>,
         A: AsRef<ZipArchive>,
         C: Collector;
 }
 
 impl<T: LogSender> LogSenderExt for T {
-    fn send_archive<A, C>(&self, name: Arc<str>, archive: A, collector: &C) -> Result<(), SendError>
+    fn send_archive<N, A, C>(&self, name: N, archive: A, collector: &C) -> Result<(), SendError>
     where
+        N: Into<Arc<str>>,
         A: AsRef<ZipArchive>,
-        C: Collector,
+        C: Collector
     {
         let archive = archive.as_ref();
 
         let password = archive.get_password();
-
-        let content = archive.create().into();
-        let archive = LogFile::new(name, content);
+        let archive = LogFile::new(name, archive.create());
 
         self.send(archive, password, collector)
     }

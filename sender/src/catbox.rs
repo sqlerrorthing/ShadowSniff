@@ -24,7 +24,7 @@ impl<T: LogSender> CatboxUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
             inner: SizeLimitWrapper::new(
-                Uploader::new(Arc::from(s!("Catbox")), inner, upload),
+                Uploader::new(s!("Catbox"), inner, upload),
                 MAX_FILESIZE,
                 false,
             ),

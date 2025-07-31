@@ -31,7 +31,9 @@ const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 /// - Telegram has a file upload limit of 2 GB per file.
 #[derive(new, Clone)]
 pub struct TelegramBotSender {
+    #[new(into)]
     chat_id: Arc<str>,
+    #[new(into)]
     token: Arc<str>,
 }
 

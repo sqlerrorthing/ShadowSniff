@@ -33,6 +33,7 @@ use utils::{format_size, internal_code_to_flag};
 /// - Discord has a file upload limit of 8 MB per file.
 #[derive(Clone, new)]
 pub struct DiscordWebhookSender {
+    #[new(into)]
     webhook: Arc<str>,
 }
 
