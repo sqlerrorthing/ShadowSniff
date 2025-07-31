@@ -14,7 +14,10 @@ unsafe impl GlobalAlloc for WinHeapAlloc {
         let align = layout.align().max(size_of::<usize>());
         let size = layout.size();
 
-        let total_size = size.checked_add(align).and_then(|v| v.checked_add(size_of::<usize>())).unwrap_or(0);
+        let total_size = size
+            .checked_add(align)
+            .and_then(|v| v.checked_add(size_of::<usize>()))
+            .unwrap_or(0);
         if total_size == 0 {
             return null_mut();
         }

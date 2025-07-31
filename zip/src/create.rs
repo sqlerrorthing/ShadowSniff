@@ -2,8 +2,8 @@ use crate::ZipArchive;
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
-use rand_chacha::rand_core::RngCore;
 use rand_chacha::ChaCha20Rng;
+use rand_chacha::rand_core::RngCore;
 use utils::random::ChaCha20RngExt;
 
 /// # Specification References

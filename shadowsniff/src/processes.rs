@@ -4,7 +4,7 @@ use collector::Collector;
 use core::fmt::Write;
 use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use utils::process::get_process_list;
 
 pub(super) struct ProcessesTask;

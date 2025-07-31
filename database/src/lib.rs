@@ -7,8 +7,8 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
-use filesystem::path::Path;
 use filesystem::FileSystem;
+use filesystem::path::Path;
 
 #[derive(Clone)]
 pub enum Value {

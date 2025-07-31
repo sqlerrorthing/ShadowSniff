@@ -1,9 +1,9 @@
 use crate::bindings::sqlite3_bindings::{
-    sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count,
-    sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize,
-    sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step,
-    sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER,
-    SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT,
+    SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL,
+    SQLITE_ROW, SQLITE_TEXT, sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes,
+    sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text,
+    sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open,
+    sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt,
 };
 use crate::{Database, DatabaseReader, TableRecord, Value};
 use alloc::boxed::Box;

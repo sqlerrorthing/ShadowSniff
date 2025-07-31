@@ -9,8 +9,8 @@ use core::ptr::null_mut;
 use core::slice;
 use windows_sys::Win32::Foundation::ERROR_SUCCESS;
 use windows_sys::Win32::System::Registry::{
-    RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, KEY_READ, KEY_WOW64_64KEY, REG_BINARY, REG_DWORD,
-    REG_EXPAND_SZ, REG_QWORD, REG_SZ,
+    HKEY, KEY_READ, KEY_WOW64_64KEY, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ,
+    RegCloseKey, RegOpenKeyExW, RegQueryValueExW,
 };
 
 #[cfg_attr(test, derive(Debug))]

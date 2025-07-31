@@ -11,32 +11,32 @@ use core::iter::once;
 use core::mem::zeroed;
 use core::ops::Deref;
 use core::ptr::{copy_nonoverlapping, null, null_mut};
+use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::FileSystem;
-use windows_sys::core::{BOOL, PCWSTR, PWSTR};
 use windows_sys::Win32::Foundation::{
     CloseHandle, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS,
     STATUS_IMAGE_NOT_AT_BASE, STATUS_SUCCESS, TRUE,
 };
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::{
-    CreateFileTransactedW, CreateFileW, CreateTransaction, GetFileSize, RollbackTransaction,
-    WriteFile, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, OPEN_EXISTING,
+    CREATE_ALWAYS, CreateFileTransactedW, CreateFileW, CreateTransaction, FILE_ATTRIBUTE_NORMAL,
+    FILE_SHARE_READ, GetFileSize, OPEN_EXISTING, RollbackTransaction, WriteFile,
 };
 use windows_sys::Win32::System::Diagnostics::Debug::{
-    GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT, CONTEXT_INTEGER_AMD64,
-    CONTEXT_INTEGER_X86, IMAGE_FILE_HEADER, IMAGE_NT_OPTIONAL_HDR64_MAGIC,
+    CONTEXT, CONTEXT_INTEGER_AMD64, CONTEXT_INTEGER_X86, GetThreadContext, IMAGE_FILE_HEADER,
+    IMAGE_NT_OPTIONAL_HDR64_MAGIC, SetThreadContext, WriteProcessMemory,
 };
 use windows_sys::Win32::System::Memory::{
-    CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, VirtualAlloc, FILE_MAP_READ, MEM_COMMIT,
-    MEM_RESERVE, PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SECTION_FLAGS, SEC_IMAGE,
+    CreateFileMappingW, FILE_MAP_READ, MEM_COMMIT, MEM_RESERVE, MapViewOfFile, PAGE_READONLY,
+    PAGE_READWRITE, SEC_IMAGE, SECTION_ALL_ACCESS, SECTION_FLAGS, UnmapViewOfFile, VirtualAlloc,
 };
 use windows_sys::Win32::System::SystemServices::IMAGE_DOS_HEADER;
 use windows_sys::Win32::System::Threading::{
-    ResumeThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, DETACHED_PROCESS, PROCESS_INFORMATION,
+    CREATE_NO_WINDOW, CREATE_SUSPENDED, DETACHED_PROCESS, PROCESS_INFORMATION, ResumeThread,
     STARTUPINFOW,
 };
+use windows_sys::core::{BOOL, PCWSTR, PWSTR};
 
 type PVoid = *mut c_void;
 type PByte = *mut u8;

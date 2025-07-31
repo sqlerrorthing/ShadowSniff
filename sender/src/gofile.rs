@@ -1,4 +1,4 @@
-use crate::external_upload::{base_upload, Uploader};
+use crate::external_upload::{Uploader, base_upload};
 use crate::{LogFile, LogSender, SendError};
 use alloc::sync::Arc;
 use collector::Collector;

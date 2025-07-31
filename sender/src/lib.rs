@@ -122,12 +122,7 @@ pub trait LogSenderExt: LogSender {
     ///
     /// This method automatically extracts the password from the archive if one is set,
     /// and converts the archive into a [`LogContent::ZipArchive`].
-    fn send_archive<N, A, C>(
-        &self,
-        name: N,
-        archive: A,
-        collector: &C,
-    ) -> Result<(), SendError>
+    fn send_archive<N, A, C>(&self, name: N, archive: A, collector: &C) -> Result<(), SendError>
     where
         N: Into<Arc<str>>,
         A: AsRef<ZipArchive>,
@@ -139,7 +134,7 @@ impl<T: LogSender> LogSenderExt for T {
     where
         N: Into<Arc<str>>,
         A: AsRef<ZipArchive>,
-        C: Collector
+        C: Collector,
     {
         let archive = archive.as_ref();
 

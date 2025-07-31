@@ -4,10 +4,10 @@ use alloc::{format, vec};
 use collector::{Collector, Software};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::{copy_file, copy_folder, FileSystem, FileSystemExt};
+use filesystem::{FileSystem, FileSystemExt, copy_file, copy_folder};
 use obfstr::obfstr as s;
 use tasks::Task;
-use utils::process::{get_process_list, get_process_path_by_pid, ProcessInfo};
+use utils::process::{ProcessInfo, get_process_list, get_process_path_by_pid};
 
 pub(super) struct TelegramTask;
 

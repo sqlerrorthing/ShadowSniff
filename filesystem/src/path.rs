@@ -7,7 +7,6 @@ use core::iter::once;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
 use core::slice::from_raw_parts;
-use windows_sys::core::PWSTR;
 use windows_sys::Win32::Foundation::S_OK;
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
@@ -15,6 +14,7 @@ use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 use windows_sys::Win32::UI::Shell::{
     FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath,
 };
+use windows_sys::core::PWSTR;
 
 #[derive(Clone, Ord, Eq, PartialEq, PartialOrd)]
 pub struct Path {

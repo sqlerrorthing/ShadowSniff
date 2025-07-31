@@ -9,7 +9,7 @@ use alloc::vec;
 use collector::Collector;
 use filesystem::FileSystem;
 use tasks::Task;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
+use tasks::{CompositeTask, composite_task, impl_composite_task_runner};
 
 pub struct GamesTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,

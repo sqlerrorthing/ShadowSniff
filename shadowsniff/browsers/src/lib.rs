@@ -13,12 +13,12 @@ use alloc::vec;
 use alloc::vec::Vec;
 use collector::Collector;
 use core::fmt::{Display, Formatter};
-use database::bindings::Sqlite3BindingsDatabase;
 use database::DatabaseExt;
+use database::bindings::Sqlite3BindingsDatabase;
 use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
 use tasks::Task;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
+use tasks::{CompositeTask, composite_task, impl_composite_task_runner};
 
 pub(crate) type SqliteDatabase = Sqlite3BindingsDatabase;
 

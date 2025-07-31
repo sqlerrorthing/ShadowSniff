@@ -9,11 +9,11 @@ use core::fmt::Write;
 use core::fmt::{Display, Formatter};
 use derive_new::new;
 use indoc::{formatdoc, writedoc};
-use ipinfo::{unwrapped_ip_info, IpInfo};
+use ipinfo::{IpInfo, unwrapped_ip_info};
 use obfstr::obfstr as s;
 use requests::{
-    write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request,
-    RequestBuilder,
+    BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder, write_file_field,
+    write_text_field,
 };
 use utils::pc_info::PcInfo;
 use utils::{format_size, internal_code_to_flag};
