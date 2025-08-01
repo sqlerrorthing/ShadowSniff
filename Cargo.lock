@@ -38,6 +38,7 @@ version = "0.1.0"
 dependencies = [
  "collector",
  "database",
+ "derive-new",
  "filesystem",
  "json",
  "obfstr",

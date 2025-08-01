@@ -2,6 +2,7 @@ use crate::chromium::BrowserData;
 use crate::{Download, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -13,14 +14,9 @@ use tasks::{Task, parent_name};
 const DOWNLOADS_CURRENT_PATH: usize = 2;
 const DOWNLOADS_TAB_URL: usize = 16;
 
+#[derive(new)]
 pub(super) struct DownloadsTask {
     browser: Arc<BrowserData>,
-}
-
-impl DownloadsTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for DownloadsTask {

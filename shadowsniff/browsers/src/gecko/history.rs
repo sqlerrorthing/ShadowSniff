@@ -2,6 +2,7 @@ use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
 use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract};
 use alloc::sync::Arc;
+use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
 use filesystem::FileSystem;
@@ -14,14 +15,9 @@ const MOZ_PLACES_URL: usize = 1;
 const MOZ_PLACES_TITLE: usize = 2;
 const MOZ_PLACES_LAST_VISIT_DATE: usize = 8;
 
+#[derive(new)]
 pub(super) struct HistoryTask<'a> {
     browser: Arc<GeckoBrowserData<'a>>,
-}
-
-impl<'a> HistoryTask<'a> {
-    pub(super) fn new(browser: Arc<GeckoBrowserData<'a>>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask<'_> {

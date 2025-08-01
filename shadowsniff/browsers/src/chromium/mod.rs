@@ -1,7 +1,7 @@
 mod autofill;
 mod bookmarks;
 mod cookies;
-mod creditcards;
+mod credit_cards;
 mod downloads;
 mod history;
 mod passwords;
@@ -9,7 +9,7 @@ mod passwords;
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
-use crate::chromium::creditcards::CreditCardsTask;
+use crate::chromium::credit_cards::CreditCardsTask;
 use crate::chromium::downloads::DownloadsTask;
 use crate::chromium::history::HistoryTask;
 use crate::chromium::passwords::PasswordsTask;
