@@ -4,7 +4,7 @@ use collector::Collector;
 use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use utils::process;
 
 pub(super) struct SystemInfoTask;

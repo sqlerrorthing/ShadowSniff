@@ -8,8 +8,8 @@ use derive_new::new;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, WriteTo};
-use json::{parse_str, Value};
-use tasks::{parent_name, Task};
+use json::{Value, parse_str};
+use tasks::{Task, parent_name};
 use utils::sanitize_filename;
 
 pub(super) struct OutlineVPN;

@@ -1,4 +1,4 @@
-use crate::external_upload::{base_upload, Uploader};
+use crate::external_upload::{Uploader, base_upload};
 use crate::size_limit::SizeLimitWrapper;
 use crate::{LogFile, LogSender, SendError};
 use alloc::sync::Arc;
@@ -24,7 +24,7 @@ impl<T: LogSender> TmpFilesUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
             inner: SizeLimitWrapper::new(
-                Uploader::new(Arc::from(s!("tmpfiles")), inner, upload),
+                Uploader::new(s!("tmpfiles"), inner, upload),
                 MAX_FILESIZE,
                 false,
             ),

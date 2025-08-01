@@ -9,7 +9,7 @@ use alloc::borrow::ToOwned;
 use alloc::vec;
 use collector::Collector;
 use filesystem::FileSystem;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
+use tasks::{CompositeTask, Task, composite_task, impl_composite_task_runner};
 
 pub struct FtpTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,

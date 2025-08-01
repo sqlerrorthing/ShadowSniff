@@ -4,8 +4,8 @@ extern crate alloc;
 mod parser;
 mod tokenize;
 
-use crate::parser::{parse_tokens, TokenParseError};
-use crate::tokenize::{tokenize, TokenizeError};
+use crate::parser::{TokenParseError, parse_tokens};
+use crate::tokenize::{TokenizeError, tokenize};
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;

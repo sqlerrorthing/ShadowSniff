@@ -23,6 +23,7 @@ pub struct Uploader<T>
 where
     T: LogSender,
 {
+    #[new(into)]
     service_name: Arc<str>,
     inner: T,
     upload: fn(&str, &[u8]) -> Option<Arc<str>>,

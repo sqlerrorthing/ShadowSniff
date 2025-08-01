@@ -8,21 +8,21 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 use filesystem::path::Path;
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GetLastError, SetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE,
-    MAX_PATH, TRUE,
+    CloseHandle, GetLastError, HANDLE, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE, MAX_PATH,
+    SetHandleInformation, TRUE,
 };
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::ReadFile;
 use windows_sys::Win32::System::Pipes::CreatePipe;
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
 use windows_sys::Win32::System::Threading::{
-    CreateProcessW, OpenProcess, QueryFullProcessImageNameW, CREATE_NO_WINDOW, PROCESS_INFORMATION,
-    PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_READ,
+    CREATE_NO_WINDOW, CreateProcessW, OpenProcess, PROCESS_INFORMATION, PROCESS_QUERY_INFORMATION,
+    PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_READ, QueryFullProcessImageNameW,
     STARTF_USESTDHANDLES, STARTUPINFOW,
 };
 
 pub unsafe fn run_file(file: &Path) -> Result<Vec<u8>, u32> {
-    run_process(&file.to_string())
+    unsafe { run_process(&file.to_string()) }
 }
 
 pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
@@ -35,40 +35,42 @@ pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
     let mut read_pipe: HANDLE = null_mut();
     let mut write_pipe: HANDLE = null_mut();
 
-    if CreatePipe(&mut read_pipe, &mut write_pipe, &mut sa, 0) == 0 {
-        return Err(GetLastError());
+    if unsafe { CreatePipe(&mut read_pipe, &mut write_pipe, &mut sa, 0) } == 0 {
+        return Err(unsafe { GetLastError() });
     }
 
-    SetHandleInformation(read_pipe, HANDLE_FLAG_INHERIT, 0);
+    unsafe { SetHandleInformation(read_pipe, HANDLE_FLAG_INHERIT, 0) };
 
-    let mut si: STARTUPINFOW = zeroed();
+    let mut si: STARTUPINFOW = unsafe { zeroed() };
     si.cb = size_of::<STARTUPINFOW>() as u32;
     si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdOutput = write_pipe;
     si.hStdError = write_pipe;
     si.hStdInput = INVALID_HANDLE_VALUE;
 
-    let mut pi: PROCESS_INFORMATION = zeroed();
+    let mut pi: PROCESS_INFORMATION = unsafe { zeroed() };
     let mut cmd_wide: Vec<u16> = cmd.encode_utf16().chain(once(0)).collect();
 
-    let res = CreateProcessW(
-        null_mut(),
-        cmd_wide.as_mut_ptr(),
-        null_mut(),
-        null_mut(),
-        1,
-        CREATE_NO_WINDOW,
-        null_mut(),
-        null_mut(),
-        &mut si,
-        &mut pi,
-    );
+    let res = unsafe {
+        CreateProcessW(
+            null_mut(),
+            cmd_wide.as_mut_ptr(),
+            null_mut(),
+            null_mut(),
+            1,
+            CREATE_NO_WINDOW,
+            null_mut(),
+            null_mut(),
+            &mut si,
+            &mut pi,
+        )
+    };
 
-    CloseHandle(write_pipe);
+    unsafe { CloseHandle(write_pipe) };
 
     if res == 0 {
-        CloseHandle(read_pipe);
-        return Err(GetLastError());
+        unsafe { CloseHandle(read_pipe) };
+        return Err(unsafe { GetLastError() });
     }
 
     let mut output = Vec::new();
@@ -76,13 +78,15 @@ pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
 
     loop {
         let mut bytes_read = 0;
-        let success = ReadFile(
-            read_pipe,
-            buffer.as_mut_ptr() as *mut _,
-            buffer.len() as u32,
-            &mut bytes_read,
-            null_mut(),
-        );
+        let success = unsafe {
+            ReadFile(
+                read_pipe,
+                buffer.as_mut_ptr() as *mut _,
+                buffer.len() as u32,
+                &mut bytes_read,
+                null_mut(),
+            )
+        };
 
         if success == 0 || bytes_read == 0 {
             break;
@@ -91,9 +95,11 @@ pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
         output.extend_from_slice(&buffer[..bytes_read as usize]);
     }
 
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-    CloseHandle(read_pipe);
+    unsafe {
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        CloseHandle(read_pipe);
+    }
 
     Ok(output)
 }

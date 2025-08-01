@@ -1,4 +1,4 @@
-use crate::external_upload::{base_upload, Uploader};
+use crate::external_upload::{Uploader, base_upload};
 use crate::{LogFile, LogSender, SendError};
 use alloc::sync::Arc;
 use collector::Collector;
@@ -15,7 +15,7 @@ pub struct GofileUploader<T: LogSender> {
 impl<T: LogSender> GofileUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
-            inner: Uploader::new(Arc::from(s!("Gofile")), inner, upload),
+            inner: Uploader::new(s!("Gofile"), inner, upload),
         }
     }
 }

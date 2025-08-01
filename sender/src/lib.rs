@@ -28,8 +28,10 @@ pub enum SendError {
 #[derive(new, Clone)]
 pub struct ExternalLink {
     /// The service name where the log file is located.
+    #[new(into)]
     service_name: Arc<str>,
     /// The URL pointing to the `.zip` log archive.
+    #[new(into)]
     link: Arc<str>,
     /// The size of the log file in bytes.
     size: usize,
@@ -40,18 +42,18 @@ pub struct ExternalLink {
 pub enum LogContent {
     /// An external link to a `.zip` log archive with metadata.
     ExternalLink(ExternalLink),
-
     /// The raw bytes of a `.zip` log archive.
-    ZipArchive(Vec<u8>),
+    ZipArchive(Arc<[u8]>),
 }
 
 /// Represents a named log file with content.
 #[derive(new, Clone)]
 pub struct LogFile {
     /// The name of the log file, including its extension.
+    #[new(into)]
     name: Arc<str>,
-
     /// The content of the log file.
+    #[new(into)]
     content: LogContent,
 }
 
@@ -67,13 +69,13 @@ impl LogFile {
 
 impl From<Vec<u8>> for LogContent {
     fn from(value: Vec<u8>) -> Self {
-        LogContent::ZipArchive(value)
+        LogContent::ZipArchive(Arc::from(value))
     }
 }
 
 impl From<ZipArchive> for LogContent {
     fn from(value: ZipArchive) -> Self {
-        LogContent::ZipArchive(value.create())
+        LogContent::ZipArchive(value.create().into())
     }
 }
 
@@ -120,28 +122,25 @@ pub trait LogSenderExt: LogSender {
     ///
     /// This method automatically extracts the password from the archive if one is set,
     /// and converts the archive into a [`LogContent::ZipArchive`].
-    fn send_archive<A, C>(
-        &self,
-        name: Arc<str>,
-        archive: A,
-        collector: &C,
-    ) -> Result<(), SendError>
+    fn send_archive<N, A, C>(&self, name: N, archive: A, collector: &C) -> Result<(), SendError>
     where
+        N: Into<Arc<str>>,
         A: AsRef<ZipArchive>,
         C: Collector;
 }
 
 impl<T: LogSender> LogSenderExt for T {
-    fn send_archive<A, C>(&self, name: Arc<str>, archive: A, collector: &C) -> Result<(), SendError>
+    fn send_archive<N, A, C>(&self, name: N, archive: A, collector: &C) -> Result<(), SendError>
     where
+        N: Into<Arc<str>>,
         A: AsRef<ZipArchive>,
         C: Collector,
     {
         let archive = archive.as_ref();
 
         let password = archive.get_password();
-        let archive = archive.create().into();
+        let archive = LogFile::new(name, archive.create());
 
-        self.send(LogFile::new(name, archive), password, collector)
+        self.send(archive, password, collector)
     }
 }

