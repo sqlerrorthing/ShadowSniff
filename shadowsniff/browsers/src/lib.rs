@@ -149,6 +149,27 @@ pub(crate) trait Extract<Args: Tuple> {
         R: TableRecord;
 }
 
+pub(crate) trait ExtractExt<Args: Tuple + Clone>: Extract<Args> {
+    fn make_extractor<R>(args: Args) -> impl Fn(&R) -> Option<Self>
+    where
+        Self: Sized,
+        R: TableRecord;
+}
+
+impl<T, Args> ExtractExt<Args> for T
+where
+    Args: Tuple + Clone,
+    T: Extract<Args>
+{
+    fn make_extractor<R>(args: Args) -> impl Fn(&R) -> Option<Self>
+    where
+        Self: Sized,
+        R: TableRecord
+    {
+        move |record| Self::extract(record, args.clone())
+    }
+}
+
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Bookmark {
     pub name: String,
