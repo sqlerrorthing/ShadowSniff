@@ -2,8 +2,8 @@
 #![no_std]
 
 extern crate alloc;
-mod gecko;
 pub mod chromium;
+mod gecko;
 
 use database::Database;
 

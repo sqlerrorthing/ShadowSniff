@@ -1,7 +1,10 @@
 use core::alloc::{GlobalAlloc, Layout};
-use core::ptr::{null_mut, NonNull};
+use core::ptr::{NonNull, null_mut};
 use windows_sys::Win32::Foundation::HANDLE;
-use windows_sys::Win32::System::Memory::{GetProcessHeap, HeapAlloc, HeapFree, VirtualAlloc, VirtualFree, MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE};
+use windows_sys::Win32::System::Memory::{
+    GetProcessHeap, HeapAlloc, HeapFree, MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE,
+    VirtualAlloc, VirtualFree,
+};
 
 pub(crate) struct WinHeapAlloc;
 
@@ -24,23 +27,14 @@ unsafe impl GlobalAlloc for WinHeapAlloc {
             return null_mut();
         }
 
-        let size  = layout.size();
+        let size = layout.size();
         let align = layout.align().max(size_of::<usize>());
 
         match align {
-            0..=NATURAL_HEAP_ALIGN => {
-                HeapAlloc(heap, 0, size) as *mut u8
-            }
-            NATURAL_HEAP_ALIGN_WITH_HEADER..PAGE_SIZE => {
-                alloc_with_header(heap, size, align)
-            }
+            0..=NATURAL_HEAP_ALIGN => HeapAlloc(heap, 0, size) as *mut u8,
+            NATURAL_HEAP_ALIGN_WITH_HEADER..PAGE_SIZE => alloc_with_header(heap, size, align),
             _ => {
-                VirtualAlloc(
-                    null_mut(),
-                    size,
-                    MEM_COMMIT | MEM_RESERVE,
-                    PAGE_READWRITE,
-                ) as *mut u8
+                VirtualAlloc(null_mut(), size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE) as *mut u8
             }
         }
     }
@@ -53,7 +47,7 @@ unsafe impl GlobalAlloc for WinHeapAlloc {
 
         if layout.align() <= NATURAL_HEAP_ALIGN {
             HeapFree(heap, 0, ptr as _);
-            return
+            return;
         }
 
         let align = layout.align().max(size_of::<usize>());
