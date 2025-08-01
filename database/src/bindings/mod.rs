@@ -39,16 +39,15 @@ impl Database for Sqlite3BindingsDatabase {
             sqlite3_initialize();
         }
 
+        if bytes.len() < 16 || &bytes[0..16] != b"SQLite format 3\0" {
+            return Err(26); // SQLITE_NOTADB
+        }
+
         let mut db: *mut sqlite3 = null_mut();
         let rc = unsafe { sqlite3_open(c":memory:".as_ptr(), &mut db) };
 
         if rc != 0 {
             return Err(rc);
-        }
-
-        if bytes.len() < 16 || &bytes[0..16] != b"SQLite format 3\0" {
-            unsafe { sqlite3_close(db) };
-            return Err(26); // SQLITE_NOTADB
         }
 
         let data_size = bytes.len();
