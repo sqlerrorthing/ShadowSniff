@@ -47,12 +47,11 @@ impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask<'_> {
 }
 
 fn extract_history_from_record<R: TableRecord>(record: &R) -> Option<History> {
-    let url = record.get_value(MOZ_PLACES_URL)?.as_string()?.to_owned();
-    let title = record.get_value(MOZ_PLACES_TITLE)?.as_string()?.to_owned();
+    let url = record.get_value(MOZ_PLACES_URL)?.as_string()?;
+    let title = record.get_value(MOZ_PLACES_TITLE)?.as_string()?;
     let last_visit_time = record
         .get_value(MOZ_PLACES_LAST_VISIT_DATE)?
-        .as_integer()?
-        .to_owned();
+        .as_integer()?;
 
     Some(History {
         url,

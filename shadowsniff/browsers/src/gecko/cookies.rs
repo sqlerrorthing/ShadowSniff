@@ -46,14 +46,13 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask<'_> {
 }
 
 fn extract_cookies_from_record<R: TableRecord>(record: &R) -> Option<Cookie> {
-    let host_key = record.get_value(MOZ_COOKIES_HOST)?.as_string()?.to_owned();
-    let name = record.get_value(MOZ_COOKIES_NAME)?.as_string()?.to_owned();
-    let path = record.get_value(MOZ_COOKIES_PATH)?.as_string()?.to_owned();
+    let host_key = record.get_value(MOZ_COOKIES_HOST)?.as_string()?;
+    let name = record.get_value(MOZ_COOKIES_NAME)?.as_string()?;
+    let path = record.get_value(MOZ_COOKIES_PATH)?.as_string()?;
     let expires = record
         .get_value(MOZ_COOKIES_EXPIRY)?
-        .as_integer()?
-        .to_owned();
-    let value = record.get_value(MOZ_COOKIES_VALUE)?.as_string()?.to_owned();
+        .as_integer()?;
+    let value = record.get_value(MOZ_COOKIES_VALUE)?.as_string()?;
 
     Some(Cookie {
         host_key,
