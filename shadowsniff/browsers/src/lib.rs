@@ -5,7 +5,7 @@ extern crate alloc;
 pub mod chromium;
 mod gecko;
 
-use database::{Database, TableRecord};
+use database::{Database, TableRecord, Value};
 
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::ChromiumTask;
@@ -170,6 +170,49 @@ impl Display for Cookie {
     }
 }
 
+/// # Parameters
+/// 
+/// - `host_idx` (`usize`): The index of the host key field in the record.
+/// - `name_idx` (`usize`): The index of the cookie name field in the record.
+/// - `path_idx` (`usize`): The index of the cookie path field in the record.
+/// - `expires_idx` (`usize`): The index of the cookie expiry timestamp field in the record.
+/// - `value_idx` (`usize`): The index of the cookie value field in the record.
+/// - `value_fn` (`F`):
+/// A function or closure that takes a [`Value`]
+/// (from the record) and returns an [`Option<Arc<str>>`],
+/// used to extract or decrypt the cookie value.
+impl<F> Extract<(usize, usize, usize, usize, usize, F)> for Cookie
+where
+    F: Fn(Value) -> Option<Arc<str>>
+{
+    fn extract<R>(
+        record: &R,
+        args: (usize, usize, usize, usize, usize, F)
+    ) -> Option<Self>
+    where
+        Self: Sized,
+        R: TableRecord
+    {
+        let (host_idx, name_idx, path_idx, expires_idx, value_idx, value_fn) = args;
+
+        let host_key = record.get_value(host_idx)?.as_string()?;
+        let name = record.get_value(name_idx)?.as_string()?;
+        let path = record.get_value(path_idx)?.as_string()?;
+        let expires_utc = record.get_value(expires_idx)?.as_integer()?;
+        let value_raw = record.get_value(value_idx)?;
+
+        let value = value_fn(value_raw)?;
+
+        Some(Cookie {
+            host_key,
+            name,
+            value,
+            path,
+            expires_utc,
+        })
+    }
+}
+
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Bookmark {
     pub name: String,
@@ -271,8 +314,13 @@ pub(crate) struct History {
     pub last_visit_time: i64,
 }
 
+/// # Parameters
+/// 
+/// - `url_offset` (`usize`): The index of the URL field in the record.
+/// - `title_offset` (`usize`): The index of the title field in the record.
+/// - `last_visit_time_offset` (`usize`):
+/// The index of the last visit timestamp field in the record.
 impl Extract<(usize, usize, usize)> for History {
-    // `(url_offset, title_offset, last_visit_time_offset)`.
     fn extract<R>(record: &R, args: (usize, usize, usize)) -> Option<Self>
     where
         Self: Sized,

