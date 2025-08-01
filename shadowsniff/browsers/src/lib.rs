@@ -123,25 +123,6 @@ where
         .write_to(filesystem, dst)
 }
 
-#[derive(PartialEq, Ord, Eq, PartialOrd)]
-pub(crate) struct Cookie {
-    pub host_key: Arc<str>,
-    pub name: Arc<str>,
-    pub value: Arc<str>,
-    pub path: Arc<str>,
-    pub expires_utc: i64,
-}
-
-impl Display for Cookie {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(
-            f,
-            "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r",
-            self.host_key, self.path, self.expires_utc, self.name, self.value
-        )
-    }
-}
-
 pub(crate) trait Extract<Args: Tuple> {
     fn extract<R>(record: &R, args: Args) -> Option<Self>
     where
@@ -167,6 +148,25 @@ where
         R: TableRecord
     {
         move |record| Self::extract(record, args.clone())
+    }
+}
+
+#[derive(PartialEq, Ord, Eq, PartialOrd)]
+pub(crate) struct Cookie {
+    pub host_key: Arc<str>,
+    pub name: Arc<str>,
+    pub value: Arc<str>,
+    pub path: Arc<str>,
+    pub expires_utc: i64,
+}
+
+impl Display for Cookie {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "{}\tTRUE\t{}\tFALSE\t{}\t{}\t{}\r",
+            self.host_key, self.path, self.expires_utc, self.name, self.value
+        )
     }
 }
 
