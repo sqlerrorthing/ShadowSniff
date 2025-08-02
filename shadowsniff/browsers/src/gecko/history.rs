@@ -21,7 +21,7 @@ pub(super) struct HistoryTask<'a> {
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for HistoryTask<'_> {
-    parent_name!("History");
+    parent_name!("History.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Some(mut history) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
