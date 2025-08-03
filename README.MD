@@ -64,16 +64,16 @@ This flexibility allows the creation of wrappers like custom uploaders or platfo
 
 ### Browsers
 
-| Feature      |                           Chromium (<127, see [here](https://github.com/sqlerrorthing/ShadowSniff/blob/master/shadowsniff/browsers/src/chromium/mod.rs#L294))                           |           Gecko            |
-|--------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------:|
-| Supported    | Amingo, Torch, Kometa, Orbitum, Epic Private, Cent, Vivaldi, **Chromium**, Thorium, **Opera**, **Opera GX**, 7Star, Chrome SxS, **Chrome**, **Edge**, Uran, **Yandex**, **Brave**, Atom | **Firefox**, **Librewolf** |
-| AutoFill     |                                                                                            ✅                                                                                            |             ❌              |
-| Bookmarks    |                                                                                            ✅                                                                                            |             ❌              |
-| Cookies      |                                                                                            ✅                                                                                            |             ✅              |
-| Passwords    |                                                                                            ✅                                                                                            |             ❌              |
-| Credit cards |                                                                                            ✅                                                                                            |             ❌              |
-| Downloads    |                                                                                            ✅                                                                                            |             ❌              |
-| History      |                                                                                            ✅                                                                                            |             ✅              |
+| Feature      |                           Chromium (<127, see [here](https://github.com/sqlerrorthing/ShadowSniff/blob/master/shadowsniff/browsers/src/chromium/mod.rs#L294))                           |                                    Gecko                                    |
+|--------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------:|
+| Supported    | Amingo, Torch, Kometa, Orbitum, Epic Private, Cent, Vivaldi, **Chromium**, Thorium, **Opera**, **Opera GX**, 7Star, Chrome SxS, **Chrome**, **Edge**, Uran, **Yandex**, **Brave**, Atom |                         **Firefox**, **Librewolf**                          |
+| AutoFill     |                                                                                            ✅                                                                                            |                                      ❌                                      |
+| Bookmarks    |                                                                                            ✅                                                                                            |                                      ❌                                      |
+| Cookies      |                                                                                            ✅                                                                                            |                                      ✅                                      |
+| Passwords    |                                                                                            ✅                                                                                            | 🟡 (if using [PasswordFox](https://www.nirsoft.net/utils/passwordfox.html)) |
+| Credit cards |                                                                                            ✅                                                                                            |                                      ❌                                      |
+| Downloads    |                                                                                            ✅                                                                                            |                                      ❌                                      |
+| History      |                                                                                            ✅                                                                                            |                                      ✅                                      |
 
 ### Messengers
 
