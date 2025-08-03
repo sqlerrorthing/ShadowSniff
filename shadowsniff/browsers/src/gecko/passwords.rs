@@ -1,9 +1,6 @@
 use crate::gecko::GeckoBrowserData;
-use crate::{SqliteDatabase, collect_unique_from_profiles, read_and_collect_unique_records};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use collector::Collector;
-use database::{Database, DatabaseExt, TableRecord};
 use derive_new::new;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;

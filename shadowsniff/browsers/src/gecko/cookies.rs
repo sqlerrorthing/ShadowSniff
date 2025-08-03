@@ -5,7 +5,6 @@ use crate::{
 };
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
-use database::TableRecord;
 use derive_new::new;
 use filesystem::FileSystem;
 use filesystem::path::Path;
