@@ -4,6 +4,7 @@ mod passwords;
 
 use crate::gecko::cookies::CookiesTask;
 use crate::gecko::history::HistoryTask;
+use crate::gecko::passwords::PasswordTask;
 use crate::vec;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -13,7 +14,6 @@ use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use tasks::{CompositeTask, Task, composite_task};
-use crate::gecko::passwords::PasswordTask;
 
 pub(crate) struct GeckoTask<'a, C: Collector, F: FileSystem> {
     tasks: Vec<(Arc<GeckoBrowserData<'a>>, CompositeTask<C, F>)>,

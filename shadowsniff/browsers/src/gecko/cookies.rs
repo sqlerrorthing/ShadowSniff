@@ -1,10 +1,12 @@
 use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
-use crate::{Cookie, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all, ExtractExt};
+use crate::{
+    Cookie, ExtractExt, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all,
+};
 use alloc::sync::Arc;
-use derive_new::new;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use derive_new::new;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -37,7 +39,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask<'_> {
                 MOZ_COOKIES_PATH,
                 MOZ_COOKIES_EXPIRY,
                 MOZ_COOKIES_VALUE,
-                |value| value.as_string()
+                |value| value.as_string(),
             )),
         ) else {
             return;

