@@ -102,6 +102,44 @@ _... more_
 If you'd like the stealer to support additional features, feel free to open an [issue](https://github.com/sqlerrorthing/ShadowSniff/issues/new/choose) here to request the functionality —
 or implement it yourself.
 
+## Building stub
+
+You can run this builder safely on your own Host machine.  
+**All code will be compiled locally on your computer** — no precompiled stubs, no hidden files, no viruses. xD.  
+Everything is built fresh just for you, right where you run the commands.
+
+---
+
+1. **Install Rust** (if you don’t have it yet):  
+   Go to [https://rustup.rs/](https://rustup.rs/) and click the big button that says **“Install”**.  
+   Follow the simple instructions to get Rust on your PC.
+
+2. **Download the Project**:  
+   You can either:  
+   - Click the green **Code** button on the GitHub page and select **Download ZIP**, then unzip it somewhere.  
+   OR  
+   - Open PowerShell (press `Win + R`, type `powershell`, press Enter) and run these commands (if you have installed git):  
+     ```powershell
+     git clone https://github.com/sqlerrorthing/ShadowSniff.git
+     cd ShadowSniff
+     ```
+
+3. **Run the Builder to Compile the Stub**:  
+   In PowerShell (make sure you are inside the `ShadowSniff` folder), run this command:  
+   ```powershell
+   cargo run -p builder --release
+   ```
+   This command will start the builder program.
+
+4. **Answer All Questions the Builder Asks**:
+   The builder will ask you some questions. Just type your answers and press Enter.
+
+5. **Wait for the Compilation to Finish**:
+   When done, you will find your compiled stub here:
+   ```
+   .\target\release\ShadowSniff.exe
+   ```
+
 ## Workflow
 
 This section describes the complete execution pipeline for ShadowSniff, outlining each step from environment
