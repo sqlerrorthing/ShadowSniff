@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+#![doc = include_str!("../../README.md")]
 #![no_std]
 #![allow(unsafe_op_in_unsafe_fn)]
 
