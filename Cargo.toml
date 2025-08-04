@@ -2,6 +2,7 @@
 name = "ShadowSniff"
 version = "0.1.0"
 edition = "2024"
+license-file = "LICENSE"
 
 [workspace]
 resolver = "3"
