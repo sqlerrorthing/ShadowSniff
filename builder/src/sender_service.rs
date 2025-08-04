@@ -24,7 +24,8 @@
  * SOFTWARE.
  */
 use std::fmt::Display;
-use inquire::{InquireError, Select, Text};
+use inquire::{required, InquireError, Select, Text};
+use inquire::validator::Validation;
 use sender::discord_webhook::DiscordWebhookSender;
 use sender::telegram_bot::TelegramBotSender;
 use crate::Ask;
@@ -36,10 +37,14 @@ impl Ask for TelegramBotSender {
     {
         let token = Text::new("What is the bot token from @BotFather?")
             .with_help_message("You can get it by creating a bot using @BotFather.")
+            .with_placeholder("000000000:***********************************")
+            .with_validator(required!())
             .prompt()?;
 
         let chat_id = Text::new("Chat id")
             .with_help_message("You can use https://emmarnitechs.com/find-change-user-id-telegram to find your Telegram ID.")
+            .with_placeholder("123456789")
+            .with_validator(required!())
             .prompt()?;
 
         Ok(Self::new(token, chat_id))
@@ -51,8 +56,19 @@ impl Ask for DiscordWebhookSender {
     where
         Self: Sized
     {
+        let validator = |webhook: &str| {
+            if webhook.starts_with("https://discord.com/api/webhooks/") {
+                Ok(Validation::Valid)
+            } else {
+                Ok(Validation::Invalid("It seems like you provided invalid webhook".into()))
+            }
+        };
+
         let webhook = Text::new("What is the webhook URL?")
             .with_help_message("If you’re stuck, read https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks.")
+            .with_placeholder("https://discord.com/api/webhooks/123456789/******************")
+            .with_validator(required!())
+            .with_validator(validator)
             .prompt()?;
 
         Ok(Self::new(webhook))
