@@ -38,7 +38,7 @@ impl Write for WindowsStdOutputWriter {
 
         unsafe {
             let handle = GetStdHandle(STD_OUTPUT_HANDLE);
-            if handle == null_mut() {
+            if handle.is_null() {
                 return Err(fmt::Error);
             }
 

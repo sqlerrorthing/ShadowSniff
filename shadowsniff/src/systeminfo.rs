@@ -41,7 +41,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for SystemInfoTask {
     fn run(&self, parent: &Path, filesystem: &F, _: &C) {
         let system = Path::system();
 
-        let Ok(res) = (unsafe { process::run_file(&(system / s!("systeminfo.exe"))) }) else {
+        let Ok(res) = process::run_file(&(system / s!("systeminfo.exe"))) else {
             return;
         };
 

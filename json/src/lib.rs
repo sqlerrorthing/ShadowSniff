@@ -133,13 +133,13 @@ impl Display for Value {
                 write!(f, "null")
             }
             Value::Boolean(value) => {
-                write!(f, "{}", value)
+                write!(f, "{value}")
             }
             Value::String(value) => {
-                write!(f, "{}", value)
+                write!(f, "{value}")
             }
             Value::Number(value) => {
-                write!(f, "{}", value)
+                write!(f, "{value}")
             }
             Value::Array(value) => {
                 write!(f, "[array {}]", value.len())

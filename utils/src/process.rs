@@ -47,12 +47,12 @@ use windows_sys::Win32::System::Threading::{
     STARTF_USESTDHANDLES, STARTUPINFOW,
 };
 
-pub unsafe fn run_file(file: &Path) -> Result<Vec<u8>, u32> {
-    unsafe { run_process(&file.to_string()) }
+pub fn run_file(file: &Path) -> Result<Vec<u8>, u32> {
+    run_process(&file.to_string())
 }
 
-pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
-    let mut sa = SECURITY_ATTRIBUTES {
+pub fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
+    let sa = SECURITY_ATTRIBUTES {
         nLength: size_of::<SECURITY_ATTRIBUTES>() as u32,
         lpSecurityDescriptor: null_mut(),
         bInheritHandle: TRUE,
@@ -61,7 +61,7 @@ pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
     let mut read_pipe: HANDLE = null_mut();
     let mut write_pipe: HANDLE = null_mut();
 
-    if unsafe { CreatePipe(&mut read_pipe, &mut write_pipe, &mut sa, 0) } == 0 {
+    if unsafe { CreatePipe(&mut read_pipe, &mut write_pipe, &sa, 0) } == 0 {
         return Err(unsafe { GetLastError() });
     }
 
@@ -87,7 +87,7 @@ pub unsafe fn run_process(cmd: &str) -> Result<Vec<u8>, u32> {
             CREATE_NO_WINDOW,
             null_mut(),
             null_mut(),
-            &mut si,
+            &si,
             &mut pi,
         )
     };
@@ -161,7 +161,7 @@ pub fn get_process_list() -> Vec<ProcessInfo> {
 
         let handle = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid) };
 
-        if handle == null_mut() {
+        if handle.is_null() {
             continue;
         }
 

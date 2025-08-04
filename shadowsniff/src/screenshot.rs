@@ -157,8 +157,8 @@ fn create_png(width: u32, height: u32, pixels: &[u8]) -> Vec<u8> {
 fn crc32(bytes: &[u8]) -> u32 {
     let mut table = [0u32; 256];
 
-    for i in 0..256 {
-        let mut c = i as u32;
+    for (idx, item) in table.iter_mut().enumerate() {
+        let mut c = idx as u32;
         for _ in 0..8 {
             c = if c & 1 != 0 {
                 0xEDB88320 ^ (c >> 1)
@@ -166,7 +166,8 @@ fn crc32(bytes: &[u8]) -> u32 {
                 c >> 1
             };
         }
-        table[i] = c;
+
+        *item = c;
     }
 
     let mut crc = 0xFFFFFFFFu32;

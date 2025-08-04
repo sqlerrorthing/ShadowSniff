@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#![allow(clippy::missing_safety_doc)]
+
 mod autofill;
 mod bookmarks;
 mod cookies;
@@ -299,7 +301,7 @@ pub fn crypt_unprotect_data(data: &[u8]) -> Option<Vec<u8>> {
 ///     - IV (12 bytes) starting at index 3,
 ///     - Ciphertext up to the last 16 bytes,
 ///     - Tag (16 bytes) at the end of the buffer.
-///     Decryption is performed using AES-GCM.
+///       Decryption is performed using AES-GCM.
 /// - **Unprefixed/legacy format**: Uses Windows Data Protection API (`CryptUnprotectData`) directly with no additional keys.
 ///
 /// # Safety

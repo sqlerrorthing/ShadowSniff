@@ -63,7 +63,7 @@ impl Display for IpInfo {
             \tPostal:\t{}",
             self.ip,
             internal_code_to_flag(&self.country)
-                .map(|flag| Arc::from(flag))
+                .map(Arc::from)
                 .unwrap_or(self.country.clone()),
             self.city,
             self.region,

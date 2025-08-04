@@ -70,7 +70,7 @@ where
     Ok(tokens)
 }
 
-fn make_token(chars: &Vec<char>, index: &mut usize) -> Result<Option<Token>, TokenizeError> {
+fn make_token(chars: &[char], index: &mut usize) -> Result<Option<Token>, TokenizeError> {
     let mut ch = chars[*index];
     while ch.is_ascii_whitespace() {
         *index += 1;
@@ -102,7 +102,7 @@ fn make_token(chars: &Vec<char>, index: &mut usize) -> Result<Option<Token>, Tok
     Ok(Some(token))
 }
 
-fn tokenize_null(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
+fn tokenize_null(chars: &[char], index: &mut usize) -> Result<Token, TokenizeError> {
     for expected_char in "null".chars() {
         if expected_char != chars[*index] {
             return Err(TokenizeError::UnfinishedLiteralValue);
@@ -113,7 +113,7 @@ fn tokenize_null(chars: &Vec<char>, index: &mut usize) -> Result<Token, Tokenize
     Ok(Token::Null)
 }
 
-fn tokenize_true(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
+fn tokenize_true(chars: &[char], index: &mut usize) -> Result<Token, TokenizeError> {
     for expected_char in "true".chars() {
         if expected_char != chars[*index] {
             return Err(TokenizeError::UnfinishedLiteralValue);
@@ -124,7 +124,7 @@ fn tokenize_true(chars: &Vec<char>, index: &mut usize) -> Result<Token, Tokenize
     Ok(Token::True)
 }
 
-fn tokenize_false(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
+fn tokenize_false(chars: &[char], index: &mut usize) -> Result<Token, TokenizeError> {
     for expected_char in "false".chars() {
         if expected_char != chars[*index] {
             return Err(TokenizeError::UnfinishedLiteralValue);
@@ -135,7 +135,7 @@ fn tokenize_false(chars: &Vec<char>, index: &mut usize) -> Result<Token, Tokeniz
     Ok(Token::False)
 }
 
-fn tokenize_string(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
+fn tokenize_string(chars: &[char], index: &mut usize) -> Result<Token, TokenizeError> {
     debug_assert!(chars[*index] == '"');
     let mut string = String::new();
     let mut is_escaping = false;
@@ -159,7 +159,7 @@ fn tokenize_string(chars: &Vec<char>, index: &mut usize) -> Result<Token, Tokeni
     Ok(Token::String(string))
 }
 
-fn tokenize_float(chars: &Vec<char>, index: &mut usize) -> Result<Token, TokenizeError> {
+fn tokenize_float(chars: &[char], index: &mut usize) -> Result<Token, TokenizeError> {
     let mut unparsed_num = String::new();
     let mut has_decimal = false;
     let mut has_exponent = false;

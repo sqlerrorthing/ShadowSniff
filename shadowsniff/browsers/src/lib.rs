@@ -201,9 +201,9 @@ impl Display for Cookie {
 /// - `expires_idx` (`usize`): The index of the cookie expiry timestamp field in the record.
 /// - `value_idx` (`usize`): The index of the cookie value field in the record.
 /// - `value_fn` (`F`):
-/// A function or closure that takes a [`Value`]
-/// (from the record) and returns an [`Option<Arc<str>>`],
-/// used to extract or decrypt the cookie value.
+///   A function or closure that takes a [`Value`]
+///   (from the record) and returns an [`Option<Arc<str>>`],
+///   used to extract or decrypt the cookie value.
 impl<F> Extract<(usize, usize, usize, usize, usize, F)> for Cookie
 where
     F: Fn(Value) -> Option<Arc<str>>,
@@ -339,7 +339,7 @@ pub(crate) struct History {
 /// - `url_offset` (`usize`): The index of the URL field in the record.
 /// - `title_offset` (`usize`): The index of the title field in the record.
 /// - `last_visit_time_offset` (`usize`):
-/// The index of the last visit timestamp field in the record.
+///   The index of the last visit timestamp field in the record.
 impl Extract<(usize, usize, usize)> for History {
     fn extract<R>(record: &R, args: (usize, usize, usize)) -> Option<Self>
     where

@@ -121,7 +121,7 @@ impl FileSystem for VirtualFileSystem {
         let mut components = path_str.split('\\').filter(|s| !s.is_empty());
 
         let mut current_path = String::from("\\");
-        while let Some(comp) = components.next() {
+        for comp in &mut components {
             if current_path != "\\" {
                 current_path.push('\\');
             }
@@ -261,8 +261,8 @@ impl FileSystem for VirtualFileSystem {
                 let parent = parent_path(&path_str).ok_or(4u32)?;
 
                 match map.get(&parent) {
-                    Some(Entry::Directory { .. }) => {
-                        // Insert new file
+                    Some(Entry::Directory) => {
+                        // Insert a new file
                         map.insert(
                             path_str,
                             Entry::File {
@@ -296,7 +296,7 @@ impl FileSystem for VirtualFileSystem {
             return None;
         }
         match map.get(&dir_str)? {
-            Entry::Directory { .. } => {}
+            Entry::Directory => {}
             _ => return None,
         }
 

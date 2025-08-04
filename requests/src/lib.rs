@@ -288,7 +288,7 @@ impl Request {
             }
 
             for (key, value) in &self.headers {
-                let header = alloc::format!("{}: {}\0", key, value);
+                let header = format!("{key}: {value}\0");
                 let header_wide: Vec<u16> = header.encode_utf16().collect();
                 if WinHttpAddRequestHeaders(
                     request,

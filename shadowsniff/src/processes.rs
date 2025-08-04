@@ -52,9 +52,8 @@ impl<C: Collector, F: FileSystem> Task<C, F> for ProcessesTask {
         let mut output = String::new();
         let _ = writeln!(
             &mut output,
-            "{:<width$}{}",
+            "{:<width$}NAME",
             "PID",
-            "NAME",
             width = pid_col_width
         );
 

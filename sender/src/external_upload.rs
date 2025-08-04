@@ -87,7 +87,7 @@ where
     }
 }
 
-pub(crate) fn base_upload<'a>(name: &str, url: &str, bytes: &[u8]) -> Option<Response> {
+pub(crate) fn base_upload(name: &str, url: &str, bytes: &[u8]) -> Option<Response> {
     let mut builder = MultipartBuilder::new("----Multipart");
     builder.write_file_field(s!("file"), name, s!("application/zip"), bytes);
 
