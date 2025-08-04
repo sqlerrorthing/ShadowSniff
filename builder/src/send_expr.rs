@@ -71,14 +71,14 @@ fn gen_uploader_wrapper(uploader: UploaderService, base: TokenStream) -> TokenSt
 impl SendSettings {
     pub fn gen_expr(&self) -> TokenStream {
         let expr = self.expr_internal();
-        
+
         quote! {
             {
                 #expr
             }
         }
     }
-    
+
     fn expr_internal(&self) -> TokenStream {
         let base = gen_base_sender(self.service.clone());
 
@@ -95,8 +95,8 @@ impl SendSettings {
                 quote! {
                     let sender = #base;
                     let wrapper = #wrapper_tokens;
-        
-                    sender::size_tallback::SizeFallbackSender::new(sender, wrapper)
+
+                    sender::size_fallback::SizeFallbackSender::new(sender, wrapper)
                 }
             }
         }
