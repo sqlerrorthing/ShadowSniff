@@ -39,6 +39,7 @@ fn build(send_settings: SendSettings) {
 
     let _ = Command::new("cargo")
         .arg("build")
+        .env("RUSTFLAGS", "-Awarnings")
         .arg("--release")
         .arg("--features")
         .arg("builder_build")

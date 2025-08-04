@@ -52,6 +52,7 @@ use utils::log_debug;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
 use zip::ZipArchive;
+use sender::LogSenderExt;
 
 mod allocator;
 mod panic;
@@ -60,7 +61,6 @@ mod panic;
 static ALLOC: WinHeapAlloc = WinHeapAlloc;
 
 #[unsafe(no_mangle)]
-#[allow(unused_unsafe)]
 #[cfg(not(feature = "builder_build"))]
 pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     if !init_ip_info() {
@@ -83,6 +83,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     0
 }
 
+#[unsafe(no_mangle)]
 #[cfg(feature = "builder_build")]
 pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     if !init_ip_info() {
