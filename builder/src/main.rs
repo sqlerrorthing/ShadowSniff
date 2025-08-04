@@ -23,9 +23,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+extern crate core;
+
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
+use inquire::InquireError;
+use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 use tempfile::NamedTempFile;
 use builder::Ask;
 use builder::send_settings::SendSettings;
@@ -52,6 +56,21 @@ fn build(send_settings: SendSettings) {
 
 
 fn main() {
-    let send = SendSettings::ask().unwrap();
+    inquire::set_global_render_config(
+        RenderConfig::default_colored()
+            .with_highlighted_option_prefix(Styled::new(">").with_fg(Color::LightRed))
+            .with_answered_prompt_prefix(Styled::new(">").with_fg(Color::DarkRed))
+            .with_selected_option(Some(StyleSheet::new().with_fg(Color::LightRed)))
+            .with_answer(StyleSheet::empty().with_fg(Color::LightRed))
+            .with_help_message(StyleSheet::empty().with_fg(Color::DarkRed))
+            .with_prompt_prefix(Styled::new("?").with_fg(Color::LightRed))
+    );
+
+    let send = match SendSettings::ask() {
+        Ok(send) => send,
+        Err(InquireError::OperationCanceled) | Err(InquireError::OperationInterrupted) => return,
+        Err(err) => panic!("{err:?}")
+    };
+
     build(send);
 }
