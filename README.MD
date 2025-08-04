@@ -198,6 +198,13 @@ a small action that makes a big difference!
 
 Thanks for being part of the project ❤️
 
+---
+
+**Important:**  
+By contributing to this project,
+you agree that your changes will be licensed under the same MIT License as the original project.  
+Please ensure your contributions comply with the terms of the [MIT License](./LICENSE).
+
 ## Use as a library
 
 This stealer is task-based.
@@ -209,6 +216,11 @@ When started, each task runs in its own thread.
 A composite task waits for all its subtasks to finish before it completes.
 
 The stealer **does not use the Rust standard library**.
+---
+
+**License Notice:**  
+When using this project as a library, you must comply with the terms of the MIT License under which this project is released.  
+Please see the [LICENSE](./LICENSE) file for details.
 
 Example run
 ```rust
