@@ -85,7 +85,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     0
 }
 
-fn generate_log_name() -> Arc<str> {
+fn _generate_log_name() -> Arc<str> {
     let PcInfo {
         computer_name,
         user_name,

