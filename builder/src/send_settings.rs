@@ -45,7 +45,7 @@ impl Ask for UploaderService {
     where
         Self: Sized
     {
-        Select::new("Which external storage provider use?", UploaderService::iter().collect())
+        Select::new("Which external storage provider would you like to use?", UploaderService::iter().collect())
             .prompt()
     }
 }
@@ -70,7 +70,7 @@ impl Ask for UploaderUsecase {
     where
         Self: Sized
     {
-        Select::new("In which condition the log should be uploaded to external storage?", UploaderUsecase::iter().collect())
+        Select::new("Under what condition should the log be uploaded to external storage?", UploaderUsecase::iter().collect())
             .prompt()
     }
 }
@@ -86,9 +86,9 @@ impl Ask for Option<Uploader> {
     where
         Self: Sized
     {
-        let r#use = Confirm::new("Do you want to use external storage for log file?")
+        let r#use = Confirm::new("Do you want to use external storage for the log file?")
             .with_default(true)
-            .with_help_message("This allows you send too big logs if the log exceeds service filesize limit")
+            .with_help_message("This allows you to send very large logs if the log exceeds the service's filesize limit.")
             .prompt()?;
 
         if !r#use {

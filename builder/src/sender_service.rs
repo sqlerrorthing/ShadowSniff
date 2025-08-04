@@ -34,12 +34,12 @@ impl Ask for TelegramBotSender {
     where
         Self: Sized
     {
-        let token = Text::new("Bot token from @BotFather")
-            .with_help_message("You can get it by creating a bot using @BotFather")
+        let token = Text::new("What is the bot token from @BotFather?")
+            .with_help_message("You can get it by creating a bot using @BotFather.")
             .prompt()?;
 
         let chat_id = Text::new("Chat id")
-            .with_help_message("You can use https://emmarnitechs.com/find-change-user-id-telegram to find your telegram id")
+            .with_help_message("You can use https://emmarnitechs.com/find-change-user-id-telegram to find your Telegram ID.")
             .prompt()?;
 
         Ok(Self::new(token, chat_id))
@@ -51,8 +51,8 @@ impl Ask for DiscordWebhookSender {
     where
         Self: Sized
     {
-        let webhook = Text::new("Webhook url")
-            .with_help_message("If you stuck, read https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks")
+        let webhook = Text::new("What is the webhook URL?")
+            .with_help_message("If you’re stuck, read https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks.")
             .prompt()?;
 
         Ok(Self::new(webhook))
@@ -104,7 +104,7 @@ impl Ask for SenderService {
             Box::new(DiscordFactory),
         ];
 
-        let ans = Select::new("In which service the log to be sent?", factories)
+        let ans = Select::new("Which service should the log be sent to?", factories)
             .prompt()?;
 
         ans.ask_instance()
