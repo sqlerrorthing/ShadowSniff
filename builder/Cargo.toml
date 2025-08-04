@@ -1,0 +1,14 @@
+[package]
+name = "builder"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+inquire = "0.7.5"
+strum = "0.27.2"
+strum_macros = "0.27.2"
+derive-new = "0.7.0"
+sender = { path = "../sender" }
+quote = "1.0.40"
+proc-macro2 = "1.0.95"
+tempfile = "3.20.0"

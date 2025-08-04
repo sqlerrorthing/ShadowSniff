@@ -58,9 +58,9 @@ const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 #[derive(new, Clone)]
 pub struct TelegramBotSender {
     #[new(into)]
-    chat_id: Arc<str>,
+    pub chat_id: Arc<str>,
     #[new(into)]
-    token: Arc<str>,
+    pub token: Arc<str>,
 }
 
 struct TelegramBlockDisplay<'a>(&'a CollectorBlock<'a>);

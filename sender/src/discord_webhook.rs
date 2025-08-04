@@ -60,7 +60,7 @@ use utils::{format_size, internal_code_to_flag};
 #[derive(Clone, new)]
 pub struct DiscordWebhookSender {
     #[new(into)]
-    webhook: Arc<str>,
+    pub webhook: Arc<str>,
 }
 
 struct DiscordEmbedFieldBlockDisplay<'a>(&'a CollectorBlock<'a>);

