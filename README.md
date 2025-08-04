@@ -108,6 +108,10 @@ You can run this builder safely on your own Host machine.
 **All code will be compiled locally on your computer** — no precompiled stubs, no hidden files, no viruses. xD.  
 Everything is built fresh just for you, right where you run the commands.
 
+
+https://github.com/user-attachments/assets/e3f9ab59-8f86-4258-bedd-5c61f8842f13
+
+
 ---
 
 1. **Install Rust** (if you don’t have it yet):  
