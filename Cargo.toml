@@ -24,7 +24,8 @@ members = [
     "zip",
     "filesystem",
     "regedit",
-    "sender"
+    "sender",
+    "builder/src-tauri"
 ]
 
 [workspace.dependencies]
