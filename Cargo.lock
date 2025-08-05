@@ -152,6 +152,7 @@ name = "collector"
 version = "0.1.0"
 dependencies = [
  "derive-new",
+ "obfstr",
  "paste",
  "spin",
 ]

@@ -38,13 +38,13 @@ macro_rules! collector_block {
         ]
     ) => {{
         CollectorBlock::new(
-            $block_emoji,
-            $block_name,
+            obfstr::obfstr!($block_emoji),
+            obfstr::obfstr!($block_name),
             [
                 $(
                     CollectorField::new(
-                        $field_emoji,
-                        $field_name,
+                        obfstr::obfstr!($field_emoji),
+                        obfstr::obfstr!($field_name),
                         format!("{}", $field_value),
                     )
                 ),*
@@ -56,9 +56,9 @@ macro_rules! collector_block {
 #[derive(new)]
 pub struct CollectorField<'a> {
     #[new(into)]
-    pub emoji: &'static str,
+    pub emoji: Arc<str>,
     #[new(into)]
-    pub name: &'a str,
+    pub name: Arc<str>,
     #[new(into)]
     pub value: Cow<'a, str>,
 }
@@ -66,9 +66,9 @@ pub struct CollectorField<'a> {
 #[derive(new)]
 pub struct CollectorBlock<'a> {
     #[new(into)]
-    pub emoji: &'static str,
+    pub emoji: Arc<str>,
     #[new(into)]
-    pub name: &'a str,
+    pub name: Arc<str>,
     #[new(into)]
     pub fields: Arc<[CollectorField<'a>]>,
 }
