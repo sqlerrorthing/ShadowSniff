@@ -39,13 +39,13 @@ impl Ask for TelegramBotSender {
         Self: Sized
     {
         let token = Text::new("What is the bot token from @BotFather?")
-            .with_help_message("You can get it by creating a bot using @BotFather.")
+            .with_help_message("You can get it by creating a bot using @BotFather")
             .with_placeholder("000000000:***********************************")
             .with_validator(required!())
             .prompt()?;
 
-        let chat_id = Text::new("Chat id")
-            .with_help_message("You can use https://emmarnitechs.com/find-change-user-id-telegram to find your Telegram ID.")
+        let chat_id = Text::new("What is your chat ID?")
+            .with_help_message("You can use https://emmarnitechs.com/find-change-user-id-telegram to find your Telegram ID")
             .with_placeholder("123456789")
             .with_validator(required!())
             .with_validator(|str: &str| {

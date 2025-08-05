@@ -127,6 +127,8 @@ impl Ask for SendSettings {
         Self: Sized
     {
         let service = SenderService::ask()?;
+        println!();
+
         let uploader = Option::<Uploader>::ask()?;
 
         Ok(Self::new(service, uploader))
