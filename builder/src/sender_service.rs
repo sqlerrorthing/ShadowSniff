@@ -49,10 +49,9 @@ impl Ask for TelegramBotSender {
             .with_placeholder("123456789")
             .with_validator(required!())
             .with_validator(|str: &str| {
-                if str.parse::<i64>().is_ok() {
-                    Ok(Validation::Valid)
-                } else {
-                    Ok(Validation::Invalid("You provided an invalid chat id".into()))
+                match str.parse::<i64>() {
+                    Ok(_) => Ok(Validation::Valid),
+                    _ => Ok(Validation::Invalid("You provided an invalid chat id".into()))
                 }
             })
             .prompt()?;
