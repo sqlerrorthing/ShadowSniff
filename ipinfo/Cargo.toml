@@ -9,3 +9,5 @@ json = { path = "../json" }
 utils = { path = "../utils" }
 obfstr = "0.4.4"
 indoc = "2.0.6"
+spin = "0.10.0"
+lazy_static = { version = "1.5.0", default-features = false, features = ["spin_no_std"] }

@@ -29,15 +29,18 @@
 extern crate alloc;
 
 use alloc::sync::Arc;
-use core::cell::UnsafeCell;
 use core::fmt::{Display, Formatter};
 use indoc::writedoc;
+use lazy_static::lazy_static;
 use json::Value;
 use obfstr::obfstr as s;
+use spin::Mutex;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
 use utils::internal_code_to_flag;
 
-static mut GLOBAL_IP_INFO: UnsafeCell<Option<IpInfo>> = UnsafeCell::new(None);
+lazy_static! {
+    static ref GLOBAL_IP_INFO: Mutex<Option<IpInfo>> = Mutex::new(None);
+}
 
 #[derive(Clone)]
 pub struct IpInfo {
@@ -73,14 +76,11 @@ impl Display for IpInfo {
 
 #[allow(static_mut_refs)]
 pub fn get_ip_info() -> Option<IpInfo> {
-    unsafe {
-        let ip_info = &*GLOBAL_IP_INFO.get();
-        ip_info.as_ref().cloned()
-    }
+    GLOBAL_IP_INFO.lock().clone()
 }
 
 pub fn unwrapped_ip_info() -> IpInfo {
-    get_ip_info().unwrap().clone()
+    get_ip_info().unwrap()
 }
 
 impl IpInfo {
@@ -107,14 +107,6 @@ impl IpInfo {
     }
 }
 
-impl TryFrom<Value> for IpInfo {
-    type Error = ();
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        Self::from_value(value).ok_or(())
-    }
-}
-
 #[allow(static_mut_refs)]
 pub fn init_ip_info() -> bool {
     if get_ip_info().is_some() {
@@ -130,12 +122,11 @@ pub fn init_ip_info() -> bool {
         return false;
     };
 
-    let Ok(info) = IpInfo::try_from(json) else {
+    let Some(info) = IpInfo::from_value(json) else {
         return false;
     };
 
-    let slot = unsafe { &mut *GLOBAL_IP_INFO.get() };
-    *slot = Some(info);
+    GLOBAL_IP_INFO.lock().replace(info);
 
     true
 }
