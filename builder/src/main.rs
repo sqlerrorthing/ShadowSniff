@@ -25,12 +25,9 @@
  */
 extern crate core;
 
-use std::fs;
-use std::io::Write;
 use std::process::{Command, Stdio};
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
-use tempfile::NamedTempFile;
 use builder::{Ask, ToExprExt};
 use builder::send_settings::SendSettings;
 

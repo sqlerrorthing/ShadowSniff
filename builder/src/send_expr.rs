@@ -25,7 +25,7 @@
  */
 use proc_macro2::TokenStream;
 use quote::quote;
-use crate::send_settings::{SendSettings, UploaderService, UploaderUsecase};
+use crate::send_settings::{SendSettings, UploaderUsecase};
 use crate::sender_service::SenderService;
 use crate::ToExpr;
 
