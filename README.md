@@ -17,8 +17,7 @@
 
 ---
 
-_This project is currently under development, and a fully functional version has not been released yet.
-Features and stability may change.
+_This project is currently under development.
 Please consider enabling notifications to stay informed about updates and important announcements._
 
 ## Features
@@ -114,9 +113,17 @@ https://github.com/user-attachments/assets/e3f9ab59-8f86-4258-bedd-5c61f8842f13
 
 ---
 
-1. **Install Rust** (if you don’t have it yet):  
+1. **Install Rust** and **Visual Studio with the C++ Development tools** (if you don’t have it yet):  
    Go to [https://rustup.rs/](https://rustup.rs/) and click the big button that says **“Install”**.  
    Follow the simple instructions to get Rust on your PC.
+   
+   **Important**:
+   You also need to install Visual Studio (not VS Code, which is a different product)
+   with the C++ Development tools workload enabled.
+
+   Download Visual Studio [here](https://visualstudio.microsoft.com/downloads)
+   During installation, make sure to select the “Desktop development with C++”
+   workload to get the necessary C++ build tools that Rust requires on Windows.
 
 2. **Download the Project**:  
    You can either:  
@@ -136,7 +143,8 @@ https://github.com/user-attachments/assets/e3f9ab59-8f86-4258-bedd-5c61f8842f13
    This command will start the builder program.
 
 4. **Answer All Questions the Builder Asks**:
-   The builder will ask you some questions. Just type your answers and press Enter.
+   The builder will ask you some questions.
+   Type your answers and press Enter.
 
 5. **Wait for the Compilation to Finish**:
    When done, you will find your compiled stub here:
