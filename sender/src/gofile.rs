@@ -49,15 +49,11 @@ impl<T: LogSender> GofileUploader<T> {
 fn upload(name: &str, bytes: &[u8]) -> Option<Arc<str>> {
     let response = base_upload(name, s!("https://upload.gofile.io/uploadFile"), bytes)?;
 
-    Some(
-        parse(response.body())
-            .ok()?
-            .get(s!("data"))?
-            .get(s!("downloadPage"))?
-            .as_string()?
-            .clone()
-            .into(),
-    )
+    parse(response.body())
+        .ok()?
+        .get(s!("data"))?
+        .get(s!("downloadPage"))?
+        .as_string()
 }
 
 impl<T: LogSender> LogSender for GofileUploader<T> {

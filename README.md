@@ -128,7 +128,7 @@ https://github.com/user-attachments/assets/e3f9ab59-8f86-4258-bedd-5c61f8842f13
 2. **Download the Project**:  
    You can either:  
    - Click the green **Code** button on the GitHub page and select **Download ZIP**, then unzip it somewhere.  
-   OR  
+     OR  
    - Open PowerShell (press `Win + R`, type `powershell`, press Enter) and run these commands (if you have installed git):  
      ```powershell
      git clone https://github.com/sqlerrorthing/ShadowSniff.git

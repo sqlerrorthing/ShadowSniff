@@ -28,7 +28,6 @@
 
 extern crate alloc;
 
-use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use core::cell::UnsafeCell;
 use core::fmt::{Display, Formatter};
@@ -86,14 +85,14 @@ pub fn unwrapped_ip_info() -> IpInfo {
 
 impl IpInfo {
     fn from_value(value: Value) -> Option<Self> {
-        let ip = value.get(s!("ip"))?.as_string()?.to_owned().into();
-        let city = value.get(s!("city"))?.as_string()?.to_owned().into();
-        let region = value.get(s!("region"))?.as_string()?.to_owned().into();
-        let country = value.get(s!("country"))?.as_string()?.to_owned().into();
-        let loc = value.get(s!("loc"))?.as_string()?.to_owned().into();
-        let org = value.get(s!("org"))?.as_string()?.to_owned().into();
-        let postal = value.get(s!("postal"))?.as_string()?.to_owned().into();
-        let timezone = value.get(s!("timezone"))?.as_string()?.to_owned().into();
+        let ip = value.get(s!("ip"))?.as_string()?;
+        let city = value.get(s!("city"))?.as_string()?;
+        let region = value.get(s!("region"))?.as_string()?;
+        let country = value.get(s!("country"))?.as_string()?;
+        let loc = value.get(s!("loc"))?.as_string()?;
+        let org = value.get(s!("org"))?.as_string()?;
+        let postal = value.get(s!("postal"))?.as_string()?;
+        let timezone = value.get(s!("timezone"))?.as_string()?;
 
         Some(Self {
             ip,

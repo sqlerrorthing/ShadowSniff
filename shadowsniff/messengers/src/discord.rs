@@ -69,7 +69,7 @@ impl<C: Collector, F: FileSystem> TokenWriterTask<C, F> {
     fn new(tokens: Vec<String>) -> Self {
         let tokens: Vec<Arc<dyn Task<C, F>>> = tokens
             .into_iter()
-            .map(|token| TokenValidationTask::new(token))
+            .map(TokenValidationTask::new)
             .map(|task| Arc::new(task) as Arc<dyn Task<C, F>>)
             .collect();
 

@@ -46,6 +46,7 @@ const NATURAL_HEAP_ALIGN_WITH_HEADER: usize = 16 + 1;
 
 const PAGE_SIZE: usize = 4096;
 
+#[allow(unsafe_op_in_unsafe_fn)]
 unsafe impl GlobalAlloc for WinHeapAlloc {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let heap = GetProcessHeap();
@@ -95,6 +96,7 @@ unsafe impl GlobalAlloc for WinHeapAlloc {
 }
 
 #[inline]
+#[allow(unsafe_op_in_unsafe_fn)]
 unsafe fn alloc_with_header(heap: HANDLE, size: usize, align: usize) -> *mut u8 {
     let total = size
         .checked_add(align)

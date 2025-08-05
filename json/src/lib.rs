@@ -100,8 +100,8 @@ impl Value {
 
     pub fn get(&self, key: impl Into<Key>) -> Option<Value> {
         match (self, key.into()) {
-            (Value::Object(map), Key::Str(k)) => map.get(&k).map(|v| v.clone()),
-            (Value::Array(arr), Key::Idx(i)) => arr.get(i).map(|v| v.clone()),
+            (Value::Object(map), Key::Str(k)) => map.get(&k).cloned(),
+            (Value::Array(arr), Key::Idx(i)) => arr.get(i).cloned(),
             _ => None,
         }
     }

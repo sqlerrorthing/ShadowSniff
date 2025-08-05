@@ -61,15 +61,11 @@ impl<T: LogSender> TmpFilesUploader<T> {
 fn upload(name: &str, bytes: &[u8]) -> Option<Arc<str>> {
     let response = base_upload(name, s!("https://tmpfiles.org/api/v1/upload"), bytes)?;
 
-    Some(
-        parse(response.body())
-            .ok()?
-            .get(s!("data"))?
-            .get(s!("url"))?
-            .as_string()?
-            .clone()
-            .into(),
-    )
+    parse(response.body())
+        .ok()?
+        .get(s!("data"))?
+        .get(s!("url"))?
+        .as_string()
 }
 
 impl<T: LogSender> LogSender for TmpFilesUploader<T> {
