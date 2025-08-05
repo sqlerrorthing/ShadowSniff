@@ -26,9 +26,11 @@
 use std::fmt::{Display, Formatter};
 use derive_new::new;
 use inquire::{Confirm, InquireError, Select};
+use proc_macro2::TokenStream;
+use quote::quote;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
-use crate::Ask;
+use crate::{Ask, ToExpr};
 use crate::sender_service::SenderService;
 
 pub type Uploader = (UploaderService, UploaderUsecase);
@@ -47,6 +49,24 @@ impl Ask for UploaderService {
     {
         Select::new("Which external storage provider would you like to use?", UploaderService::iter().collect())
             .prompt()
+    }
+}
+
+impl ToExpr<(TokenStream,)> for UploaderService {
+    fn to_expr(&self, args: (TokenStream,)) -> TokenStream {
+        let (base,) = args;
+
+        match self {
+            UploaderService::Gofile => quote! {
+                sender::gofile::GofileUploader::new(#base)
+            },
+            UploaderService::TmpFiles => quote! {
+                sender::tmpfiles::TmpFilesUploader::new(#base)
+            },
+            UploaderService::Catbox => quote! {
+                sender::catbox::CatboxUploader::new(#base)
+            }
+        }
     }
 }
 

