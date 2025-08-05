@@ -34,17 +34,19 @@ use crate::parser::{TokenParseError, parse_tokens};
 use crate::tokenize::{TokenizeError, tokenize};
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
 
 #[cfg_attr(test, derive(Debug))]
+#[derive(Clone)]
 pub enum Value {
     Null,
     Boolean(bool),
-    String(String),
+    String(Arc<str>),
     Number(f64),
     Array(Vec<Value>),
-    Object(BTreeMap<String, Value>),
+    Object(Arc<BTreeMap<String, Value>>),
 }
 
 impl Value {
@@ -56,25 +58,25 @@ impl Value {
         }
     }
 
-    pub fn as_bool(&self) -> Option<&bool> {
+    pub fn as_bool(&self) -> Option<bool> {
         if let Self::Boolean(val) = self {
-            Some(val)
+            Some(*val)
         } else {
             None
         }
     }
 
-    pub fn as_string(&self) -> Option<&String> {
+    pub fn as_string(&self) -> Option<Arc<str>> {
         if let Self::String(val) = self {
-            Some(val)
+            Some(val.clone())
         } else {
             None
         }
     }
 
-    pub fn as_number(&self) -> Option<&f64> {
+    pub fn as_number(&self) -> Option<f64> {
         if let Self::Number(val) = self {
-            Some(val)
+            Some(*val)
         } else {
             None
         }
@@ -88,18 +90,18 @@ impl Value {
         }
     }
 
-    pub fn as_object(&self) -> Option<&BTreeMap<String, Value>> {
+    pub fn as_object(&self) -> Option<Arc<BTreeMap<String, Value>>> {
         if let Self::Object(val) = self {
-            Some(val)
+            Some(val.clone())
         } else {
             None
         }
     }
 
-    pub fn get(&self, key: impl Into<Key>) -> Option<&Value> {
+    pub fn get(&self, key: impl Into<Key>) -> Option<Value> {
         match (self, key.into()) {
-            (Value::Object(map), Key::Str(k)) => map.get(&k),
-            (Value::Array(arr), Key::Idx(i)) => arr.get(i),
+            (Value::Object(map), Key::Str(k)) => map.get(&k).map(|v| v.clone()),
+            (Value::Array(arr), Key::Idx(i)) => arr.get(i).map(|v| v.clone()),
             _ => None,
         }
     }

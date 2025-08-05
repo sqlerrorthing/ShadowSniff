@@ -235,8 +235,8 @@ where
 
 #[derive(PartialEq, Ord, Eq, PartialOrd)]
 pub(crate) struct Bookmark {
-    pub name: String,
-    pub url: String,
+    pub name: Arc<str>,
+    pub url: Arc<str>,
 }
 
 impl Display for Bookmark {

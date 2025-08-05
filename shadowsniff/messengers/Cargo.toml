@@ -11,3 +11,4 @@ requests = { path = "../../requests" }
 collector = { path = "../../collector" }
 filesystem = { path = "../../filesystem" }
 browsers = { path = "../browsers" }
+derive-new = "0.7.0"

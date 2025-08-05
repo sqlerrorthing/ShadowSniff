@@ -27,6 +27,7 @@
 use crate::Value;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 use super::tokenize::Token;
@@ -55,7 +56,7 @@ pub fn parse_tokens(tokens: &[Token], index: &mut usize) -> ParseResult {
 
 fn parse_string(input: &str) -> ParseResult {
     let unescaped = unescape_string(input)?;
-    Ok(Value::String(unescaped))
+    Ok(Value::String(Arc::from(unescaped)))
 }
 
 fn unescape_string(input: &str) -> Result<String, TokenParseError> {
@@ -155,7 +156,7 @@ fn parse_object(tokens: &[Token], index: &mut usize) -> ParseResult {
     }
     *index += 1;
 
-    Ok(Value::Object(map))
+    Ok(Value::Object(Arc::from(map)))
 }
 
 #[derive(Debug, PartialEq)]

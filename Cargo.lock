@@ -870,6 +870,7 @@ version = "0.1.0"
 dependencies = [
  "browsers",
  "collector",
+ "derive-new",
  "filesystem",
  "obfstr",
  "requests",

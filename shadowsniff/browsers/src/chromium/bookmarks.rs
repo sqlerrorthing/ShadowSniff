@@ -79,7 +79,7 @@ where
     Some(bookmarks)
 }
 
-fn extract_bookmarks(root: &Value) -> Vec<Bookmark> {
+fn extract_bookmarks(root: Value) -> Vec<Bookmark> {
     let mut bookmarks = Vec::new();
     let mut stack = vec![root];
 
@@ -98,7 +98,7 @@ fn extract_bookmarks(root: &Value) -> Vec<Bookmark> {
                 && let Some(children) = children_val.as_array()
             {
                 for child in children.iter().rev() {
-                    stack.push(child);
+                    stack.push(child.clone());
                 }
             }
         }

