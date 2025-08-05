@@ -24,11 +24,14 @@
  * SOFTWARE.
  */
 use std::fmt::Display;
+use std::ops::Deref;
 use inquire::{required, InquireError, Select, Text};
 use inquire::validator::Validation;
+use proc_macro2::TokenStream;
+use quote::quote;
 use sender::discord_webhook::DiscordWebhookSender;
 use sender::telegram_bot::TelegramBotSender;
-use crate::Ask;
+use crate::{Ask, ToExpr};
 
 impl Ask for TelegramBotSender {
     fn ask() -> Result<Self, InquireError>
@@ -48,6 +51,20 @@ impl Ask for TelegramBotSender {
             .prompt()?;
 
         Ok(Self::new(token, chat_id))
+    }
+}
+
+impl ToExpr for TelegramBotSender {
+    fn to_expr(&self, _args: ()) -> TokenStream {
+        let token = self.token.deref();
+        let chat_id = self.chat_id.deref();
+
+        quote! {
+            sender::telegram_bot::TelegramBotSender::new(
+                obfstr::obfstr!(#token),
+                obfstr::obfstr!(#chat_id),
+            )
+        }
     }
 }
 
@@ -72,6 +89,17 @@ impl Ask for DiscordWebhookSender {
             .prompt()?;
 
         Ok(Self::new(webhook))
+    }
+}
+
+impl ToExpr for DiscordWebhookSender {
+    fn to_expr(&self, _args: ()) -> TokenStream {
+        let webhook = self.webhook.deref();
+        quote! {
+            sender::discord_webhook::DiscordWebhookSender::new(
+                obfstr::obfstr!(#webhook),
+            )
+        }
     }
 }
 

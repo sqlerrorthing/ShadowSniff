@@ -31,15 +31,11 @@ use std::process::{Command, Stdio};
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 use tempfile::NamedTempFile;
-use builder::Ask;
+use builder::{Ask, ToExprExt};
 use builder::send_settings::SendSettings;
 
 fn build(send_settings: SendSettings) {
-    let mut send_expr_file: NamedTempFile = NamedTempFile::new().unwrap();
-    write!(send_expr_file, "{}", send_settings.gen_expr()).unwrap();
-    let send_expr_file = fs::canonicalize(send_expr_file.path()).unwrap();
-
-    println!("Starting building...");
+    println!("\nStarting build...");
 
     let _ = Command::new("cargo")
         .arg("build")
@@ -47,7 +43,7 @@ fn build(send_settings: SendSettings) {
         .arg("--release")
         .arg("--features")
         .arg("builder_build")
-        .env("BUILDER_SENDER_EXPR", send_expr_file.display().to_string())
+        .env("BUILDER_SENDER_EXPR", send_settings.to_expr_temp_file(()).display().to_string())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .status()
