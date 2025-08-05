@@ -48,6 +48,13 @@ impl Ask for TelegramBotSender {
             .with_help_message("You can use https://emmarnitechs.com/find-change-user-id-telegram to find your Telegram ID.")
             .with_placeholder("123456789")
             .with_validator(required!())
+            .with_validator(|str: &str| {
+                if str.parse::<i64>().is_ok() {
+                    Ok(Validation::Valid)
+                } else {
+                    Ok(Validation::Invalid("You provided an invalid chat id".into()))
+                }
+            })
             .prompt()?;
 
         Ok(Self::new(token, chat_id))
