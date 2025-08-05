@@ -26,6 +26,7 @@
 use std::fmt::Display;
 use std::io::ErrorKind;
 use std::ops::Deref;
+use std::sync::Arc;
 use colored::Colorize;
 use inquire::{required, InquireError, Select, Text};
 use inquire::validator::Validation;
@@ -189,21 +190,21 @@ impl Ask for SenderService {
     where
         Self: Sized
     {
-        let factories: Vec<Box<dyn ServiceFactory>> = vec![
-            Box::new(TelegramFactory),
-            Box::new(DiscordFactory),
+        let factories: Vec<Arc<dyn ServiceFactory>> = vec![
+            Arc::new(TelegramFactory),
+            Arc::new(DiscordFactory),
         ];
 
-        let ans = Select::new("Which service should the log be sent to?", factories)
-            .prompt()?;
+        loop {
+            let ans = Select::new("Which service should the log be sent to?", factories.clone())
+                .prompt()?;
 
-        let instance = ans.ask_instance()?;
+            let instance = ans.ask_instance()?;
+            if instance.validate().is_ok() {
+                return Ok(instance);
+            }
 
-        if instance.validate().is_err() {
             println!("{}", "[!] Invalid credentials provided, Take another one.".red());
-            SenderService::ask()
-        } else {
-            Ok(instance)
         }
     }
 }
