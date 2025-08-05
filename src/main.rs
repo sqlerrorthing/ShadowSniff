@@ -26,7 +26,6 @@
 
 #![no_std]
 #![no_main]
-
 #![cfg_attr(debug_assertions, windows_subsystem = "console")]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -54,6 +53,6 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
             debug::run();
         }
     }
-    
+
     0
 }

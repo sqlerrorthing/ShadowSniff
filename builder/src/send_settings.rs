@@ -23,15 +23,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use std::fmt::{Display, Formatter};
+use crate::sender_service::SenderService;
+use crate::{Ask, ToExpr};
 use derive_new::new;
 use inquire::{Confirm, InquireError, Select};
 use proc_macro2::TokenStream;
 use quote::quote;
+use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
-use crate::{Ask, ToExpr};
-use crate::sender_service::SenderService;
 
 pub type Uploader = (UploaderService, UploaderUsecase);
 
@@ -39,16 +39,19 @@ pub type Uploader = (UploaderService, UploaderUsecase);
 pub enum UploaderService {
     Gofile,
     TmpFiles,
-    Catbox
+    Catbox,
 }
 
 impl Ask for UploaderService {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
-        Select::new("Which external storage provider would you like to use?", UploaderService::iter().collect())
-            .prompt()
+        Select::new(
+            "Which external storage provider would you like to use?",
+            UploaderService::iter().collect(),
+        )
+        .prompt()
     }
 }
 
@@ -65,7 +68,7 @@ impl ToExpr<(TokenStream,)> for UploaderService {
             },
             UploaderService::Catbox => quote! {
                 sender::catbox::CatboxUploader::new(#base)
-            }
+            },
         }
     }
 }
@@ -73,14 +76,16 @@ impl ToExpr<(TokenStream,)> for UploaderService {
 #[derive(EnumIter, Clone)]
 pub enum UploaderUsecase {
     Always,
-    WhenLogExceedsLimit
+    WhenLogExceedsLimit,
 }
 
 impl Display for UploaderUsecase {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match *self {
             UploaderUsecase::Always => write!(f, "Always"),
-            UploaderUsecase::WhenLogExceedsLimit => write!(f, "When log exceeds service filesize limit"),
+            UploaderUsecase::WhenLogExceedsLimit => {
+                write!(f, "When log exceeds service filesize limit")
+            }
         }
     }
 }
@@ -88,10 +93,13 @@ impl Display for UploaderUsecase {
 impl Ask for UploaderUsecase {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
-        Select::new("Under what condition should the log be uploaded to external storage?", UploaderUsecase::iter().collect())
-            .prompt()
+        Select::new(
+            "Under what condition should the log be uploaded to external storage?",
+            UploaderUsecase::iter().collect(),
+        )
+        .prompt()
     }
 }
 
@@ -104,7 +112,7 @@ pub struct SendSettings {
 impl Ask for Option<Uploader> {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let r#use = Confirm::new("Do you want to use external storage for the log file?")
             .with_default(true)
@@ -124,7 +132,7 @@ impl Ask for Option<Uploader> {
 impl Ask for SendSettings {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let service = SenderService::ask()?;
         println!();

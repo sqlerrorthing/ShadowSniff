@@ -23,11 +23,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use proc_macro2::TokenStream;
-use quote::quote;
+use crate::ToExpr;
 use crate::send_settings::{SendSettings, UploaderUsecase};
 use crate::sender_service::SenderService;
-use crate::ToExpr;
+use proc_macro2::TokenStream;
+use quote::quote;
 
 impl ToExpr for SendSettings {
     fn to_expr(&self, _args: ()) -> TokenStream {
@@ -45,11 +45,11 @@ impl SendSettings {
     fn expr_internal(&self) -> TokenStream {
         let base = match self.service.clone() {
             SenderService::TelegramBot(bot) => bot.to_expr(()),
-            SenderService::DiscordWebhook(webhook) => webhook.to_expr(())
+            SenderService::DiscordWebhook(webhook) => webhook.to_expr(()),
         };
 
         let Some((service, usecase)) = self.uploader.clone() else {
-            return base
+            return base;
         };
 
         match usecase.clone() {

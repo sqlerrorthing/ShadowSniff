@@ -25,11 +25,11 @@
  */
 extern crate core;
 
-use std::process::{Command, Stdio};
+use builder::send_settings::SendSettings;
+use builder::{Ask, ToExprExt};
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
-use builder::{Ask, ToExprExt};
-use builder::send_settings::SendSettings;
+use std::process::{Command, Stdio};
 
 fn build(send_settings: SendSettings) {
     println!("\nStarting build...");
@@ -40,13 +40,15 @@ fn build(send_settings: SendSettings) {
         .arg("--release")
         .arg("--features")
         .arg("builder_build")
-        .env("BUILDER_SENDER_EXPR", send_settings.to_expr_temp_file(()).display().to_string())
+        .env(
+            "BUILDER_SENDER_EXPR",
+            send_settings.to_expr_temp_file(()).display().to_string(),
+        )
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .status()
         .expect("Failed to start cargo build");
 }
-
 
 fn main() {
     inquire::set_global_render_config(
@@ -56,13 +58,13 @@ fn main() {
             .with_selected_option(Some(StyleSheet::new().with_fg(Color::LightRed)))
             .with_answer(StyleSheet::empty().with_fg(Color::LightRed))
             .with_help_message(StyleSheet::empty().with_fg(Color::DarkRed))
-            .with_prompt_prefix(Styled::new("?").with_fg(Color::LightRed))
+            .with_prompt_prefix(Styled::new("?").with_fg(Color::LightRed)),
     );
 
     let send = match SendSettings::ask() {
         Ok(send) => send,
         Err(InquireError::OperationCanceled) | Err(InquireError::OperationInterrupted) => return,
-        Err(err) => panic!("{err:?}")
+        Err(err) => panic!("{err:?}"),
     };
 
     build(send);

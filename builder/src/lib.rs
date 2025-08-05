@@ -26,17 +26,17 @@
 
 #![feature(tuple_trait)]
 
-use std::io::Write;
-use std::fs;
-use std::marker::Tuple;
-use std::path::PathBuf;
 use inquire::InquireError;
 use proc_macro2::TokenStream;
+use std::fs;
+use std::io::Write;
+use std::marker::Tuple;
+use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
-pub mod sender_service;
-pub mod send_settings;
 pub mod send_expr;
+pub mod send_settings;
+pub mod sender_service;
 
 pub trait ToExpr<Args: Tuple = ()> {
     fn to_expr(&self, args: Args) -> TokenStream;

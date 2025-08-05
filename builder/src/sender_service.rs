@@ -23,19 +23,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use std::fmt::Display;
-use std::io::ErrorKind;
-use std::ops::Deref;
-use std::sync::Arc;
+use crate::{Ask, ToExpr};
 use colored::Colorize;
-use inquire::{required, InquireError, Select, Text};
 use inquire::validator::Validation;
+use inquire::{InquireError, Select, Text, required};
 use proc_macro2::TokenStream;
 use quote::quote;
 use reqwest::blocking::Client;
 use sender::discord_webhook::DiscordWebhookSender;
 use sender::telegram_bot::TelegramBotSender;
-use crate::{Ask, ToExpr};
+use std::fmt::Display;
+use std::io::ErrorKind;
+use std::ops::Deref;
+use std::sync::Arc;
 
 #[enum_delegate::register]
 trait ValidateRequest {
@@ -45,7 +45,7 @@ trait ValidateRequest {
 impl Ask for TelegramBotSender {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let token = Text::new("What is the bot token from @BotFather?")
             .with_help_message("You can get it by creating a bot using @BotFather")
@@ -82,7 +82,10 @@ impl ValidateRequest for TelegramBotSender {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(Box::new(std::io::Error::new(ErrorKind::InvalidInput, "Invalid creds")))
+            Err(Box::new(std::io::Error::new(
+                ErrorKind::InvalidInput,
+                "Invalid creds",
+            )))
         }
     }
 }
@@ -104,13 +107,15 @@ impl ToExpr for TelegramBotSender {
 impl Ask for DiscordWebhookSender {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let validator = |webhook: &str| {
             if webhook.starts_with("https://discord.com/api/webhooks/") {
                 Ok(Validation::Valid)
             } else {
-                Ok(Validation::Invalid("It seems like you provided invalid webhook".into()))
+                Ok(Validation::Invalid(
+                    "It seems like you provided invalid webhook".into(),
+                ))
             }
         };
 
@@ -133,7 +138,10 @@ impl ValidateRequest for DiscordWebhookSender {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(Box::new(std::io::Error::new(ErrorKind::InvalidInput, "Invalid webhook")))
+            Err(Box::new(std::io::Error::new(
+                ErrorKind::InvalidInput,
+                "Invalid webhook",
+            )))
         }
     }
 }
@@ -188,23 +196,27 @@ impl ServiceFactory for DiscordFactory {
 impl Ask for SenderService {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
-        let factories: Vec<Arc<dyn ServiceFactory>> = vec![
-            Arc::new(TelegramFactory),
-            Arc::new(DiscordFactory),
-        ];
+        let factories: Vec<Arc<dyn ServiceFactory>> =
+            vec![Arc::new(TelegramFactory), Arc::new(DiscordFactory)];
 
         loop {
-            let ans = Select::new("Which service should the log be sent to?", factories.clone())
-                .prompt()?;
+            let ans = Select::new(
+                "Which service should the log be sent to?",
+                factories.clone(),
+            )
+            .prompt()?;
 
             let instance = ans.ask_instance()?;
             if instance.validate().is_ok() {
                 return Ok(instance);
             }
 
-            println!("{}", "[!] Invalid credentials provided, Take another one.".red());
+            println!(
+                "{}",
+                "[!] Invalid credentials provided, Take another one.".red()
+            );
         }
     }
 }

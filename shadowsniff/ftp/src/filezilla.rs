@@ -143,7 +143,7 @@ where
         let server = nodes.Item(i).ok()?;
 
         let get_text = |name: &str| -> Option<String> {
-            if let Ok(child) = server.SelectSingleNode(&HSTRING::from(name))  {
+            if let Ok(child) = server.SelectSingleNode(&HSTRING::from(name)) {
                 Some(child.InnerText().ok()?.to_string_lossy())
             } else {
                 Some(String::new())
