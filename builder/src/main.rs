@@ -32,8 +32,9 @@ use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 use std::process::{Command, Stdio};
 use quote::quote;
 use builder::empty_log::ConsiderEmpty;
+use builder::start_delay::StartDelay;
 
-fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>) {
+fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>, start_delay: StartDelay) {
     println!("\nStarting build...");
 
     let collector = quote! {
@@ -57,6 +58,10 @@ fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>) {
         .env(
             "BUILDER_CONSIDER_EMPTY_EXPR",
             consider_empty.to_expr_temp_file((collector, return_stmt)).display().to_string(),
+        )
+        .env(
+            "BUILDER_START_DELAY",
+            start_delay.to_expr_temp_file(()).display().to_string(),
         )
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -88,7 +93,8 @@ fn main() {
 
     let send = ask!(SendSettings::ask());
     println!();
+    let start_delay = ask!(StartDelay::ask());
     let consider_empty = ask!(Vec::<ConsiderEmpty>::ask());
 
-    build(send, consider_empty);
+    build(send, consider_empty, start_delay);
 }

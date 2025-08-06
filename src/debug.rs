@@ -25,6 +25,8 @@
  */
 
 use alloc::format;
+use rand_core::RngCore;
+use windows_sys::Win32::System::Threading::Sleep;
 use collector::atomic::AtomicCollector;
 use collector::{Browser, Collector, Software};
 use collector::display::PrimitiveDisplayCollector;

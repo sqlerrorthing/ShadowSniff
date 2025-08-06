@@ -45,6 +45,8 @@ use zip::ZipArchive;
 
 #[inline(always)]
 pub fn run() {
+    include!(env!("BUILDER_START_DELAY"));
+
     if !init_ip_info() {
         panic!()
     }
