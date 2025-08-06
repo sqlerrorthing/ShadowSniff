@@ -126,7 +126,7 @@ impl Ask for StartDelay {
         Self: Sized,
     {
         let ans = CustomType::<Self>::new("What is the start delay?")
-            .with_help_message("Leave empty for no delay. Enter a single number in milliseconds for a fixed delay, or a range in the format 'start..end' (inclusive) to pick a random delay within that range")
+            .with_help_message("Leave empty for no delay. Enter a number (ms) for a fixed delay, or a range like '100..200' (ms, inclusive) for a random delay within that range.")
             .prompt_skippable()?;
 
         match ans {
