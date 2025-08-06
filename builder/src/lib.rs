@@ -34,10 +34,10 @@ use std::marker::Tuple;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
+pub mod empty_log;
 pub mod send_expr;
 pub mod send_settings;
 pub mod sender_service;
-pub mod empty_log;
 pub mod start_delay;
 
 pub trait ToExpr<Args: Tuple = ()> {

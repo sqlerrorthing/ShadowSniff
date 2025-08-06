@@ -25,14 +25,14 @@
  */
 extern crate core;
 
+use builder::empty_log::ConsiderEmpty;
 use builder::send_settings::SendSettings;
+use builder::start_delay::StartDelay;
 use builder::{Ask, ToExprExt};
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
-use std::process::{Command, Stdio};
 use quote::quote;
-use builder::empty_log::ConsiderEmpty;
-use builder::start_delay::StartDelay;
+use std::process::{Command, Stdio};
 
 fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>, start_delay: StartDelay) {
     println!("\nStarting build...");
@@ -57,7 +57,10 @@ fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>, start_
         )
         .env(
             "BUILDER_CONSIDER_EMPTY_EXPR",
-            consider_empty.to_expr_temp_file((collector, return_stmt)).display().to_string(),
+            consider_empty
+                .to_expr_temp_file((collector, return_stmt))
+                .display()
+                .to_string(),
         )
         .env(
             "BUILDER_START_DELAY",
@@ -73,8 +76,10 @@ macro_rules! ask {
     ($expr:expr) => {{
         match $expr {
             Ok(val) => val,
-            Err(InquireError::OperationCanceled) | Err(InquireError::OperationInterrupted) => return,
-            Err(err) => panic!("{err:?}")
+            Err(InquireError::OperationCanceled) | Err(InquireError::OperationInterrupted) => {
+                return;
+            }
+            Err(err) => panic!("{err:?}"),
         }
     }};
 }

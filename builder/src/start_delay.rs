@@ -23,21 +23,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use crate::{Ask, ToExpr};
+use inquire::{CustomType, InquireError};
+use proc_macro2::TokenStream;
+use quote::quote;
 use std::fmt::{Display, Formatter};
 use std::num::ParseIntError;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
-use inquire::{CustomType, InquireError};
-use proc_macro2::TokenStream;
-use quote::quote;
 use thiserror::Error;
-use crate::{Ask, ToExpr};
 
 #[derive(Clone)]
 pub enum StartDelay {
     Fixed(u32),
     Random(RangeInclusive<u32>),
-    None
+    None,
 }
 
 impl Display for StartDelay {
@@ -74,8 +74,8 @@ impl ToExpr for StartDelay {
                         windows_sys::Win32::System::Threading::Sleep(#start + scaled);
                     }
                 }
-            },
-            StartDelay::None => quote! {{}}
+            }
+            StartDelay::None => quote! {{}},
         }
     }
 }
@@ -112,7 +112,7 @@ impl FromStr for StartDelay {
                 Ok(Self::Fixed(start))
             } else {
                 Ok(Self::Random(start..=end))
-            }
+            };
         }
 
         let fixed = s.parse::<u32>()?;
@@ -123,7 +123,7 @@ impl FromStr for StartDelay {
 impl Ask for StartDelay {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let ans = CustomType::<Self>::new("What is the start delay?")
             .with_help_message("Leave empty for no delay. Enter a single number in milliseconds for a fixed delay, or a range in the format 'start..end' (inclusive) to pick a random delay within that range")
@@ -131,7 +131,7 @@ impl Ask for StartDelay {
 
         match ans {
             Some(ans) => Ok(ans),
-            None => Ok(Self::None)
+            None => Ok(Self::None),
         }
     }
 }

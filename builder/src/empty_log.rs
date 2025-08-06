@@ -23,19 +23,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use std::fmt::{Display, Formatter};
+use crate::{Ask, ToExpr};
 use inquire::{InquireError, MultiSelect};
 use proc_macro2::TokenStream;
 use quote::quote;
+use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::{Ask, ToExpr};
 
 #[derive(EnumIter, PartialEq)]
 pub enum ConsiderEmpty {
     WhenEmptyBrowsers,
     WhenEmptyMessengers,
-    WhenEmptyVpnAccounts
+    WhenEmptyVpnAccounts,
 }
 
 impl Display for ConsiderEmpty {
@@ -48,8 +48,8 @@ impl Display for ConsiderEmpty {
     }
 }
 
-impl ToExpr<(TokenStream,TokenStream)> for ConsiderEmpty {
-    fn to_expr(&self, args: (TokenStream,TokenStream)) -> TokenStream {
+impl ToExpr<(TokenStream, TokenStream)> for ConsiderEmpty {
+    fn to_expr(&self, args: (TokenStream, TokenStream)) -> TokenStream {
         let (collector, return_stmt) = args;
 
         match self {
@@ -76,7 +76,7 @@ impl ToExpr<(TokenStream,TokenStream)> for ConsiderEmpty {
                 if #collector.get_vpn().get_accounts() == 0 {
                     #return_stmt
                 }
-            }
+            },
         }
     }
 }
@@ -85,7 +85,8 @@ impl ToExpr<(TokenStream, TokenStream)> for Vec<ConsiderEmpty> {
     fn to_expr(&self, args: (TokenStream, TokenStream)) -> TokenStream {
         let (collector, return_stmt) = args;
 
-        let if_blocks: Vec<TokenStream> = self.iter()
+        let if_blocks: Vec<TokenStream> = self
+            .iter()
             .map(|cond| cond.to_expr((collector.clone(), return_stmt.clone())))
             .collect();
 
@@ -100,7 +101,7 @@ impl ToExpr<(TokenStream, TokenStream)> for Vec<ConsiderEmpty> {
 impl Ask for Vec<ConsiderEmpty> {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         MultiSelect::new(
             "Under what conditions should the log be considered empty? Leave unselected to disable.",

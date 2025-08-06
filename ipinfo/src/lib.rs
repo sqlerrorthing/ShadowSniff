@@ -31,11 +31,11 @@ extern crate alloc;
 use alloc::sync::Arc;
 use core::fmt::{Display, Formatter};
 use indoc::writedoc;
-use lazy_static::lazy_static;
 use json::Value;
+use lazy_static::lazy_static;
 use obfstr::obfstr as s;
-use spin::Mutex;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
+use spin::Mutex;
 use utils::internal_code_to_flag;
 
 lazy_static! {
