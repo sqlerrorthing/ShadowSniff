@@ -297,9 +297,28 @@ impl Ask for MessageBoxSource {
 
 impl ToExpr for MessageBoxSource {
     fn to_expr(&self, _args: ()) -> TokenStream {
-        match self {
+        let base = match self {
             MessageBoxSource::Preset(presets) => presets.to_expr(()),
             MessageBoxSource::Custom(source) => source.to_expr(())
+        };
+
+        quote! {
+            unsafe {
+                extern "system" fn _box(_: *mut core::ffi::c_void) -> u32 {
+                    #base
+                    
+                    0
+                }
+                
+                windows_sys::Win32::System::Threading::CreateThread(
+                    core::ptr::null_mut(),
+                    0,
+                    Some(_box),
+                    core::ptr::null_mut(),
+                    0,
+                    core::ptr::null_mut(),
+                );
+            }
         }
     }
 }

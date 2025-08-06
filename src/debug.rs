@@ -41,15 +41,6 @@ pub fn run() {
         panic!()
     }
 
-    unsafe {
-        windows_sys::Win32::UI::WindowsAndMessaging::MessageBoxA(
-            core::ptr::null_mut(),
-            c"asd".as_ptr() as _,
-            c"asd".as_ptr() as _,
-            0
-        );
-    }
-
     let fs = StorageFileSystem;
     let out = &Path::new("output");
     let _ = fs.remove_dir_all(out);
