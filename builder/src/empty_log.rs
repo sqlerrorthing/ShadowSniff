@@ -67,7 +67,7 @@ impl ToExpr<(TokenStream,TokenStream)> for ConsiderEmpty {
             },
             ConsiderEmpty::WhenEmptyMessengers => quote! {
                 if !#collector.get_software().is_telegram()
-                    || #collector.get_software().get_discord_tokens() == 0
+                    && #collector.get_software().get_discord_tokens() == 0
                 {
                     #return_stmt
                 }
