@@ -82,6 +82,7 @@ fn main() {
             .with_selected_option(Some(StyleSheet::new().with_fg(Color::LightRed)))
             .with_answer(StyleSheet::empty().with_fg(Color::LightRed))
             .with_help_message(StyleSheet::empty().with_fg(Color::DarkRed))
+            .with_selected_checkbox(Styled::new("[x]").with_fg(Color::LightRed))
             .with_prompt_prefix(Styled::new("?").with_fg(Color::LightRed)),
     );
 
