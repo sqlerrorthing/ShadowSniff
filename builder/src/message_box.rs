@@ -34,7 +34,7 @@ use strum_macros::{Display, EnumIter};
 use windows::Win32::UI::WindowsAndMessaging::{MB_ABORTRETRYIGNORE, MB_CANCELTRYCONTINUE, MB_ICONERROR, MB_ICONINFORMATION, MB_ICONQUESTION, MB_ICONWARNING, MB_OK, MB_OKCANCEL, MB_RETRYCANCEL, MB_YESNO, MB_YESNOCANCEL};
 use crate::{Ask, AskInstanceFactory, ToExpr};
 
-#[derive(EnumIter)]
+#[derive(Copy, PartialEq, Clone, EnumIter)]
 pub enum Show {
     Before,
     After
@@ -297,19 +297,35 @@ impl Ask for MessageBoxSource {
 
 impl ToExpr for MessageBoxSource {
     fn to_expr(&self, _args: ()) -> TokenStream {
-        let base = match self {
+        match self {
             MessageBoxSource::Preset(presets) => presets.to_expr(()),
             MessageBoxSource::Custom(source) => source.to_expr(())
-        };
+        }
+    }
+}
+
+pub struct MessageBox {
+    pub show: Show,
+    pub message: MessageBoxSource
+}
+
+impl ToExpr for MessageBox {
+    fn to_expr(&self, _args: ()) -> TokenStream {
+        let show = self.show;
+        let message = self.message.to_expr(());
+
+        if show == Show::After {
+            return message;
+        }
 
         quote! {
             unsafe {
                 extern "system" fn _box(_: *mut core::ffi::c_void) -> u32 {
-                    #base
-                    
+                    #message
+
                     0
                 }
-                
+
                 windows_sys::Win32::System::Threading::CreateThread(
                     core::ptr::null_mut(),
                     0,
@@ -321,11 +337,6 @@ impl ToExpr for MessageBoxSource {
             }
         }
     }
-}
-
-pub struct MessageBox {
-    pub show: Show,
-    pub message: MessageBoxSource
 }
 
 impl Ask for MessageBox {

