@@ -55,12 +55,12 @@ impl ToExpr<(TokenStream,TokenStream)> for ConsiderEmpty {
         match self {
             ConsiderEmpty::WhenEmptyBrowsers => quote! {
                 if #collector.get_browser().get_cookies() == 0
-                    || #collector.get_browser().get_passwords() == 0
-                    || #collector.get_browser().get_credit_cards() == 0
-                    || #collector.get_browser().get_auto_fills() == 0
-                    || #collector.get_browser().get_history() == 0
-                    || #collector.get_browser().get_bookmarks() == 0
-                    || #collector.get_browser().get_downloads() == 0
+                    && #collector.get_browser().get_passwords() == 0
+                    && #collector.get_browser().get_credit_cards() == 0
+                    && #collector.get_browser().get_auto_fills() == 0
+                    && #collector.get_browser().get_history() == 0
+                    && #collector.get_browser().get_bookmarks() == 0
+                    && #collector.get_browser().get_downloads() == 0
                 {
                     #return_stmt
                 }
