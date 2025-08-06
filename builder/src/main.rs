@@ -116,9 +116,9 @@ fn main() {
     println!();
     let start_delay = ask!(StartDelay::ask());
     println!();
-    let fake_error = ask!(Option::<MessageBox>::ask());
+    let message_box = ask!(Option::<MessageBox>::ask());
     println!();
     let consider_empty = ask!(Vec::<ConsiderEmpty>::ask());
 
-    build(send, consider_empty, start_delay, fake_error);
+    build(send, consider_empty, start_delay, message_box);
 }
