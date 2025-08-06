@@ -37,7 +37,7 @@ use tempfile::NamedTempFile;
 pub mod send_expr;
 pub mod send_settings;
 pub mod sender_service;
-mod empty_log;
+pub mod empty_log;
 
 pub trait ToExpr<Args: Tuple = ()> {
     fn to_expr(&self, args: Args) -> TokenStream;

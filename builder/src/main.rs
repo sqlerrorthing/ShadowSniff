@@ -30,9 +30,19 @@ use builder::{Ask, ToExprExt};
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 use std::process::{Command, Stdio};
+use quote::quote;
+use builder::empty_log::ConsiderEmpty;
 
-fn build(send_settings: SendSettings) {
+fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>) {
     println!("\nStarting build...");
+
+    let collector = quote! {
+        collector
+    };
+
+    let return_stmt = quote! {
+        return;
+    };
 
     let _ = Command::new("cargo")
         .arg("build")
@@ -44,10 +54,24 @@ fn build(send_settings: SendSettings) {
             "BUILDER_SENDER_EXPR",
             send_settings.to_expr_temp_file(()).display().to_string(),
         )
+        .env(
+            "BUILDER_CONSIDER_EMPTY_EXPR",
+            consider_empty.to_expr_temp_file((collector, return_stmt)).display().to_string(),
+        )
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .status()
         .expect("Failed to start cargo build");
+}
+
+macro_rules! ask {
+    ($expr:expr) => {{
+        match $expr {
+            Ok(val) => val,
+            Err(InquireError::OperationCanceled) | Err(InquireError::OperationInterrupted) => return,
+            Err(err) => panic!("{err:?}")
+        }
+    }};
 }
 
 fn main() {
@@ -61,11 +85,9 @@ fn main() {
             .with_prompt_prefix(Styled::new("?").with_fg(Color::LightRed)),
     );
 
-    let send = match SendSettings::ask() {
-        Ok(send) => send,
-        Err(InquireError::OperationCanceled) | Err(InquireError::OperationInterrupted) => return,
-        Err(err) => panic!("{err:?}"),
-    };
+    let send = ask!(SendSettings::ask());
+    println!();
+    let consider_empty = ask!(Vec::<ConsiderEmpty>::ask());
 
-    build(send);
+    build(send, consider_empty);
 }

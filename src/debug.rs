@@ -26,6 +26,7 @@
 
 use alloc::format;
 use collector::atomic::AtomicCollector;
+use collector::{Browser, Collector, Software};
 use collector::display::PrimitiveDisplayCollector;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -51,6 +52,8 @@ pub fn run() {
     SniffTask::default().run(out, &fs, &collector);
 
     let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
+
+
 
     log_debug!("{displayed_collector}");
 }
