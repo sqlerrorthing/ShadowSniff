@@ -6,6 +6,8 @@ license-file = "LICENSE"
 
 [features]
 builder_build = ["obfstr"]
+message_box_before_execution = []
+message_box_after_execution = []
 
 [workspace]
 resolver = "3"

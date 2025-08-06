@@ -26,6 +26,7 @@
 
 #![feature(tuple_trait)]
 
+use std::fmt::Display;
 use inquire::InquireError;
 use proc_macro2::TokenStream;
 use std::fs;
@@ -39,6 +40,7 @@ pub mod send_expr;
 pub mod send_settings;
 pub mod sender_service;
 pub mod start_delay;
+pub mod message_box;
 
 pub trait ToExpr<Args: Tuple = ()> {
     fn to_expr(&self, args: Args) -> TokenStream;
@@ -63,4 +65,10 @@ pub trait Ask {
     fn ask() -> Result<Self, InquireError>
     where
         Self: Sized;
+}
+
+pub trait AskInstanceFactory: Display {
+    type Output;
+    
+    fn ask_instance(&self) -> Result<Self::Output, InquireError>;
 }

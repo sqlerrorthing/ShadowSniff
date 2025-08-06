@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::{Ask, ToExpr};
+use crate::{Ask, AskInstanceFactory, ToExpr};
 use colored::Colorize;
 use inquire::validator::Validation;
 use inquire::{InquireError, Select, Text, required};
@@ -178,16 +178,16 @@ impl Display for DiscordFactory {
     }
 }
 
-trait ServiceFactory: Display {
-    fn ask_instance(&self) -> Result<SenderService, InquireError>;
-}
+impl AskInstanceFactory for TelegramFactory {
+    type Output = SenderService;
 
-impl ServiceFactory for TelegramFactory {
     fn ask_instance(&self) -> Result<SenderService, InquireError> {
         Ok(SenderService::TelegramBot(TelegramBotSender::ask()?))
     }
 }
-impl ServiceFactory for DiscordFactory {
+impl AskInstanceFactory for DiscordFactory {
+    type Output = SenderService;
+
     fn ask_instance(&self) -> Result<SenderService, InquireError> {
         Ok(SenderService::DiscordWebhook(DiscordWebhookSender::ask()?))
     }
@@ -198,7 +198,7 @@ impl Ask for SenderService {
     where
         Self: Sized,
     {
-        let factories: Vec<Arc<dyn ServiceFactory>> =
+        let factories: Vec<Arc<dyn AskInstanceFactory<Output = Self>>> =
             vec![Arc::new(TelegramFactory), Arc::new(DiscordFactory)];
 
         loop {

