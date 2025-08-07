@@ -5,5 +5,5 @@ edition = "2024"
 
 [dependencies]
 obfstr = "0.4.4"
-utils = { path = "../utils" }
 filesystem = { path = "../filesystem" }
+windows-sys = { workspace = true }

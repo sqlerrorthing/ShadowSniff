@@ -27,12 +27,34 @@
 #![no_std]
 
 mod kvm_check;
+mod monitor_metrics;
 
 extern crate alloc;
 
 use crate::kvm_check::KVMCheck;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+use crate::monitor_metrics::SmallScreenCheck;
+
+macro_rules! is_running_in_vm_dispatch {
+    (
+        $enum_name:ident,
+        $(
+            $dispatch_variant:ident $( ( $pat:pat ) )? => $expr:expr
+        )*
+    ) => {
+        impl VmDetector for $enum_name {
+            fn is_running_in_vm(&self) -> bool {
+                match self {
+                    $(
+                        $enum_name::$dispatch_variant $( ($pat) )? =>
+                            $expr.is_running_in_vm(),
+                    )*
+                }
+            }
+        }
+    };
+}
 
 /// A trait for detecting whether the current process is running inside a virtual machine (VM).
 ///
@@ -50,17 +72,16 @@ pub trait VmDetector {
 
 pub enum Check {
     KVM,
+    SmallScreen,
     Custom(Box<dyn VmDetector>),
 }
 
-impl VmDetector for Check {
-    fn is_running_in_vm(&self) -> bool {
-        match self {
-            Check::KVM => KVMCheck.is_running_in_vm(),
-            Check::Custom(check) => check.is_running_in_vm(),
-        }
-    }
-}
+is_running_in_vm_dispatch!(
+    Check,
+    KVM => KVMCheck
+    SmallScreen => SmallScreenCheck
+    Custom(check) => check
+);
 
 #[inline(always)]
 pub fn run_checks(checks: Vec<Check>) -> bool {
