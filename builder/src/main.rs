@@ -26,6 +26,7 @@
 extern crate core;
 
 use builder::empty_log::ConsiderEmpty;
+use builder::message_box::{MessageBox, Show};
 use builder::send_settings::SendSettings;
 use builder::start_delay::StartDelay;
 use builder::{Ask, ToExprExt};
@@ -33,7 +34,6 @@ use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 use quote::quote;
 use std::process::{Command, Stdio};
-use builder::message_box::{Show, MessageBox};
 
 fn build(
     send_settings: SendSettings,
@@ -45,7 +45,8 @@ fn build(
 
     let mut builder = &mut Command::new("cargo");
 
-    builder = builder.arg("build")
+    builder = builder
+        .arg("build")
         .env("RUSTFLAGS", "-Awarnings")
         .arg("--release")
         .arg("--features")
@@ -69,23 +70,24 @@ fn build(
         .stderr(Stdio::inherit());
 
     if let Some(message_box) = message_box {
-        builder = builder
-            .arg("--features");
-        
+        builder = builder.arg("--features");
+
         builder = match message_box.show {
             Show::Before => builder.arg("message_box_before_execution"),
             Show::After => builder.arg("message_box_after_execution"),
         };
 
-        builder = builder
-            .env(
-                "BUILDER_MESSAGE_BOX_EXPR",
-                message_box.message.to_expr_temp_file(()).display().to_string(),
-            )
+        builder = builder.env(
+            "BUILDER_MESSAGE_BOX_EXPR",
+            message_box
+                .message
+                .to_expr_temp_file(())
+                .display()
+                .to_string(),
+        )
     }
 
-    let _ = builder.status()
-        .expect("Failed to start cargo build");
+    let _ = builder.status().expect("Failed to start cargo build");
 }
 
 macro_rules! ask {

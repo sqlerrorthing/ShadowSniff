@@ -1,0 +1,1 @@
+Inspired by [EvilBytecode/GoDefender](https://github.com/EvilBytecode/GoDefender)

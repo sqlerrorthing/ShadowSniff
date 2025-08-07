@@ -30,6 +30,8 @@ fn main() {
     let after = env::var("CARGO_FEATURE_MESSAGE_BOX_AFTER_EXECUTION").is_ok();
 
     if before && after {
-        panic!("Only one of `message_box_before_execution` or `message_box_after_execution` can be enabled at a time.");
+        panic!(
+            "Only one of `message_box_before_execution` or `message_box_after_execution` can be enabled at a time."
+        );
     }
 }
