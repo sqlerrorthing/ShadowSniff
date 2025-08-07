@@ -24,16 +24,24 @@
  * SOFTWARE.
  */
 use crate::VmDetector;
-use windows_sys::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
+use filesystem::FileSystem;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use obfstr::obfstr as s;
 
-pub struct SmallScreenCheck;
+pub struct ParallelsCheck;
 
-impl VmDetector for SmallScreenCheck {
-    // Code adapted from: https://github.com/EvilBytecode/GoDefender/blob/c8dc6b434a976579d59ec5d62d5ef9457495b49a/AntiVirtualization/MonitorMetrics/monitormetrics.go
+impl VmDetector for ParallelsCheck {
     fn is_running_in_vm(&self) -> bool {
-        let (width, height) =
-            unsafe { (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)) };
-
-        width < 800 || height < 600
+        StorageFileSystem
+            .list_files_filtered(Path::system_root() / "System32", &|file| {
+                [s!("prl_sf"), s!("prl_tg"), s!("prl_eth")]
+                    .iter()
+                    .any(|driver| {
+                        file.name()
+                            .map_or(false, |file_name| file_name.contains(driver))
+                    })
+            })
+            .map_or(false, |v| !v.is_empty())
     }
 }

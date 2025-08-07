@@ -28,13 +28,15 @@
 
 mod kvm_check;
 mod monitor_metrics;
+mod parallels;
 
 extern crate alloc;
 
 use crate::kvm_check::KVMCheck;
+use crate::monitor_metrics::SmallScreenCheck;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use crate::monitor_metrics::SmallScreenCheck;
+use crate::parallels::ParallelsCheck;
 
 macro_rules! is_running_in_vm_dispatch {
     (
@@ -73,6 +75,7 @@ pub trait VmDetector {
 pub enum Check {
     KVM,
     SmallScreen,
+    Parallels,
     Custom(Box<dyn VmDetector>),
 }
 
@@ -80,6 +83,7 @@ is_running_in_vm_dispatch!(
     Check,
     KVM => KVMCheck
     SmallScreen => SmallScreenCheck
+    Parallels => ParallelsCheck
     Custom(check) => check
 );
 
