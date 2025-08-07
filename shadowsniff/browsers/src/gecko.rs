@@ -127,11 +127,13 @@ macro_rules! browser {
     };
 }
 
-fn get_gecko_browsers<'a>() -> [GeckoBrowser<'a>; 2] {
+fn get_gecko_browsers<'a>() -> [GeckoBrowser<'a>; 4] {
     let appdata = Path::appdata();
 
     [
         browser!("Firefox", &appdata / "Mozilla" / "Firefox"),
         browser!("Librewolf", &appdata / "librewolf"),
+        browser!("Floorp", &appdata / "Floorp"),
+        browser!("Zen", &appdata / "zen"),
     ]
 }
