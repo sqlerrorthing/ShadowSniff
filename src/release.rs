@@ -52,7 +52,7 @@ pub fn run() {
     }
 
     #[cfg(feature = "message_box_before_execution")]
-    include!(env!("BUILDER_MESSAGE_BOX"));
+    include!(env!("BUILDER_MESSAGE_BOX_EXPR"));
 
     let fs = VirtualFileSystem::default();
     let out = &Path::new("\\output");
