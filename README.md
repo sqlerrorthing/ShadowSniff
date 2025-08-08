@@ -565,6 +565,7 @@ I’d like to thank everyone whose contributions helped shape this project — w
 
 - [davimiku](https://github.com/davimiku/json_parser) — for a clean and efficient JSON parser implementation
 - [CasualX](https://github.com/CasualX/obfstr) — for compile-time string obfuscation
+- [EvilBytecode](https://github.com/EvilBytecode/GoDefender) — for virtualization checks
 
 ...and many others whose code, ideas, or techniques helped shape this project —
 even if only through a single clever line of Rust.

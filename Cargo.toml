@@ -30,7 +30,8 @@ members = [
     "filesystem",
     "regedit",
     "sender",
-    "builder"
+    "builder", 
+    "antivm"
 ]
 
 [workspace.dependencies]

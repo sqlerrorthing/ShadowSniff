@@ -38,7 +38,8 @@ use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 use windows_sys::Win32::UI::Shell::{
-    FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath,
+    FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, FOLDERID_Windows,
+    SHGetKnownFolderPath,
 };
 use windows_sys::core::PWSTR;
 
@@ -227,6 +228,10 @@ impl Path {
 
     pub fn appdata() -> Self {
         get_known_folder_path(&FOLDERID_RoamingAppData).unwrap()
+    }
+
+    pub fn system_root() -> Self {
+        get_known_folder_path(&FOLDERID_Windows).unwrap()
     }
 
     pub fn localappdata() -> Self {

