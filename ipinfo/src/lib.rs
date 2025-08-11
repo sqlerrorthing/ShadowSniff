@@ -28,8 +28,10 @@
 
 extern crate alloc;
 
+use alloc::format;
 use alloc::sync::Arc;
 use core::fmt::{Display, Formatter};
+use derive_new::new;
 use indoc::writedoc;
 use json::Value;
 use lazy_static::lazy_static;
@@ -42,15 +44,22 @@ lazy_static! {
     static ref GLOBAL_IP_INFO: Mutex<Option<IpInfo>> = Mutex::new(None);
 }
 
-#[derive(Clone)]
+#[allow(clippy::too_many_arguments)]
+#[derive(new, Clone)]
 pub struct IpInfo {
+    #[new(into)]
     pub ip: Arc<str>,
+    #[new(into)]
     pub city: Arc<str>,
+    #[new(into)]
     pub region: Arc<str>,
+    #[new(into)]
     pub country: Arc<str>,
+    #[new(into)]
     pub loc: Arc<str>,
+    #[new(into)]
     pub org: Arc<str>,
-    pub postal: Arc<str>,
+    #[new(into)]
     pub timezone: Arc<str>,
 }
 
@@ -61,15 +70,13 @@ impl Display for IpInfo {
             "
             IP: {}
             \tCity:\t({}) {}
-            \tRegion:\t{}
-            \tPostal:\t{}",
+            \tRegion:\t{}",
             self.ip,
             internal_code_to_flag(&self.country)
                 .map(Arc::from)
                 .unwrap_or(self.country.clone()),
             self.city,
             self.region,
-            self.postal
         )
     }
 }
@@ -83,50 +90,78 @@ pub fn unwrapped_ip_info() -> IpInfo {
     get_ip_info().unwrap()
 }
 
-impl IpInfo {
-    fn from_value(value: Value) -> Option<Self> {
-        let ip = value.get(s!("ip"))?.as_string()?;
-        let city = value.get(s!("city"))?.as_string()?;
-        let region = value.get(s!("region"))?.as_string()?;
-        let country = value.get(s!("country"))?.as_string()?;
-        let loc = value.get(s!("loc"))?.as_string()?;
-        let org = value.get(s!("org"))?.as_string()?;
-        let postal = value.get(s!("postal"))?.as_string()?;
-        let timezone = value.get(s!("timezone"))?.as_string()?;
-
-        Some(Self {
-            ip,
-            city,
-            region,
-            country,
-            loc,
-            org,
-            postal,
-            timezone,
-        })
-    }
-}
-
-#[allow(static_mut_refs)]
-pub fn init_ip_info() -> bool {
+fn init_ip_info(api: &str, mapper: impl FnOnce(Value) -> Option<IpInfo>) -> Option<bool> {
     if get_ip_info().is_some() {
-        return false;
+        return None;
     }
 
-    let result = Request::get("https://ipinfo.io/json").build().send();
+    let result = Request::get(api)
+        .header("Accept", "application/json")
+        .build()
+        .send();
 
-    let Some(json) = result
-        .ok()
+    let Some(info) = result.ok()
         .and_then(|response| response.body().as_json().ok())
+        .and_then(mapper)
     else {
-        return false;
-    };
-
-    let Some(info) = IpInfo::from_value(json) else {
-        return false;
+        return Some(false);
     };
 
     GLOBAL_IP_INFO.lock().replace(info);
 
-    true
+    Some(true)
+}
+
+#[allow(static_mut_refs)]
+fn init_ip_info_io() -> Option<bool> {
+    init_ip_info(s!("https://ipinfo.io/json"), |value| {
+        Some(IpInfo::new(
+            value.get(s!("ip"))?.as_string()?,
+            value.get(s!("city"))?.as_string()?,
+            value.get(s!("region"))?.as_string()?,
+            value.get(s!("country"))?.as_string()?,
+            value.get(s!("loc"))?.as_string()?,
+            value.get(s!("org"))?.as_string()?,
+            value.get(s!("timezone"))?.as_string()?,
+        ))
+    })
+}
+
+fn init_ip_ip_wtf() -> Option<bool> {
+    init_ip_info(s!("https://ip.wtf"), |value| {
+        let location = value.get(s!("location"))?;
+        let r#as = value.get(s!("as"))?;
+
+        let loc = format!(
+            "{},{}",
+            location.get(s!("latitude"))?.as_number()?,
+            location.get(s!("longitude"))?.as_number()?,
+        );
+
+        let org = format!(
+            "AS{} {}",
+            r#as.get("number")?.as_number()?,
+            r#as.get("name")?.as_string()?,
+        );
+
+        Some(IpInfo::new(
+            value.get(s!("ip"))?.as_string()?,
+            location.get(s!("city"))?.as_string()?,
+            location.get(s!("region_name"))?.as_string()?,
+            location.get(s!("country"))?.as_string()?,
+            loc,
+            org,
+            location.get(s!("timezone"))?.get(s!("name"))?.as_string()?,
+        ))
+    })
+}
+
+pub fn init() -> Option<()> {
+    if init_ip_ip_wtf() != Some(true)
+        && init_ip_info_io() != Some(true)
+    {
+        return None;
+    }
+
+    Some(())
 }

