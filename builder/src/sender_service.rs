@@ -170,7 +170,7 @@ impl Serialize for SenderService {
             SenderService::TelegramBot(bot) => {
                 let mut state = serializer.serialize_struct("TelegramBot", 3)?;
                 state.serialize_field("type", "telegram_bot")?;
-                state.serialize_field("chat_id", &*bot.chat_id)?;
+                state.serialize_field("chat_id", &bot.chat_id)?;
                 state.serialize_field("token", &*bot.token)?;
                 state.end()
             }
@@ -203,7 +203,7 @@ impl<'de> Deserialize<'de> for SenderService {
                 V: MapAccess<'de>,
             {
                 let mut kind: Option<String> = None;
-                let mut chat_id: Option<String> = None;
+                let mut chat_id: Option<i64> = None;
                 let mut token: Option<String> = None;
                 let mut webhook: Option<String> = None;
 
