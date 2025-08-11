@@ -35,6 +35,7 @@ use std::marker::Tuple;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use quote::quote;
+use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
 use crate::empty_log::ConsiderEmpty;
 use crate::message_box::{MessageBox, Show};
@@ -78,14 +79,15 @@ pub trait AskInstanceFactory: Display {
     fn ask_instance(&self) -> Result<Self::Output, InquireError>;
 }
 
-pub struct Builder {
+#[derive(Serialize, Deserialize)]
+pub struct BuilderConfig {
     send_settings: SendSettings,
     consider_empty: Vec<ConsiderEmpty>,
     start_delay: StartDelay,
     message_box: Option<MessageBox>,
 }
 
-impl Ask for Builder {
+impl Ask for BuilderConfig {
     fn ask() -> Result<Self, InquireError>
     where
         Self: Sized
@@ -107,7 +109,7 @@ impl Ask for Builder {
     }
 }
 
-impl Builder {
+impl BuilderConfig {
     pub fn build(self) {
         println!("\nStarting build...");
 

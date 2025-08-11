@@ -29,12 +29,13 @@ use std::sync::Arc;
 use inquire::{required, Confirm, InquireError, Select, Text};
 use proc_macro2::{Literal, TokenStream};
 use quote::quote;
+use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 use windows::Win32::UI::WindowsAndMessaging::{MB_ABORTRETRYIGNORE, MB_CANCELTRYCONTINUE, MB_ICONERROR, MB_ICONINFORMATION, MB_ICONQUESTION, MB_ICONWARNING, MB_OK, MB_OKCANCEL, MB_RETRYCANCEL, MB_YESNO, MB_YESNOCANCEL};
 use crate::{Ask, AskInstanceFactory, ToExpr};
 
-#[derive(Copy, PartialEq, Clone, EnumIter)]
+#[derive(Copy, PartialEq, Clone, EnumIter, Serialize, Deserialize)]
 pub enum Show {
     Before,
     After
@@ -63,7 +64,7 @@ impl Ask for Show {
 }
 
 #[repr(u32)]
-#[derive(Display, Copy, Clone, EnumIter)]
+#[derive(Display, Copy, Clone, EnumIter, Serialize, Deserialize)]
 enum SourceIcon {
     Error = MB_ICONERROR.0,
     Warning = MB_ICONWARNING.0,
@@ -85,7 +86,7 @@ impl Ask for SourceIcon {
 }
 
 #[repr(u32)]
-#[derive(Copy, Clone, EnumIter)]
+#[derive(Copy, Clone, EnumIter, Serialize, Deserialize)]
 enum SourceButton {
     Ok = MB_OK.0,
     OkCancel = MB_OKCANCEL.0,
@@ -123,6 +124,7 @@ impl Display for SourceButton {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CustomSource {
     caption: String,
     text: String,
@@ -175,7 +177,7 @@ impl ToExpr for CustomSource {
     }
 }
 
-#[derive(EnumIter)]
+#[derive(EnumIter, Serialize, Deserialize)]
 pub enum SourcePresets {
     NotSupported,
     VCRuntimeNotFound,
@@ -245,6 +247,7 @@ impl Ask for SourcePresets {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum MessageBoxSource {
     Preset(SourcePresets),
     Custom(CustomSource)
@@ -304,6 +307,7 @@ impl ToExpr for MessageBoxSource {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct MessageBox {
     pub show: Show,
     pub message: MessageBoxSource

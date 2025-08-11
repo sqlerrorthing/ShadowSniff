@@ -30,12 +30,17 @@ use inquire::{Confirm, InquireError, Select};
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::fmt::{Display, Formatter};
+use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
-pub type Uploader = (UploaderService, UploaderUsecase);
+#[derive(new, Serialize, Deserialize, Clone)]
+pub struct Uploader {
+    service: UploaderService,
+    usecase: UploaderUsecase,
+}
 
-#[derive(Display, EnumIter, Clone)]
+#[derive(Display, EnumIter, Clone, Serialize, Deserialize)]
 pub enum UploaderService {
     Gofile,
     TmpFiles,
@@ -73,7 +78,7 @@ impl ToExpr<(TokenStream,)> for UploaderService {
     }
 }
 
-#[derive(EnumIter, Clone)]
+#[derive(EnumIter, Clone, Serialize, Deserialize)]
 pub enum UploaderUsecase {
     Always,
     WhenLogExceedsLimit,
@@ -103,7 +108,7 @@ impl Ask for UploaderUsecase {
     }
 }
 
-#[derive(new)]
+#[derive(new, Serialize, Deserialize)]
 pub struct SendSettings {
     pub(crate) service: SenderService,
     pub(crate) uploader: Option<Uploader>,
@@ -131,7 +136,7 @@ impl Ask for Option<Uploader> {
 
         let service = UploaderService::ask()?;
         let usecase = UploaderUsecase::ask()?;
-        Ok(Some((service, usecase)))
+        Ok(Some(Uploader::new(service, usecase)))
     }
 }
 
@@ -168,7 +173,7 @@ impl SendSettings {
             SenderService::DiscordWebhook(webhook) => webhook.to_expr(()),
         };
 
-        let Some((service, usecase)) = self.uploader.clone() else {
+        let Some(Uploader {service, usecase}) = self.uploader.clone() else {
             return base;
         };
 

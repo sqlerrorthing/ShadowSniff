@@ -153,6 +153,28 @@ https://github.com/user-attachments/assets/5d79246e-7f32-4ebe-957d-601d2b14f616
    .\target\release\ShadowSniff.exe
    ```
 
+---
+
+## Additional CLI Options
+You can customize the builder behavior with these command-line flags:
+
+- `--save`
+
+  Saves the current configuration to a config file after answering questions interactively.
+
+- `--config <CONFIG>` 
+
+  Loads configuration from the specified JSON config file instead of asking interactively.
+
+#### Example usage:
+
+```shell
+cargo run -p builder --release -- --save
+cargo run -p builder --release -- --config config.json
+```
+
+_Note: The `--` after `--release` is necessary to pass flags to the builder binary rather than cargo itself._
+
 ## Workflow
 
 This section describes the complete execution pipeline for ShadowSniff, outlining each step from environment

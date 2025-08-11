@@ -28,10 +28,11 @@ use inquire::{InquireError, MultiSelect};
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::fmt::{Display, Formatter};
+use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
-#[derive(EnumIter, PartialEq)]
+#[derive(EnumIter, PartialEq, Serialize, Deserialize)]
 pub enum ConsiderEmpty {
     WhenEmptyBrowsers,
     WhenEmptyMessengers,

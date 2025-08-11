@@ -25,20 +25,60 @@
  */
 extern crate core;
 
+use std::fs;
+use std::path::PathBuf;
+use clap::Parser;
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
-use builder::{Ask, Builder};
+use thiserror::Error;
+use builder::{Ask, BuilderConfig};
+use crate::ConfigError::Inquire;
 
-macro_rules! ask {
-    ($expr:expr) => {{
+#[derive(Parser, Debug)]
+#[command(name = "configurator")]
+struct Cli {
+    #[arg(long, help = "Uses config file to load/save")]
+    config: Option<PathBuf>,
+
+    #[arg(long, help = "Save only saves config")]
+    save: bool,
+}
+
+#[derive(Error, Debug)]
+enum ConfigError {
+    #[error("io error")]
+    Io(#[from] std::io::Error),
+
+    #[error("json parse error")]
+    Json(#[from] serde_json::Error),
+
+    #[error("inquire error")]
+    Inquire(#[from] InquireError),
+}
+
+fn load_config(cli: &Cli) -> Result<BuilderConfig, ConfigError> {
+    if let Some(config_path) = &cli.config {
+        let data = fs::read_to_string(config_path)?;
+        Ok(serde_json::from_str(&data)?)
+    } else {
+        Ok(BuilderConfig::ask()?)
+    }
+}
+
+fn save_config(config: BuilderConfig, save_path: &PathBuf) -> Result<(), ConfigError> {
+    let json = serde_json::to_string_pretty(&config)?;
+    fs::write(save_path, json)?;
+    Ok(())
+}
+
+macro_rules! cancellable {
+    ($expr:expr) => {
         match $expr {
             Ok(val) => val,
-            Err(InquireError::OperationCanceled) | Err(InquireError::OperationInterrupted) => {
-                return;
-            }
+            Err(Inquire(InquireError::OperationCanceled)) | Err(Inquire(InquireError::OperationInterrupted)) => {return}
             Err(err) => panic!("{err:?}"),
         }
-    }};
+    };
 }
 
 fn main() {
@@ -53,5 +93,14 @@ fn main() {
             .with_prompt_prefix(Styled::new("?").with_fg(Color::LightRed)),
     );
 
-    ask!(Builder::ask()).build();
+    let cli = Cli::parse();
+    let config = cancellable!(load_config(&cli));
+
+    if cli.save {
+        let save_path = cli.config.clone().unwrap_or_else(|| PathBuf::from("config.json"));
+        cancellable!(save_config(config, &save_path));
+        println!("Config saved to {save_path:?}")
+    } else {
+        config.build()
+    }
 }
