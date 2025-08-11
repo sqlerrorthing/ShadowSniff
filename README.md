@@ -153,9 +153,8 @@ https://github.com/user-attachments/assets/5d79246e-7f32-4ebe-957d-601d2b14f616
    .\target\release\ShadowSniff.exe
    ```
 
----
 
-## Additional CLI Options
+### Additional CLI Options
 You can customize the builder behavior with these command-line flags:
 
 - `--save`
