@@ -43,7 +43,7 @@ const MOZ_PLACES_TITLE: usize = 2;
 const MOZ_PLACES_LAST_VISIT_DATE: usize = 8;
 
 #[derive(new)]
-pub(super) struct HistoryTask<'a> {
+pub struct HistoryTask<'a> {
     browser: Arc<GeckoBrowserData<'a>>,
 }
 

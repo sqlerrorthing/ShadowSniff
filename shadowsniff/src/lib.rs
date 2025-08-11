@@ -28,11 +28,11 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
-mod clipboard;
-mod processes;
-mod screenshot;
-mod systeminfo;
-mod userinfo;
+pub mod clipboard;
+pub mod processes;
+pub mod screenshot;
+pub mod systeminfo;
+pub mod userinfo;
 
 use crate::clipboard::ClipboardTask;
 use crate::processes::ProcessesTask;

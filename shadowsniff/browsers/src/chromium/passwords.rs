@@ -42,7 +42,7 @@ const LOGINS_USERNAME_VALUE: usize = 3;
 const LOGINS_PASSWORD_VALUE: usize = 5;
 
 #[derive(new)]
-pub(super) struct PasswordsTask {
+pub struct PasswordsTask {
     browser: Arc<BrowserData>,
 }
 

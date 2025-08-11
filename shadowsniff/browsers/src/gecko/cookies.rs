@@ -45,7 +45,7 @@ const MOZ_COOKIES_PATH: usize = 5;
 const MOZ_COOKIES_EXPIRY: usize = 6;
 
 #[derive(new)]
-pub(super) struct CookiesTask<'a> {
+pub struct CookiesTask<'a> {
     browser: Arc<GeckoBrowserData<'a>>,
 }
 

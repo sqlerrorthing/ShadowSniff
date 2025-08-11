@@ -40,7 +40,7 @@ use obfstr::obfstr as s;
 use tasks::{Task, parent_name};
 
 #[derive(new)]
-pub(super) struct BookmarksTask {
+pub struct BookmarksTask {
     browser: Arc<BrowserData>,
 }
 

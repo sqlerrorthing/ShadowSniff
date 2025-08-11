@@ -27,7 +27,7 @@
 #![no_std]
 
 extern crate alloc;
-mod steam;
+pub mod steam;
 
 use crate::alloc::borrow::ToOwned;
 use crate::steam::SteamTask;

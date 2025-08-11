@@ -43,7 +43,7 @@ const URLS_TITLE: usize = 2;
 const URLS_LAST_VISIT_TIME: usize = 5;
 
 #[derive(new)]
-pub(super) struct HistoryTask {
+pub struct HistoryTask {
     browser: Arc<BrowserData>,
 }
 

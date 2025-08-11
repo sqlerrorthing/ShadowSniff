@@ -24,9 +24,9 @@
  * SOFTWARE.
  */
 
-mod cookies;
-mod history;
-mod passwords;
+pub mod cookies;
+pub mod history;
+pub mod passwords;
 
 use crate::gecko::cookies::CookiesTask;
 use crate::gecko::history::HistoryTask;

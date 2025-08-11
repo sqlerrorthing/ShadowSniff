@@ -29,8 +29,8 @@
 
 extern crate alloc;
 use crate::alloc::borrow::ToOwned;
-mod discord;
-mod telegram;
+pub mod discord;
+pub mod telegram;
 
 use crate::discord::DiscordTask;
 use crate::telegram::TelegramTask;

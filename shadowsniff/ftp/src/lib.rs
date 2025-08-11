@@ -28,7 +28,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
-mod filezilla;
+pub mod filezilla;
 
 use crate::filezilla::FileZillaTask;
 use alloc::borrow::ToOwned;

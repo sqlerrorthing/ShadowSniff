@@ -29,7 +29,7 @@
 
 extern crate alloc;
 pub mod chromium;
-mod gecko;
+pub mod gecko;
 
 use database::{Database, TableRecord, Value};
 

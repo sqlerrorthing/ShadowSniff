@@ -35,7 +35,7 @@ use obfstr::obfstr as s;
 use tasks::Task;
 use utils::process::{ProcessInfo, get_process_list, get_process_path_by_pid};
 
-pub(super) struct TelegramTask;
+pub struct TelegramTask;
 
 macro_rules! find_first_process {
     (

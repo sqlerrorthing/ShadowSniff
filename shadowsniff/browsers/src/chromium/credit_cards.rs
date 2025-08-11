@@ -44,7 +44,7 @@ const CREDIT_CARDS_CARD_NUMBER: usize = 4;
 const CREDIT_CARDS_USE_COUNT: usize = 7;
 
 #[derive(new)]
-pub(super) struct CreditCardsTask {
+pub struct CreditCardsTask {
     browser: Arc<BrowserData>,
 }
 

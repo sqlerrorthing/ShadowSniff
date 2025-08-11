@@ -27,8 +27,8 @@
 #![no_std]
 
 extern crate alloc;
-mod openvpn;
-mod outline;
+pub mod openvpn;
+pub mod outline;
 
 use crate::alloc::borrow::ToOwned;
 

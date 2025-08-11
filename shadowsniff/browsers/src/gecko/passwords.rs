@@ -36,7 +36,7 @@ use obfstr::obfstr as s;
 use tasks::Task;
 
 #[derive(new)]
-pub(super) struct PasswordTask<'a> {
+pub struct PasswordTask<'a> {
     browser: Arc<GeckoBrowserData<'a>>,
 }
 

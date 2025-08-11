@@ -32,7 +32,7 @@ use filesystem::{FileSystem, WriteTo};
 use ipinfo::unwrapped_ip_info;
 use tasks::{Task, parent_name};
 
-pub(super) struct UserInfoTask;
+pub struct UserInfoTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for UserInfoTask {
     parent_name!("User.txt");

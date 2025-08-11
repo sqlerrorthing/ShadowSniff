@@ -42,7 +42,7 @@ const AUTOFILL_VALUE: usize = 1;
 const AUTOFILL_DATE_LAST_USED: usize = 4;
 
 #[derive(new)]
-pub(super) struct AutoFillTask {
+pub struct AutoFillTask {
     browser: Arc<BrowserData>,
 }
 

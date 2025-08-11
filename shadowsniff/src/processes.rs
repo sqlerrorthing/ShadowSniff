@@ -33,7 +33,7 @@ use filesystem::{FileSystem, WriteTo};
 use tasks::{Task, parent_name};
 use utils::process::get_process_list;
 
-pub(super) struct ProcessesTask;
+pub struct ProcessesTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for ProcessesTask {
     parent_name!("Processes.txt");

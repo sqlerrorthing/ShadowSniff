@@ -45,7 +45,7 @@ const COOKIES_PATH: usize = 6;
 const COOKIES_EXPIRES_UTC: usize = 7;
 
 #[derive(new)]
-pub(super) struct CookiesTask {
+pub struct CookiesTask {
     browser: Arc<BrowserData>,
 }
 

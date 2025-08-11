@@ -41,7 +41,7 @@ const DOWNLOADS_CURRENT_PATH: usize = 2;
 const DOWNLOADS_TAB_URL: usize = 16;
 
 #[derive(new)]
-pub(super) struct DownloadsTask {
+pub struct DownloadsTask {
     browser: Arc<BrowserData>,
 }
 

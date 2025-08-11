@@ -81,7 +81,7 @@ impl<C: Collector, F: FileSystem> TokenWriterTask<C, F> {
 
 impl_composite_task_runner!(TokenWriterTask<C, F>);
 
-pub(super) struct DiscordTask;
+pub struct DiscordTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for DiscordTask {
     parent_name!("Discord");

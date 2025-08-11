@@ -44,7 +44,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
     GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
 };
 
-pub(super) struct ScreenshotTask;
+pub struct ScreenshotTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for ScreenshotTask {
     parent_name!("Screenshot.png");

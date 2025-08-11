@@ -26,13 +26,13 @@
 
 #![allow(clippy::missing_safety_doc)]
 
-mod autofill;
-mod bookmarks;
-mod cookies;
-mod credit_cards;
-mod downloads;
-mod history;
-mod passwords;
+pub mod autofill;
+pub mod bookmarks;
+pub mod cookies;
+pub mod credit_cards;
+pub mod downloads;
+pub mod history;
+pub mod passwords;
 
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;

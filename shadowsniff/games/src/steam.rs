@@ -34,7 +34,7 @@ use regedit::{RegistryValue, read_registry_value};
 use tasks::{Task, parent_name};
 use windows_sys::Win32::System::Registry::HKEY_CURRENT_USER;
 
-pub(crate) struct SteamTask;
+pub struct SteamTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for SteamTask {
     parent_name!("Steam");

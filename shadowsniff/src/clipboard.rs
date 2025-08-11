@@ -34,7 +34,7 @@ use tasks::{Task, parent_name};
 use windows_sys::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, OpenClipboard};
 use windows_sys::Win32::System::Memory::{GlobalLock, GlobalUnlock};
 
-pub(super) struct ClipboardTask;
+pub struct ClipboardTask;
 
 impl<C: Collector, F: FileSystem> Task<C, F> for ClipboardTask {
     parent_name!("Clipboard.txt");

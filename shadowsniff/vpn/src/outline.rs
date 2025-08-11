@@ -38,7 +38,7 @@ use json::{Value, parse_str};
 use tasks::{Task, parent_name};
 use utils::sanitize_filename;
 
-pub(super) struct OutlineVPN;
+pub struct OutlineVPN;
 
 #[derive(PartialEq, Ord, Eq, PartialOrd, new)]
 struct Profile {
