@@ -27,8 +27,8 @@ use crate::{Ask, ToExpr};
 use inquire::{InquireError, MultiSelect};
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 

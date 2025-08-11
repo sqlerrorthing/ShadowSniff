@@ -29,8 +29,8 @@ use derive_new::new;
 use inquire::{Confirm, InquireError, Select};
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
@@ -173,7 +173,7 @@ impl SendSettings {
             SenderService::DiscordWebhook(webhook) => webhook.to_expr(()),
         };
 
-        let Some(Uploader {service, usecase}) = self.uploader.clone() else {
+        let Some(Uploader { service, usecase }) = self.uploader.clone() else {
             return base;
         };
 

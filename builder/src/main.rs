@@ -25,14 +25,14 @@
  */
 extern crate core;
 
-use std::fs;
-use std::path::PathBuf;
+use crate::ConfigError::Inquire;
+use builder::{Ask, BuilderConfig};
 use clap::Parser;
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
+use std::fs;
+use std::path::PathBuf;
 use thiserror::Error;
-use builder::{Ask, BuilderConfig};
-use crate::ConfigError::Inquire;
 
 #[derive(Parser, Debug)]
 #[command(name = "configurator")]
@@ -75,7 +75,8 @@ macro_rules! cancellable {
     ($expr:expr) => {
         match $expr {
             Ok(val) => val,
-            Err(Inquire(InquireError::OperationCanceled)) | Err(Inquire(InquireError::OperationInterrupted)) => {return}
+            Err(Inquire(InquireError::OperationCanceled))
+            | Err(Inquire(InquireError::OperationInterrupted)) => return,
             Err(err) => panic!("{err:?}"),
         }
     };
@@ -97,7 +98,10 @@ fn main() {
     let config = cancellable!(load_config(&cli));
 
     if cli.save {
-        let save_path = cli.config.clone().unwrap_or_else(|| PathBuf::from("config.json"));
+        let save_path = cli
+            .config
+            .clone()
+            .unwrap_or_else(|| PathBuf::from("config.json"));
         cancellable!(save_config(config, &save_path));
         println!("Config saved to {save_path:?}")
     } else {

@@ -27,11 +27,11 @@ use crate::{Ask, ToExpr};
 use inquire::{CustomType, InquireError};
 use proc_macro2::TokenStream;
 use quote::quote;
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::num::ParseIntError;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Clone, Serialize, Deserialize)]

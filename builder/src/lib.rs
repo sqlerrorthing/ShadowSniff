@@ -26,27 +26,27 @@
 
 #![feature(tuple_trait)]
 
-use std::fmt::Display;
+use crate::empty_log::ConsiderEmpty;
+use crate::message_box::{MessageBox, Show};
+use crate::send_settings::SendSettings;
+use crate::start_delay::StartDelay;
 use inquire::InquireError;
 use proc_macro2::TokenStream;
+use quote::quote;
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::fs;
 use std::io::Write;
 use std::marker::Tuple;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use quote::quote;
-use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
-use crate::empty_log::ConsiderEmpty;
-use crate::message_box::{MessageBox, Show};
-use crate::send_settings::SendSettings;
-use crate::start_delay::StartDelay;
 
 mod empty_log;
+mod message_box;
 mod send_settings;
 mod sender_service;
 mod start_delay;
-mod message_box;
 
 pub trait ToExpr<Args: Tuple = ()> {
     fn to_expr(&self, args: Args) -> TokenStream;
@@ -75,7 +75,7 @@ pub trait Ask {
 
 pub trait AskInstanceFactory: Display {
     type Output;
-    
+
     fn ask_instance(&self) -> Result<Self::Output, InquireError>;
 }
 
@@ -90,7 +90,7 @@ pub struct BuilderConfig {
 impl Ask for BuilderConfig {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let send_settings = SendSettings::ask()?;
         println!();
@@ -115,14 +115,18 @@ impl BuilderConfig {
 
         let mut builder = &mut Command::new("cargo");
 
-        builder = builder.arg("build")
+        builder = builder
+            .arg("build")
             .env("RUSTFLAGS", "-Awarnings")
             .arg("--release")
             .arg("--features")
             .arg("builder_build")
             .env(
                 "BUILDER_SENDER_EXPR",
-                self.send_settings.to_expr_temp_file(()).display().to_string(),
+                self.send_settings
+                    .to_expr_temp_file(())
+                    .display()
+                    .to_string(),
             )
             .env(
                 "BUILDER_CONSIDER_EMPTY_EXPR",
@@ -139,22 +143,19 @@ impl BuilderConfig {
             .stderr(Stdio::inherit());
 
         if let Some(message_box) = self.message_box {
-            builder = builder
-                .arg("--features");
+            builder = builder.arg("--features");
 
             builder = match message_box.show {
                 Show::Before => builder.arg("message_box_before_execution"),
                 Show::After => builder.arg("message_box_after_execution"),
             };
 
-            builder = builder
-                .env(
-                    "BUILDER_MESSAGE_BOX_EXPR",
-                    message_box.to_expr_temp_file(()).display().to_string(),
-                )
+            builder = builder.env(
+                "BUILDER_MESSAGE_BOX_EXPR",
+                message_box.to_expr_temp_file(()).display().to_string(),
+            )
         }
 
-        let _ = builder.status()
-            .expect("Failed to start cargo build");
+        let _ = builder.status().expect("Failed to start cargo build");
     }
 }

@@ -23,7 +23,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use std::fmt;
 use crate::{Ask, AskInstanceFactory, ToExpr};
 use colored::Colorize;
 use inquire::validator::Validation;
@@ -33,13 +32,14 @@ use quote::quote;
 use reqwest::blocking::Client;
 use sender::discord_webhook::DiscordWebhookSender;
 use sender::telegram_bot::TelegramBotSender;
+use serde::de::{MapAccess, Visitor};
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use std::fmt;
 use std::fmt::Display;
 use std::io::ErrorKind;
 use std::ops::Deref;
 use std::sync::Arc;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use serde::de::{MapAccess, Visitor};
-use serde::ser::SerializeStruct;
 
 #[enum_delegate::register]
 trait ValidateRequest {
@@ -230,17 +230,20 @@ impl<'de> Deserialize<'de> for SenderService {
                     Some("telegram_bot") => {
                         let chat_id = chat_id.ok_or_else(|| de::Error::missing_field("chat_id"))?;
                         let token = token.ok_or_else(|| de::Error::missing_field("token"))?;
-                        Ok(SenderService::TelegramBot(
-                            TelegramBotSender::new(chat_id, token)
-                        ))
+                        Ok(SenderService::TelegramBot(TelegramBotSender::new(
+                            chat_id, token,
+                        )))
                     }
                     Some("discord_webhook") => {
                         let webhook = webhook.ok_or_else(|| de::Error::missing_field("webhook"))?;
-                        Ok(SenderService::DiscordWebhook(
-                            DiscordWebhookSender::new(webhook)
-                        ))
+                        Ok(SenderService::DiscordWebhook(DiscordWebhookSender::new(
+                            webhook,
+                        )))
                     }
-                    Some(other) => Err(de::Error::unknown_variant(other, &["telegram_bot", "discord_webhook"])),
+                    Some(other) => Err(de::Error::unknown_variant(
+                        other,
+                        &["telegram_bot", "discord_webhook"],
+                    )),
                     None => Err(de::Error::missing_field("type")),
                 }
             }
