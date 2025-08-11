@@ -154,20 +154,56 @@ impl Ask for SendSettings {
     }
 }
 
-impl ToExpr for SendSettings {
-    fn to_expr(&self, _args: ()) -> TokenStream {
-        let expr = self.expr_internal();
+impl Ask for Vec<SendSettings> {
+    fn ask() -> Result<Self, InquireError>
+    where
+        Self: Sized
+    {
+        let mut senders = vec![SendSettings::ask()?];
+
+        println!();
+
+        let ask =
+            || Confirm::new("Would you like to specify additional log destinations?")
+                .with_help_message("Sends to all specified destinations, e.g. multiple Telegram chats or other targets.")
+                .with_default(false)
+                .prompt();
+
+        while ask()? {
+            println!();
+            senders.push(SendSettings::ask()?);
+            println!();
+        }
+
+        Ok(senders)
+    }
+}
+
+impl ToExpr<(TokenStream, TokenStream, TokenStream)> for Vec<SendSettings> {
+    fn to_expr(&self, args: (TokenStream, TokenStream, TokenStream)) -> TokenStream {
+        let (log_name, zip, collector) = args;
+
+        let send_blocks: Vec<TokenStream> = self
+            .iter()
+            .map(|send| {
+                let body = send.to_expr(());
+
+                quote! {
+                    let _ = #body.send_archive(#log_name, #zip, #collector);
+                }
+            })
+            .collect();
 
         quote! {
             {
-                #expr
+                #(#send_blocks)*
             }
         }
     }
 }
 
-impl SendSettings {
-    fn expr_internal(&self) -> TokenStream {
+impl ToExpr for SendSettings {
+    fn to_expr(&self, _args: ()) -> TokenStream {
         let base = match self.service.clone() {
             SenderService::TelegramBot(bot) => bot.to_expr(()),
             SenderService::DiscordWebhook(webhook) => webhook.to_expr(()),
@@ -184,10 +220,12 @@ impl SendSettings {
                 let wrapper_tokens = service.to_expr((sender_clone,));
 
                 quote! {
-                    let sender = #base;
-                    let wrapper = #wrapper_tokens;
+                    {
+                        let sender = #base;
+                        let wrapper = #wrapper_tokens;
 
-                    sender::size_fallback::SizeFallbackSender::new(sender, wrapper)
+                        sender::size_fallback::SizeFallbackSender::new(sender, wrapper)
+                    }
                 }
             }
         }
