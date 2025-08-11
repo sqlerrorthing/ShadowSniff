@@ -80,7 +80,7 @@ fn build(
         builder = builder
             .env(
                 "BUILDER_MESSAGE_BOX_EXPR",
-                message_box.message.to_expr_temp_file(()).display().to_string(),
+                message_box.to_expr_temp_file(()).display().to_string(),
             )
     }
 
