@@ -1,12 +1,14 @@
 <div align="center">
-    <img width="256" height="256" src="./.github/images/logo.png" alt="">
-    <img width="64" height="64" src="https://github.com/user-attachments/assets/78ef06c4-9ee2-4093-a36a-562353862a7e" alt=""/
+    <img width="256" height="256" src="./.github/images/logo.png" alt="" />
 </div>
 
 <div align="center">
     <h1>ShadowSniff</h1>
     <p>Lightweight information stealer written in Rust, targeting Windows systems. It interacts directly with the Windows API and avoids unnecessary external dependencies, resulting in a compact, efficient, and low-footprint binary. (PoC. For Educational Purposes only)</p>
-    <p>Made in Russia.</p> 
+    <div align="center">
+        <p>Made in Russia.</p>
+        <img width="64" height="64" src="https://github.com/user-attachments/assets/78ef06c4-9ee2-4093-a36a-562353862a7e" alt="" />
+    </div>
     <div align="center">
         <a href="https://github.com/sqlerrorthing/ShadowSniff/network/members"><img src="https://img.shields.io/github/forks/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Forks"></a>
         <a href="https://github.com/sqlerrorthing/ShadowSniff/stargazers"><img src="https://img.shields.io/github/stars/sqlerrorthing/ShadowSniff?style=for-the-badge&labelColor=%239f0000&color=%23D73332" alt="Stargazers"></a>
