@@ -120,7 +120,13 @@ impl Ask for Option<Uploader> {
             .prompt()?;
 
         if !r#use {
-            return Ok(None);
+            let sure = Confirm::new("You may lose your log if it's too big. Are you sure?")
+                .with_default(false)
+                .prompt()?;
+
+            if sure {
+                return Ok(None);
+            }
         }
 
         let service = UploaderService::ask()?;
