@@ -66,7 +66,7 @@ This flexibility allows the creation of wrappers like custom uploaders or platfo
 
 ### Browsers
 
-| Feature      |                           Chromium (<127, see [here](https://github.com/sqlerrorthing/ShadowSniff/blob/master/shadowsniff/browsers/src/chromium/mod.rs#320))                            |                                    Gecko                                    |
+| Feature      |                             Chromium (<127, see [here](https://github.com/sqlerrorthing/ShadowSniff/blob/master/shadowsniff/browsers/src/chromium.rs#L323))                             |                                    Gecko                                    |
 |--------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------:|
 | Supported    | Amingo, Torch, Kometa, Orbitum, Epic Private, Cent, Vivaldi, **Chromium**, Thorium, **Opera**, **Opera GX**, 7Star, Chrome SxS, **Chrome**, **Edge**, Uran, **Yandex**, **Brave**, Atom |                         **Firefox**, **Librewolf**                          |
 | AutoFill     |                                                                                            ✅                                                                                            |                                      ❌                                      |
