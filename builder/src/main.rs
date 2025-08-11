@@ -25,68 +25,9 @@
  */
 extern crate core;
 
-use builder::empty_log::ConsiderEmpty;
-use builder::send_settings::SendSettings;
-use builder::start_delay::StartDelay;
-use builder::{Ask, ToExprExt};
 use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
-use quote::quote;
-use std::process::{Command, Stdio};
-use builder::message_box::{Show, MessageBox};
-
-fn build(
-    send_settings: SendSettings,
-    consider_empty: Vec<ConsiderEmpty>,
-    start_delay: StartDelay,
-    message_box: Option<MessageBox>,
-) {
-    println!("\nStarting build...");
-
-    let mut builder = &mut Command::new("cargo");
-
-    builder = builder.arg("build")
-        .env("RUSTFLAGS", "-Awarnings")
-        .arg("--release")
-        .arg("--features")
-        .arg("builder_build")
-        .env(
-            "BUILDER_SENDER_EXPR",
-            send_settings.to_expr_temp_file(()).display().to_string(),
-        )
-        .env(
-            "BUILDER_CONSIDER_EMPTY_EXPR",
-            consider_empty
-                .to_expr_temp_file((quote! {collector}, quote! {return;}))
-                .display()
-                .to_string(),
-        )
-        .env(
-            "BUILDER_START_DELAY",
-            start_delay.to_expr_temp_file(()).display().to_string(),
-        )
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit());
-
-    if let Some(message_box) = message_box {
-        builder = builder
-            .arg("--features");
-        
-        builder = match message_box.show {
-            Show::Before => builder.arg("message_box_before_execution"),
-            Show::After => builder.arg("message_box_after_execution"),
-        };
-
-        builder = builder
-            .env(
-                "BUILDER_MESSAGE_BOX_EXPR",
-                message_box.to_expr_temp_file(()).display().to_string(),
-            )
-    }
-
-    let _ = builder.status()
-        .expect("Failed to start cargo build");
-}
+use builder::{Ask, Builder};
 
 macro_rules! ask {
     ($expr:expr) => {{
@@ -112,13 +53,5 @@ fn main() {
             .with_prompt_prefix(Styled::new("?").with_fg(Color::LightRed)),
     );
 
-    let send = ask!(SendSettings::ask());
-    println!();
-    let start_delay = ask!(StartDelay::ask());
-    println!();
-    let message_box = ask!(Option::<MessageBox>::ask());
-    println!();
-    let consider_empty = ask!(Vec::<ConsiderEmpty>::ask());
-
-    build(send, consider_empty, start_delay, message_box);
+    ask!(Builder::ask()).build();
 }

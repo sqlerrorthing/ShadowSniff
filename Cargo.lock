@@ -109,6 +109,8 @@ dependencies = [
  "quote",
  "reqwest",
  "sender",
+ "serde",
+ "serde_json",
  "strum",
  "strum_macros",
  "tempfile",
