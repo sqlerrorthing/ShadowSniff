@@ -58,7 +58,7 @@ const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 #[derive(new, Clone)]
 pub struct TelegramBotSender {
     #[new(into)]
-    pub chat_id: Arc<str>,
+    pub chat_id: i64,
     #[new(into)]
     pub token: Arc<str>,
 }
@@ -237,7 +237,7 @@ impl TelegramBotSender {
     ) -> Result<(), SendError> {
         let mut builder = MultipartBuilder::new("----BoundaryMediaGroup");
 
-        write_text_field!(builder, "chat_id" => &self.chat_id);
+        write_text_field!(builder, "chat_id" => &self.chat_id.to_string());
 
         let mut media_group = MediaGroup::default();
 
@@ -278,7 +278,7 @@ impl TelegramBotSender {
         match screenshot {
             Some(photo_bytes) => {
                 let mut builder = MultipartBuilder::new("----BoundaryPhoto");
-                write_text_field!(builder, "chat_id" => &self.chat_id);
+                write_text_field!(builder, "chat_id" => &self.chat_id.to_string());
                 write_text_field!(builder, "caption" => &combined_caption);
                 write_text_field!(builder, "parse_mode", "HTML");
                 write_file_field!(
@@ -293,7 +293,7 @@ impl TelegramBotSender {
             }
             None => {
                 let mut builder = MultipartBuilder::new("----BoundaryPhoto");
-                write_text_field!(builder, "chat_id" => &self.chat_id);
+                write_text_field!(builder, "chat_id" => &self.chat_id.to_string());
                 write_text_field!(builder, "text" => &combined_caption);
                 write_text_field!(builder, "parse_mode", "HTML");
 

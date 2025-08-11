@@ -26,7 +26,7 @@
 use crate::{Ask, AskInstanceFactory, ToExpr};
 use colored::Colorize;
 use inquire::validator::Validation;
-use inquire::{InquireError, Select, Text, required};
+use inquire::{InquireError, Select, Text, required, CustomType};
 use proc_macro2::TokenStream;
 use quote::quote;
 use reqwest::blocking::Client;
@@ -53,16 +53,9 @@ impl Ask for TelegramBotSender {
             .with_validator(required!())
             .prompt()?;
 
-        let chat_id = Text::new("What is your chat ID?")
+        let chat_id = CustomType::<i64>::new("What is your chat ID?")
             .with_help_message("You can use https://emmarnitechs.com/find-change-user-id-telegram to find your Telegram ID")
             .with_placeholder("123456789")
-            .with_validator(required!())
-            .with_validator(|str: &str| {
-                match str.parse::<i64>() {
-                    Ok(_) => Ok(Validation::Valid),
-                    _ => Ok(Validation::Invalid("You provided an invalid chat id".into()))
-                }
-            })
             .prompt()?;
 
         Ok(Self::new(chat_id, token))
@@ -93,12 +86,12 @@ impl ValidateRequest for TelegramBotSender {
 impl ToExpr for TelegramBotSender {
     fn to_expr(&self, _args: ()) -> TokenStream {
         let token = self.token.deref();
-        let chat_id = self.chat_id.deref();
+        let chat_id = self.chat_id;
 
         quote! {
             sender::telegram_bot::TelegramBotSender::new(
+                #chat_id,
                 obfstr::obfstr!(#token),
-                obfstr::obfstr!(#chat_id),
             )
         }
     }
