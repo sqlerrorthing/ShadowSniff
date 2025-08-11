@@ -142,3 +142,43 @@ impl Ask for SendSettings {
         Ok(Self::new(service, uploader))
     }
 }
+
+impl ToExpr for SendSettings {
+    fn to_expr(&self, _args: ()) -> TokenStream {
+        let expr = self.expr_internal();
+
+        quote! {
+            {
+                #expr
+            }
+        }
+    }
+}
+
+impl SendSettings {
+    fn expr_internal(&self) -> TokenStream {
+        let base = match self.service.clone() {
+            SenderService::TelegramBot(bot) => bot.to_expr(()),
+            SenderService::DiscordWebhook(webhook) => webhook.to_expr(()),
+        };
+
+        let Some((service, usecase)) = self.uploader.clone() else {
+            return base;
+        };
+
+        match usecase.clone() {
+            UploaderUsecase::Always => service.to_expr((base,)),
+            UploaderUsecase::WhenLogExceedsLimit => {
+                let sender_clone = quote! { sender.clone() };
+                let wrapper_tokens = service.to_expr((sender_clone,));
+
+                quote! {
+                    let sender = #base;
+                    let wrapper = #wrapper_tokens;
+
+                    sender::size_fallback::SizeFallbackSender::new(sender, wrapper)
+                }
+            }
+        }
+    }
+}

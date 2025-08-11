@@ -42,7 +42,6 @@ use crate::send_settings::SendSettings;
 use crate::start_delay::StartDelay;
 
 mod empty_log;
-mod send_expr;
 mod send_settings;
 mod sender_service;
 mod start_delay;
