@@ -783,6 +783,7 @@ dependencies = [
 name = "ipinfo"
 version = "0.1.0"
 dependencies = [
+ "derive-new",
  "indoc",
  "json",
  "lazy_static",
