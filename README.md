@@ -1,5 +1,6 @@
 <div align="center">
     <img width="256" height="256" src="./.github/images/logo.png" alt="">
+    <img width="64" height="64" src="https://github.com/user-attachments/assets/78ef06c4-9ee2-4093-a36a-562353862a7e" alt=""/
 </div>
 
 <div align="center">
@@ -607,3 +608,9 @@ Any inquiries related to malicious or unauthorized activities will be disregarde
 
 By using this tool, you acknowledge and accept the terms of this disclaimer.
 If you do not agree with these terms, you must refrain from using the software.
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=sqlerrorthing/ShadowSniff&type=Date)](https://www.star-history.com/#sqlerrorthing/ShadowSniff&Date)
