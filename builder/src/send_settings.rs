@@ -185,7 +185,7 @@ impl Ask for Vec<SendSettings> {
             if senders.contains(&new_sender) {
                 println!(
                     "{}",
-                    "[!] That log destination in already specified. No new one was added.".red()
+                    "[!] That log destination is already specified. No new one was added.".red()
                 );
             } else {
                 senders.push(new_sender);
