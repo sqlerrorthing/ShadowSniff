@@ -31,16 +31,17 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use colored::Colorize;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
-#[derive(new, Serialize, Deserialize, Clone)]
+#[derive(new, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Uploader {
     service: UploaderService,
     usecase: UploaderUsecase,
 }
 
-#[derive(Display, EnumIter, Clone, Serialize, Deserialize)]
+#[derive(Display, EnumIter, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum UploaderService {
     Gofile,
     TmpFiles,
@@ -78,7 +79,7 @@ impl ToExpr<(TokenStream,)> for UploaderService {
     }
 }
 
-#[derive(EnumIter, Clone, Serialize, Deserialize)]
+#[derive(EnumIter, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum UploaderUsecase {
     Always,
     WhenLogExceedsLimit,
@@ -113,6 +114,14 @@ pub struct SendSettings {
     pub(crate) service: SenderService,
     pub(crate) uploader: Option<Uploader>,
 }
+
+impl PartialEq for SendSettings {
+    fn eq(&self, other: &Self) -> bool {
+        self.service == other.service
+    }
+}
+
+impl Eq for SendSettings {}
 
 impl Ask for Option<Uploader> {
     fn ask() -> Result<Self, InquireError>
@@ -171,7 +180,17 @@ impl Ask for Vec<SendSettings> {
 
         while ask()? {
             println!();
-            senders.push(SendSettings::ask()?);
+            let new_sender = SendSettings::ask()?;
+
+            if senders.contains(&new_sender) {
+                println!(
+                    "{}",
+                    "[!] That log destination in already specified. No new one was added.".red()
+                );
+            } else {
+                senders.push(new_sender);
+            }
+
             println!();
         }
 

@@ -155,7 +155,7 @@ impl ToExpr for DiscordWebhookSender {
 }
 
 #[enum_delegate::implement(ValidateRequest)]
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum SenderService {
     TelegramBot(TelegramBotSender),
     DiscordWebhook(DiscordWebhookSender),
