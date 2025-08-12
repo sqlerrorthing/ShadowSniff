@@ -115,8 +115,10 @@ impl BuilderConfig {
         if self.send_settings.is_empty() {
             println!(
                 "{}",
-                "[!] No log destination specified.".red()
+                "[!] No log destination specified. At least one log destination is required.".red()
             );
+
+            return
         }
 
         println!("\nStarting build...");
