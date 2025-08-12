@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "ShadowSniff"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "cfg-if",
  "collector",
@@ -1517,7 +1517,7 @@ dependencies = [
 
 [[package]]
 name = "shadowsniff"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "browsers",
  "collector",
