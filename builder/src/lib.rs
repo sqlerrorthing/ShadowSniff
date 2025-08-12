@@ -40,6 +40,7 @@ use std::io::Write;
 use std::marker::Tuple;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use colored::Colorize;
 use tempfile::NamedTempFile;
 
 mod empty_log;
@@ -111,6 +112,13 @@ impl Ask for BuilderConfig {
 
 impl BuilderConfig {
     pub fn build(self) {
+        if self.send_settings.is_empty() {
+            println!(
+                "{}",
+                "[!] No log destination specified.".red()
+            );
+        }
+
         println!("\nStarting build...");
 
         let mut builder = &mut Command::new("cargo");
