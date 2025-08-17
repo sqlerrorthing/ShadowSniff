@@ -100,11 +100,12 @@ where
     C: Collector,
     F: FileSystem,
 {
-    if !StorageFileSystem.is_exists(tdata / s!("key_datas")) {
+    let key_datas_path = tdata / s!("key_datas");
+    if !StorageFileSystem.is_exists(&key_datas_path) {
         return;
     }
 
-    let mut contents = vec![];
+    let mut contents = vec![&key_datas_path];
     let mut files = vec![];
     let mut dirs = vec![];
 
