@@ -10,7 +10,7 @@ strum_macros = "0.27.2"
 derive-new = "0.7.0"
 sender = { path = "../sender" }
 quote = "1.0.40"
-proc-macro2 = "1.0.97"
+proc-macro2 = "1.0.101"
 tempfile = "3.20.0"
 reqwest = { version = "0.12.23", features = ["blocking"] }
 enum_delegate = "0.2.0"
