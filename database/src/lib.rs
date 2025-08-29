@@ -33,6 +33,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
+use core::iter::FusedIterator;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 
@@ -133,7 +134,11 @@ pub trait Database: DatabaseReader {
 /// - `Record`: The record type, must implement `TableRecord`.
 pub trait DatabaseReader {
     /// The type of iterator returned when reading a table.
-    type Iter: Iterator<Item = Self::Record>;
+    type Iter: Iterator<Item = Self::Record>
+        + Send
+        + FusedIterator
+        + DoubleEndedIterator
+        + ExactSizeIterator;
 
     /// The record type stored in the database tables.
     type Record: TableRecord;

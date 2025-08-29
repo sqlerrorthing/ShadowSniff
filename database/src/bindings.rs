@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+use alloc::ffi::CString;
 use crate::bindings::sqlite3_bindings::{
     SQLITE_BLOB, SQLITE_DESERIALIZE_FREEONCLOSE, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT,
     SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT, sqlite3, sqlite3_close,
@@ -37,7 +37,6 @@ use alloc::format;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::{IntoIter, Vec};
-use core::ffi::c_char;
 use core::ptr;
 use core::ptr::null_mut;
 use obfstr::obfstr as s;
@@ -110,7 +109,7 @@ impl Database for Sqlite3BindingsDatabase {
 }
 
 impl DatabaseReader for Sqlite3BindingsDatabase {
-    type Iter = SqliteIterator;
+    type Iter = IntoIter<SqliteRow>;
     type Record = SqliteRow;
 
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
@@ -118,7 +117,7 @@ impl DatabaseReader for Sqlite3BindingsDatabase {
         S: AsRef<str>,
     {
         let query = format!("{} {}", s!("SELECT * FROM"), table_name.as_ref());
-        let c_query = CString::new(query.as_ref());
+        let c_query = CString::new(query).unwrap();
         let mut stmt: *mut sqlite3_stmt = null_mut();
 
         let rc =
@@ -128,23 +127,10 @@ impl DatabaseReader for Sqlite3BindingsDatabase {
             return None;
         }
 
-        let table = SqliteTable::from_stmt(stmt);
+        let table = SqliteTable::from(stmt);
         unsafe { sqlite3_finalize(stmt) };
 
-        let rows = table.rows.into_iter();
-        Some(SqliteIterator { rows })
-    }
-}
-
-pub struct SqliteIterator {
-    rows: IntoIter<SqliteRow>,
-}
-
-impl Iterator for SqliteIterator {
-    type Item = SqliteRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.rows.next()
+        Some(table.rows.into_iter())
     }
 }
 
@@ -152,18 +138,8 @@ struct SqliteTable {
     rows: Vec<SqliteRow>,
 }
 
-pub struct SqliteRow {
-    row: Vec<Value>,
-}
-
-impl TableRecord for SqliteRow {
-    fn get_value(&self, key: usize) -> Option<Value> {
-        self.row.get(key).cloned()
-    }
-}
-
-impl SqliteTable {
-    fn from_stmt(stmt: *mut sqlite3_stmt) -> Self {
+impl From<*mut sqlite3_stmt> for SqliteTable {
+    fn from(stmt: *mut sqlite3_stmt) -> Self {
         let col_count = unsafe { sqlite3_column_count(stmt) } as usize;
         let mut rows = Vec::new();
 
@@ -210,23 +186,17 @@ impl SqliteTable {
             rows.push(SqliteRow { row });
         }
 
-        SqliteTable { rows }
+        Self { rows }
     }
 }
 
-pub struct CString {
-    inner: Vec<u8>,
+#[derive(Clone)]
+pub struct SqliteRow {
+    row: Vec<Value>,
 }
 
-impl CString {
-    pub fn new(s: &str) -> Self {
-        let mut v = Vec::with_capacity(s.len() + 1);
-        v.extend_from_slice(s.as_bytes());
-        v.push(0);
-        Self { inner: v }
-    }
-
-    pub fn as_ptr(&self) -> *const c_char {
-        self.inner.as_ptr() as *const c_char
+impl TableRecord for SqliteRow {
+    fn get_value(&self, key: usize) -> Option<Value> {
+        self.row.get(key).cloned()
     }
 }
