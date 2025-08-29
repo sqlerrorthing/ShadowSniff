@@ -37,8 +37,10 @@ use alloc::format;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::{IntoIter, Vec};
+use core::iter::FusedIterator;
 use core::ptr;
 use core::ptr::null_mut;
+use delegate::delegate;
 use obfstr::obfstr as s;
 
 mod sqlite3_bindings;
@@ -183,7 +185,7 @@ impl From<*mut sqlite3_stmt> for SqliteTable {
                 row.push(val);
             }
 
-            rows.push(SqliteRow { row });
+            rows.push(SqliteRow::from(row));
         }
 
         Self { rows }
@@ -191,12 +193,49 @@ impl From<*mut sqlite3_stmt> for SqliteTable {
 }
 
 #[derive(Clone)]
-pub struct SqliteRow {
-    row: Vec<Value>,
+pub struct SqliteRow(IntoIter<Value>);
+
+impl From<Vec<Value>> for SqliteRow {
+    fn from(value: Vec<Value>) -> Self {
+        Self(value.into_iter())
+    }
 }
+
+impl Iterator for SqliteRow {
+    type Item = Value;
+
+    delegate! {
+        to self.0 {
+            fn next(&mut self) -> Option<Self::Item>;
+            fn size_hint(&self) -> (usize, Option<usize>);
+            fn nth(&mut self, n: usize) -> Option<Self::Item>;
+            fn last(self) -> Option<Self::Item>;
+            fn count(self) -> usize;
+        }
+    }
+}
+
+impl DoubleEndedIterator for SqliteRow {
+    delegate! {
+        to self.0 {
+            fn next_back(&mut self) -> Option<Self::Item>;
+            fn nth_back(&mut self, n: usize) -> Option<Self::Item>;
+        }
+    }
+}
+
+impl ExactSizeIterator for SqliteRow {
+    delegate! {
+        to self.0 {
+            fn len(&self) -> usize;
+        }
+    }
+}
+
+impl FusedIterator for SqliteRow {}
 
 impl TableRecord for SqliteRow {
     fn get_value(&self, key: usize) -> Option<Value> {
-        self.row.get(key).cloned()
+        self.0.as_slice().get(key).cloned()
     }
 }

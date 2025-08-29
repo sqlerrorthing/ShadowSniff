@@ -141,7 +141,7 @@ pub trait DatabaseReader {
         + ExactSizeIterator;
 
     /// The record type stored in the database tables.
-    type Record: TableRecord;
+    type Record: TableRecord + Clone;
 
     /// Reads a table by name, returning an iterator over its records if found.
     ///
@@ -192,6 +192,12 @@ impl<T: Database> DatabaseExt for T {
     }
 }
 
-pub trait TableRecord {
-    fn get_value(&self, key: usize) -> Option<Value>;
+pub trait TableRecord:
+    Iterator<Item = Value>
+    + Send
+    + FusedIterator
+    + DoubleEndedIterator
+    + ExactSizeIterator
+{
+    fn get_value(&self, index: usize) -> Option<Value>;
 }

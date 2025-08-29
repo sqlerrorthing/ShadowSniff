@@ -9,3 +9,4 @@ cc = "1.2"
 [dependencies]
 filesystem = { path = "../filesystem" }
 obfstr = "0.4.4"
+delegate = "0.13.4"
