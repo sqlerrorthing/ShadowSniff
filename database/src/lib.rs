@@ -193,11 +193,7 @@ impl<T: Database> DatabaseExt for T {
 }
 
 pub trait TableRecord:
-    Iterator<Item = Value>
-    + Send
-    + FusedIterator
-    + DoubleEndedIterator
-    + ExactSizeIterator
+    Iterator<Item = Value> + Send + FusedIterator + DoubleEndedIterator + ExactSizeIterator
 {
     fn get_value(&self, index: usize) -> Option<Value>;
 }

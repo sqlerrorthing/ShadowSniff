@@ -26,7 +26,7 @@
 use crate::{Ask, AskInstanceFactory, ToExpr};
 use colored::Colorize;
 use inquire::validator::Validation;
-use inquire::{InquireError, Select, Text, required, CustomType};
+use inquire::{CustomType, InquireError, Select, Text, required};
 use proc_macro2::TokenStream;
 use quote::quote;
 use reqwest::blocking::Client;

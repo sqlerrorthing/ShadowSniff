@@ -30,6 +30,7 @@ use crate::empty_log::ConsiderEmpty;
 use crate::message_box::{MessageBox, Show};
 use crate::send_settings::SendSettings;
 use crate::start_delay::StartDelay;
+use colored::Colorize;
 use inquire::InquireError;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -40,7 +41,6 @@ use std::io::Write;
 use std::marker::Tuple;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use colored::Colorize;
 use tempfile::NamedTempFile;
 
 mod empty_log;
@@ -118,7 +118,7 @@ impl BuilderConfig {
                 "[!] No log destination specified. At least one log destination is required.".red()
             );
 
-            return
+            return;
         }
 
         println!("\nStarting build...");
@@ -134,7 +134,11 @@ impl BuilderConfig {
             .env(
                 "BUILDER_SENDER_EXPR",
                 self.send_settings
-                    .to_expr_temp_file((quote! {_log_name.clone()}, quote! {&_zip}, quote! {&collector}))
+                    .to_expr_temp_file((
+                        quote! {_log_name.clone()},
+                        quote! {&_zip},
+                        quote! {&collector},
+                    ))
                     .display()
                     .to_string(),
             )

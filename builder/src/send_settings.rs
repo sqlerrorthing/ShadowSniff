@@ -25,13 +25,13 @@
  */
 use crate::sender_service::SenderService;
 use crate::{Ask, ToExpr};
+use colored::Colorize;
 use derive_new::new;
 use inquire::{Confirm, InquireError, Select};
 use proc_macro2::TokenStream;
 use quote::quote;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use colored::Colorize;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
@@ -166,17 +166,18 @@ impl Ask for SendSettings {
 impl Ask for Vec<SendSettings> {
     fn ask() -> Result<Self, InquireError>
     where
-        Self: Sized
+        Self: Sized,
     {
         let mut senders = vec![SendSettings::ask()?];
 
         println!();
 
-        let ask =
-            || Confirm::new("Would you like to specify additional log destinations?")
+        let ask = || {
+            Confirm::new("Would you like to specify additional log destinations?")
                 .with_help_message("Sends to all specified destinations, e.g. multiple Telegram chats or other targets.")
                 .with_default(false)
-                .prompt();
+                .prompt()
+        };
 
         while ask()? {
             println!();

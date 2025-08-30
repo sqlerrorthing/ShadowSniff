@@ -100,7 +100,8 @@ fn init_ip_info(api: &str, mapper: impl FnOnce(Value) -> Option<IpInfo>) -> Opti
         .build()
         .send();
 
-    let Some(info) = result.ok()
+    let Some(info) = result
+        .ok()
         .and_then(|response| response.body().as_json().ok())
         .and_then(mapper)
     else {
@@ -157,9 +158,7 @@ fn init_ip_ip_wtf() -> Option<bool> {
 }
 
 pub fn init() -> Option<()> {
-    if init_ip_ip_wtf() != Some(true)
-        && init_ip_info_io() != Some(true)
-    {
+    if init_ip_ip_wtf() != Some(true) && init_ip_info_io() != Some(true) {
         return None;
     }
 
