@@ -4,7 +4,7 @@ version = "2.2.0"
 edition = "2024"
 
 [dependencies]
-inquire = "0.8.0"
+inquire = "0.9.1"
 strum = "0.27.2"
 strum_macros = "0.27.2"
 derive-new = "0.7.0"
