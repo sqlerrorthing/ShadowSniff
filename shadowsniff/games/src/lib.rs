@@ -29,7 +29,6 @@
 extern crate alloc;
 pub mod steam;
 
-use crate::alloc::borrow::ToOwned;
 use crate::steam::SteamTask;
 use alloc::vec;
 use collector::Collector;

@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
 use collector::Collector;
 use core::ptr::{null_mut, slice_from_raw_parts};

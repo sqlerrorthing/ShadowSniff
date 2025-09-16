@@ -33,7 +33,6 @@ pub mod gecko;
 
 use database::{Database, TableRecord, Value};
 
-use crate::alloc::borrow::ToOwned;
 use crate::chromium::ChromiumTask;
 use crate::gecko::GeckoTask;
 use alloc::string::{String, ToString};

@@ -28,7 +28,6 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
-use crate::alloc::borrow::ToOwned;
 pub mod discord;
 pub mod telegram;
 

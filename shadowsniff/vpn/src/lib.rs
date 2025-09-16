@@ -30,8 +30,6 @@ extern crate alloc;
 pub mod openvpn;
 pub mod outline;
 
-use crate::alloc::borrow::ToOwned;
-
 use crate::openvpn::OpenVPN;
 use crate::outline::OutlineVPN;
 use alloc::vec;

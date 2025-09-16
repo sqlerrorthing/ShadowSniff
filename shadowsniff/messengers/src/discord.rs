@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;

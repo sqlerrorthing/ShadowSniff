@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use crate::chromium::{BrowserData, decrypt_data};
 use crate::{CreditCard, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
 use alloc::sync::Arc;

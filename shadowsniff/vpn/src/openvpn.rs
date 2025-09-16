@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use collector::{Collector, Vpn};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;

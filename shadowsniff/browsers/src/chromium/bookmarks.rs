@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
 use crate::{Bookmark, collect_unique_from_profiles, to_string_and_write_all};
 use alloc::sync::Arc;

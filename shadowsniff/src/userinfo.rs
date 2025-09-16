@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use alloc::format;
 use collector::Collector;
 use filesystem::path::Path;

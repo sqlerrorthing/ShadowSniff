@@ -31,7 +31,6 @@ extern crate alloc;
 pub mod filezilla;
 
 use crate::filezilla::FileZillaTask;
-use alloc::borrow::ToOwned;
 use alloc::vec;
 use collector::Collector;
 use filesystem::FileSystem;

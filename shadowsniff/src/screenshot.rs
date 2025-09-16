@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::iter::once;

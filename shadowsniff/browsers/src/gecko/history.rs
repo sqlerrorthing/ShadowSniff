@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use crate::gecko::GeckoBrowserData;
 use crate::{
     ExtractExt, History, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all,

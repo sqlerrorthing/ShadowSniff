@@ -26,7 +26,6 @@
 
 use crate::chromium::{BrowserData, decrypt_data};
 use crate::{Password, SqliteDatabase, read_and_collect_unique_records, to_string_and_write_all};
-use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
