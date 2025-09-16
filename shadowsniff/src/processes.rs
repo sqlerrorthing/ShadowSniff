@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-use crate::alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use collector::Collector;
 use core::fmt::Write;

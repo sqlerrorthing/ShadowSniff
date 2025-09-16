@@ -56,8 +56,8 @@ macro_rules! composite_task {
 #[macro_export]
 macro_rules! parent_name {
     ($name:expr) => {
-        fn parent_name(&self) -> Option<alloc::string::String> {
-            Some(obfstr::obfstr!($name).to_owned())
+        fn parent_name(&self) -> Option<&str> {
+            Some($name)
         }
     };
 }
@@ -100,7 +100,7 @@ pub trait Task<C: Collector, F: FileSystem>: Send + Sync {
     /// If `None`, the output is written directly into the `parent` directory.
     ///
     /// This allows a task to define its own output folder/file name if needed.
-    fn parent_name(&self) -> Option<String> {
+    fn parent_name(&self) -> Option<&str> {
         None
     }
 
@@ -183,7 +183,7 @@ where
             CreateThread(
                 null_mut(),
                 0,
-                Some(thread_proc::<C, F>),
+                Some(thread_proc::<C, F, dyn Task<C, F>>),
                 Box::into_raw(params) as *mut _,
                 0,
                 null_mut(),
@@ -206,22 +206,20 @@ where
     }
 }
 
-fn task_path<C: Collector, F: FileSystem>(task: &Arc<dyn Task<C, F>>, parent: &Path) -> Path {
-    match task.parent_name() {
-        Some(name) => parent / name,
-        None => parent.clone(),
-    }
+#[inline(always)]
+fn task_path<C: Collector, F: FileSystem, T: Task<C, F> + ?Sized>(task: &Arc<T>, parent: &Path) -> Path {
+    task.parent_name().map(|name| parent / name).unwrap_or(parent.clone())
 }
 
-struct ThreadParams<'a, C: Collector, F: FileSystem> {
-    task: Arc<dyn Task<C, F>>,
+struct ThreadParams<'a, C: Collector, F: FileSystem, T: Task<C, F> + ?Sized> {
+    task: Arc<T>,
     path: Path,
     filesystem: &'a F,
     collector: &'a C,
 }
 
-unsafe extern "system" fn thread_proc<C: Collector, F: FileSystem>(param: *mut c_void) -> u32 {
-    let params = unsafe { Box::from_raw(param as *mut ThreadParams<C, F>) };
+unsafe extern "system" fn thread_proc<C: Collector, F: FileSystem, T: Task<C, F> + ?Sized>(param: *mut c_void) -> u32 {
+    let params = unsafe { Box::from_raw(param as *mut ThreadParams<C, F, T>) };
 
     params
         .task

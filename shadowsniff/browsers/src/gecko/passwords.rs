@@ -76,7 +76,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for PasswordTask<'_> {
                 Good luck — you’ll need it.
             "#};
 
-            let _ = content.write_to(filesystem, parent / "README.txt");
+            let _ = content.write_to(filesystem, parent / s!("README.txt"));
         }
     }
 }
