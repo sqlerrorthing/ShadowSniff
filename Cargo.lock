@@ -17,7 +17,7 @@ dependencies = [
  "shadowsniff",
  "tasks",
  "utils",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
  "zip",
 ]
 
@@ -138,7 +138,7 @@ dependencies = [
  "obfstr",
  "tasks",
  "utils",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -447,7 +447,7 @@ name = "filesystem"
 version = "0.1.0"
 dependencies = [
  "spin 0.10.0",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -566,7 +566,7 @@ dependencies = [
  "obfstr",
  "regedit",
  "tasks",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -634,7 +634,7 @@ name = "hollowing"
 version = "0.1.0"
 dependencies = [
  "filesystem",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -1297,7 +1297,7 @@ dependencies = [
 name = "regedit"
 version = "0.1.0"
 dependencies = [
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -1305,7 +1305,7 @@ name = "requests"
 version = "0.1.0"
 dependencies = [
  "json",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -1553,7 +1553,7 @@ dependencies = [
  "tasks",
  "utils",
  "vpn",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -1735,7 +1735,7 @@ dependencies = [
  "collector",
  "filesystem",
  "obfstr",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -1748,7 +1748,7 @@ dependencies = [
  "getrandom 0.3.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -1966,7 +1966,7 @@ dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.3",
  "regedit",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -2281,9 +2281,9 @@ dependencies = [
 
 [[package]]
 name = "windows-sys"
-version = "0.61.0"
+version = "0.61.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e201184e40b2ede64bc2ea34968b28e33622acdbbf37104f0e4a33f7abe657aa"
+checksum = "6f109e41dd4a3c848907eb83d5a42ea98b3769495597450cf6d153507b166f0f"
 dependencies = [
  "windows-link 0.2.0",
 ]
@@ -2552,5 +2552,5 @@ dependencies = [
  "miniz_oxide",
  "rand_chacha 0.9.0",
  "utils",
- "windows-sys 0.61.0",
+ "windows-sys 0.61.1",
 ]

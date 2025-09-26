@@ -34,7 +34,7 @@ members = [
 ]
 
 [workspace.dependencies]
-windows-sys = { version = "0.61.0", features = [
+windows-sys = { version = "0.61.1", features = [
     "Win32_Foundation",
     "Win32_System_Console",
     "Win32_Storage_FileSystem",
