@@ -9,7 +9,7 @@ strum = "0.27.2"
 strum_macros = "0.27.2"
 derive-new = "0.7.0"
 sender = { path = "../sender" }
-quote = "1.0.40"
+quote = "1.0.41"
 proc-macro2 = "1.0.101"
 tempfile = "3.23.0"
 reqwest = { version = "0.12.23", features = ["blocking"] }
